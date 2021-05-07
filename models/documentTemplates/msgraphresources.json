@@ -7,8 +7,7 @@
             {
                 "name": "androidManagedAppProtection",
                 "category": "approtection",
-                "platform": "android",
-                "msgraphResourceDataType": "androidManagedAppProtections"
+                "platform": "android"
             }
         ]
     },
@@ -20,26 +19,22 @@
             {
                 "name": "androidCompliancePolicy",
                 "category": "compliance",
-                "platform": "android",
-                "msgraphResourceDataType": "devicecompliancepolicies"
+                "platform": "android"
             },
             {
                 "name": "androidWorkProfileCompliancePolicy",
                 "category": "compliance",
-                "platform": "android",
-                "msgraphResourceDataType": "devicecompliancepolicies"
+                "platform": "android"
             },
             {
                 "name": "androidWorkProfileCompliancePolicy",
                 "category": "compliance",
-                "platform": "android",
-                "msgraphResourceDataType": "devicecompliancepolicies"
+                "platform": "android"
             },
             {
                 "name": "iosCompliancePolicy",
                 "category": "compliance",
-                "platform": "iosipados",
-                "msgraphResourceDataType": "devicecompliancepolicies"
+                "platform": "iosipados"
             }
         ]
     },
@@ -49,10 +44,24 @@
         "version": "beta",
         "configurationTypes": [
             {
+                "name": "windowsUpdateForBusinessConfiguration",
+                "category": "update",
+                "platform": "windows"
+            },
+            {
                 "name": "iosGeneralDeviceConfiguration",
                 "category": "configurationprofile",
-                "platform": "iosipados",
-                "msgraphResourceDataType": "deviceConfigurations"
+                "platform": "iosipados"
+            },
+            {
+                "name": "windows10CustomConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
+            },
+            {
+                "name": "windows10GeneralConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
             }
         ]
     },
@@ -74,8 +83,7 @@
             {
                 "name": "iosManagedAppProtection",
                 "category": "appprotection",
-                "platform": "iosipados",
-                "msgraphResourceDataType": "iosManagedAppProtection"
+                "platform": "iosipados"
             }
         ]
     },

@@ -28,7 +28,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     let ConfigurationType = mongoose.model('ConfigurationType');
     let ConfigurationVersion = mongoose.model('ConfigurationVersion');
 
-    // check for new devicesc 
+    // check for new devices
     for (var i = 0; i < configurationListGraph.length; i++) {
         let configurationObjectFromGraph = configurationListGraph[i];
         console.log("handle configuration: " + configurationObjectFromGraph.id);
@@ -38,7 +38,8 @@ const activityFunction: AzureFunction = async function (context: Context, parame
         if (configurations.length == 0) {
             console.log("found new configuration " + configurationObjectFromGraph.id);
 
-            // get odataType from configuration
+            // get config type from configuration
+            // this information is important to link the configuration doc to a configurationType doc
             let dataType = null
             if (configurationObjectFromGraph["@odata.type"]) {
                 dataType = configurationObjectFromGraph["@odata.type"].replace("#microsoft.graph.", "");
@@ -62,11 +63,9 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 }
             }
 
-            // check odata Type
+            // check data Type
             if (!dataType) {
-                // no return needed, we skip to the next configuration element and log the occurence
-                // return ({ ok: false, error: 'dataType not defined', object: configurationObjectFromGraph })
-                console.log('action needed: dataType not defined');
+                console.log('dataType not defined');
                 console.log(configurationObjectFromGraph);
             } else {
                 console.log("dataType defined: " + dataType);
@@ -74,11 +73,11 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
             // find configurationType Id
             let configurationTypeId = null;
-            let configurationTypes = await ConfigurationType.find({ dataType: dataType });
+            let configurationTypes = await ConfigurationType.find({ name: dataType });
             console.log("found configurationtypes: " + JSON.stringify(configurationTypes));
 
             if (configurationTypes.length > 0) {
-                console.log("found configuration type: " + configurationTypes[0].label);
+                console.log("found configuration type: " + configurationTypes[0].name);
 
                 // Create Configuration
                 configurationTypeId = configurationTypes[0].id

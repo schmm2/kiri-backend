@@ -4,6 +4,7 @@ const createMongooseClient = require('../shared/mongodb');
 const { ConfigurationType } = require('../models/configurationtype');
 const { MsGraphResource } = require('../models/msgraphresource');
 import * as msgraphResourcesTemplate from '../models/documentTemplates/msgraphresources.json';
+import IsValidJSONString from '../utils/isvalidjsonstring';
 
 const BASIC_LOGGING = {
   requestDidStart(requestContext) {
@@ -25,6 +26,7 @@ const BASIC_LOGGING = {
 
 // connect db
 createMongooseClient();
+
 
 // fill database with predefined data
 for (let m = 0; m < msgraphResourcesTemplate.length; m++) {
@@ -62,7 +64,7 @@ for (let m = 0; m < msgraphResourcesTemplate.length; m++) {
                     platform: configurationTypeTemplate.platform,
                     category: configurationTypeTemplate.category,
                     msGraphResource: msGraphResourceCreated.id
-                  }); 
+                  });
                   console.log("mongoose, created resourcetype document: " + configurationTypeCreated.name);
 
                   // establish relationship, update msGraphResource
@@ -81,7 +83,6 @@ for (let m = 0; m < msgraphResourcesTemplate.length; m++) {
       }
     });
 }
-
 
 
 const server = new ApolloServer({
