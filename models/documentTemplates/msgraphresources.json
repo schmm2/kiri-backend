@@ -1,0 +1,92 @@
+[
+    {
+        "name": "androidManagedAppProtections",
+        "resource": "/deviceAppManagement/androidManagedAppProtections",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "androidManagedAppProtection",
+                "category": "approtection",
+                "platform": "android",
+                "msgraphResourceDataType": "androidManagedAppProtections"
+            }
+        ]
+    },
+    {
+        "name": "devicecompliancepolicies",
+        "resource": "/deviceManagement/deviceCompliancePolicies",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "androidCompliancePolicy",
+                "category": "compliance",
+                "platform": "android",
+                "msgraphResourceDataType": "devicecompliancepolicies"
+            },
+            {
+                "name": "androidWorkProfileCompliancePolicy",
+                "category": "compliance",
+                "platform": "android",
+                "msgraphResourceDataType": "devicecompliancepolicies"
+            },
+            {
+                "name": "androidWorkProfileCompliancePolicy",
+                "category": "compliance",
+                "platform": "android",
+                "msgraphResourceDataType": "devicecompliancepolicies"
+            },
+            {
+                "name": "iosCompliancePolicy",
+                "category": "compliance",
+                "platform": "iosipados",
+                "msgraphResourceDataType": "devicecompliancepolicies"
+            }
+        ]
+    },
+    {
+        "name": "deviceConfigurations",
+        "resource": "/deviceManagement/deviceConfigurations",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "iosGeneralDeviceConfiguration",
+                "category": "configurationprofile",
+                "platform": "iosipados",
+                "msgraphResourceDataType": "deviceConfigurations"
+            }
+        ]
+    },
+    {
+        "name": "deviceenrollmentconfigurations",
+        "resource": "/deviceManagement/deviceEnrollmentConfigurations",
+        "version": "beta"
+    },
+    {
+        "name": "groupPolicyConfigurations",
+        "resource": "/deviceManagement/groupPolicyConfigurations",
+        "version": "beta"
+    },
+    {
+        "name": "iosManagedAppProtections",
+        "resource": "/deviceAppManagement/iosManagedAppProtections",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "iosManagedAppProtection",
+                "category": "appprotection",
+                "platform": "iosipados",
+                "msgraphResourceDataType": "iosManagedAppProtection"
+            }
+        ]
+    },
+    {
+        "name": "managedDevices",
+        "resource": "/deviceManagement/managedDevices",
+        "version": "beta"
+    },
+    {
+        "name": "windowsAutopilotDeploymentProfiles",
+        "resource": "/deviceManagement/windowsAutopilotDeploymentProfiles",
+        "version": "beta"
+    }
+]
