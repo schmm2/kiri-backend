@@ -29,7 +29,8 @@ const orchestrator = df.orchestrator(function* (context) {
 
         let parameter = {
             graphValue: msGraphResponseValue,
-            graphResourceUrl: queryParameters.graphResourceUrl
+            graphResourceUrl: queryParameters.graphResourceUrl,
+            tenant: queryParameters.tenant
         }
 
         switch (queryParameters.graphResourceUrl) {

@@ -15,6 +15,11 @@ const configurationSchema = new Schema({
         type: String,
         required: true
     },
+    tenant: {
+        type: Schema.Types.ObjectId,
+        ref: 'Tenant',
+        require: true
+    },
     configurationType: {
         type: Schema.Types.ObjectId,
         ref: 'ConfigurationType',

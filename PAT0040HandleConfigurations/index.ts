@@ -19,11 +19,14 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
     let configurationListGraph = parameter.graphValue;
     let graphResourceUrl = parameter.graphResourceUrl;
+    let tenant = parameter.tenant;
 
+    console.log("pat0040", tenant);
     // console.log("graphValue");
     // console.log(JSON.stringify(configurationListGraph));
 
     console.log("handle configurations")
+    let Tenant = mongoose.model('Tenant');
     let Configuration = mongoose.model('Configuration');
     let ConfigurationType = mongoose.model('ConfigurationType');
     let ConfigurationVersion = mongoose.model('ConfigurationVersion');
@@ -85,8 +88,17 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     graphIsDeleted: false,
                     graphId: configurationObjectFromGraph.id,
                     graphCreatedAt: configurationObjectFromGraph.createdDateTime,
-                    configurationType: configurationTypeId
+                    configurationType: configurationTypeId,
+                    tenant: tenant._id
                 });
+
+                // establish relationship, update tenant
+                Tenant.update(
+                    { _id: tenant._id },
+                    { $push: { configurations: addConfigurationResponse._id } },
+                    (err, doc) => { if (err) { console.log("mongoose: error updating tenant") } }
+                )
+
                 // console.log("created new configuration element");
                 // console.log("created configuration response: " + JSON.stringify(addConfigurationResponse));
 
