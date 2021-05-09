@@ -10,20 +10,15 @@
  */
 
 import * as df from "durable-functions"
-
-
-// models
-import { ConfigurationType } from "../models/configurationtype";
-import { MsGraphResource } from "../models/msgraphresource";
-import { Tenant } from "../models/tenant";
 const createMongooseClient = require('../shared/mongodb');
-const crypto = require('crypto');
 
 const orchestrator = df.orchestrator(function* (context) {
+    console.log("start SOL0001");
+
+    const queryParameters: any = context.df.getInput();
     const outputs = [];
     let tenantDbId = null;
-    const queryParameters: any = context.df.getInput();
-  
+    
     // Get Tenant Object
     if (queryParameters) {
         tenantDbId = queryParameters.tenantDbId;
@@ -31,11 +26,14 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // static for testing
     tenantDbId = "608eaae218d41715c4021618";
+    console.log("tenantDbId", tenantDbId);
 
-    let tenant = (yield context.df.callActivity("PAT0021TenantGetById", tenantDbId));
+    let tenant = yield context.df.callActivity("PAT0021TenantGetById", tenantDbId);
     console.log(tenant);
+    
+    console.log("--------------")
 
-    let accessTokenResponse = (yield context.df.callActivity("TEC0001MsGraphAccessTokenCreateActivity", tenant));
+    let accessTokenResponse = yield context.df.callActivity("TEC0001MsGraphAccessTokenCreateActivity", tenant);
 
     if (accessTokenResponse && accessTokenResponse.body) {
         if (accessTokenResponse.body.ok) {

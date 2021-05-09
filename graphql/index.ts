@@ -4,7 +4,7 @@ const createMongooseClient = require('../shared/mongodb');
 const { ConfigurationType } = require('../models/configurationtype');
 const { MsGraphResource } = require('../models/msgraphresource');
 import * as msgraphResourcesTemplate from '../models/documentTemplates/msgraphresources.json';
-import IsValidJSONString from '../utils/isvalidjsonstring';
+// import IsValidJSONString from '../utils/isvalidjsonstring';
 
 const BASIC_LOGGING = {
   requestDidStart(requestContext) {

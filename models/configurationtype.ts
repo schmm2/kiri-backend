@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const { composeWithMongoose } = require("graphql-compose-mongoose");
+import { createObjectTC } from '../graphql/createObjectTC';
 
 const configurationTypeSchema = new Schema({
     name: {
@@ -19,10 +19,14 @@ const configurationTypeSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'MsGraphResource',
         require: true
-    }
+    },
+    configurations: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Configuration'
+    }]
 }, {
     timestamps: true
 });
 
-export const ConfigurationTypeTC = composeWithMongoose(mongoose.model('ConfigurationType', configurationTypeSchema));
-export const ConfigurationType = mongoose.model('ConfigurationType', configurationTypeSchema); 
+export const ConfigurationType = mongoose.models.ConfigurationType || mongoose.model('ConfigurationType', configurationTypeSchema);
+export const ConfigurationTypeTC = createObjectTC({ model: ConfigurationType, customizationOptions: {} });

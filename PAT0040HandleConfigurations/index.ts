@@ -31,7 +31,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     let ConfigurationType = mongoose.model('ConfigurationType');
     let ConfigurationVersion = mongoose.model('ConfigurationVersion');
 
-    // check for new devices
+    // check for new configurations
     for (var i = 0; i < configurationListGraph.length; i++) {
         let configurationObjectFromGraph = configurationListGraph[i];
         console.log("handle configuration: " + configurationObjectFromGraph.id);
@@ -99,6 +99,13 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     (err, doc) => { if (err) { console.log("mongoose: error updating tenant") } }
                 )
 
+                // establish relationship, update configurationType
+                ConfigurationType.update(
+                    { _id: configurationTypeId },
+                    { $push: { configurations: addConfigurationResponse._id } },
+                    (err, doc) => { if (err) { console.log("mongoose: error updating configurationType") } }
+                )
+
                 // console.log("created new configuration element");
                 // console.log("created configuration response: " + JSON.stringify(addConfigurationResponse));
 
@@ -129,7 +136,57 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 console.log("unable to find configuration type");
             }
         } else {
-            console.log("configuration does already exist:" + configurationObjectFromGraph.id);
+            let configuration = configurations[0];
+            console.log("configuration does already exist:" + configuration._id); 
+
+            // get newest configuration versions of this configuration
+            let newestStoredConfigurationVersion = null;
+            let storedConfigurationVersions = await ConfigurationVersion.find({configuration: configuration._id, isNewest: true});
+            console.log("stored version",storedConfigurationVersions[0]);
+
+            if (storedConfigurationVersions[0]) {
+                // we have to make sure the version property exists
+                if (storedConfigurationVersions[0].version) {
+                    newestStoredConfigurationVersion = storedConfigurationVersions[0];
+                    console.log("newest stored version: ", newestStoredConfigurationVersion);
+                }
+            }
+
+            // we are unable to use the version property as it does not exist on all graph resources => use md5 hash instead
+            let configurationObjectFromGraphVersion = crypto.createHash('md5').update(JSON.stringify(configurationObjectFromGraph)).digest("hex");
+            console.log("graph hash version", configurationObjectFromGraphVersion);
+            console.log("stored hash version", newestStoredConfigurationVersion.version);
+
+            // compare version of object from graph and stored in dynamodb
+            // new version found, need to add the new version
+            if (configurationObjectFromGraphVersion != newestStoredConfigurationVersion.version) {
+                console.log("configuration " + configuration.id + " new version found, add new configuration version");
+
+                let addConfigurationVersionResponse = await ConfigurationVersion.create({
+                    value: JSON.stringify(configurationObjectFromGraph),
+                    version: configurationObjectFromGraphVersion,
+                    configuration: configuration._id,
+                    isNewest: true,
+                    displayName: configurationObjectFromGraph.displayName,
+                    graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime
+                });
+
+                console.log("new version: ", addConfigurationVersionResponse);
+
+                // establish relationship, update configuration
+                Configuration.update(
+                    { _id: configuration._id },
+                    { $push: { configurationVersions: addConfigurationVersionResponse._id } },
+                    (err, doc) => { if (err) { console.log("mongoose: error updating configuration") } }
+                )
+
+                // set active configurationversion to old state
+                newestStoredConfigurationVersion.isNewest = false;
+                newestStoredConfigurationVersion.save();       
+            } else{
+                 // else: no newer version, nothing needs to be done
+                console.log("same version")
+            }     
         }
     };
     return;

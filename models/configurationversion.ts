@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const { composeWithMongoose } = require("graphql-compose-mongoose");
+import { createObjectTC } from "../graphql/createObjectTC";
+import { ConfigurationTC } from "./configuration"; 
 
 const configurationversionSchema = new Schema({
     displayName: {
@@ -32,5 +33,16 @@ const configurationversionSchema = new Schema({
     timestamps: true
 });
 
-export const ConfigurationVersionTC = composeWithMongoose(mongoose.model('ConfigurationVersion', configurationversionSchema));
-export const ConfigurationVersion = mongoose.model('ConfigurationVersion', configurationversionSchema);
+export const ConfigurationVersion = mongoose.models.ConfigurationVersion || mongoose.model('ConfigurationVersion', configurationversionSchema);
+export const ConfigurationVersionTC = createObjectTC({model: ConfigurationVersion, customizationOptions: {}});
+
+ConfigurationVersionTC.addRelation(
+    'configuration',
+    {
+        resolver: () => ConfigurationTC.getResolver("findById"),
+        prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
+            _id: (source) => source.configuration,
+        },
+        projection: { configuration: true }, // point fields in source object, which should be fetched from DB
+    }
+);
