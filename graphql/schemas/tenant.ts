@@ -1,4 +1,4 @@
-const { TenantTC } = require("../../models/tenant");
+import { TenantTC } from "../../models/tenant";
 
 export const tenantQuery = {
     tenantById: TenantTC.getResolver("findById"),

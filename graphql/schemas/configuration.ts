@@ -1,4 +1,4 @@
-const { ConfigurationTC } = require("../../models/Configuration");
+import { ConfigurationTC } from "../../models/Configuration";
 
 export const configurationQuery = {
     configurationByIds: ConfigurationTC.getResolver("findByIds"),
