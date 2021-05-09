@@ -20,6 +20,10 @@ const tenantSchema = new Schema({
       required: false,
       default: false
    },
+   configurations: [{
+      type: Schema.Types.ObjectId,
+      ref: 'Configuration'
+    }]
 }, {
    timestamps: true
 });

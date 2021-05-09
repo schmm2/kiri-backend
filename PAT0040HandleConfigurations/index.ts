@@ -93,11 +93,6 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 // Create Configuration Version
                 let configurationObjectFromGraphJSON = JSON.stringify(configurationObjectFromGraph);
                 let version = crypto.createHash('md5').update(configurationObjectFromGraphJSON).digest("hex");
-                // console.log("version");
-                // console.log(version);
-
-                // console.log("time");
-                // console.log(configurationObjectFromGraph.lastModifiedDateTime);
 
                 let addConfigurationVersionResponse = await ConfigurationVersion.create({
                     displayName: configurationObjectFromGraph.displayName,
@@ -105,8 +100,15 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     value: configurationObjectFromGraphJSON,
                     version: version,
                     isNewest: true,
-                    configuration: addConfigurationResponse.id
+                    configuration: addConfigurationResponse._id
                 });
+
+                // establish relationship, update configuration
+                Configuration.update(
+                    { _id: addConfigurationResponse._id },
+                    { $push: { configurationVersions: addConfigurationVersionResponse._id } },
+                    (err, doc) => { if (err) { console.log("mongoose: error updating configuration") } }
+                )
 
                 console.log("created new configuration version element");
                 console.log("created configuration version response: " + JSON.stringify(addConfigurationVersionResponse));

@@ -19,7 +19,11 @@ const configurationSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'ConfigurationType',
         require: true
-    }
+    },
+    configurationVersions: [{
+        type: Schema.Types.ObjectId,
+        ref: 'ConfigurationVersion'
+    }]
 }, {
     timestamps: true
 });
