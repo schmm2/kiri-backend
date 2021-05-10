@@ -17,21 +17,24 @@ const orchestrator = df.orchestrator(function* (context) {
 
     const queryParameters: any = context.df.getInput();
     const outputs = [];
-    let tenantDbId = null;
-    
+    let tenantDbId = queryParameters.tenantDbId;
+
+    // Create Job
+    let jobData = {
+        type: "TENENAT_REFRESH",
+        state: "STARTED",
+        tenant: tenantDbId
+    };
+    let job = yield context.df.callActivity("PAT0022JobCreate", jobData);
+    console.log("new job", job);
+
     // Get Tenant Object
     if (queryParameters) {
-        tenantDbId = queryParameters.tenantDbId;
+        tenantDbId = tenantDbId;
+        console.log("tenantDbId", tenantDbId);
     }
-
-    // static for testing
-    tenantDbId = "608eaae218d41715c4021618";
-    console.log("tenantDbId", tenantDbId);
-
     let tenant = yield context.df.callActivity("PAT0021TenantGetById", tenantDbId);
     console.log(tenant);
-    
-    console.log("--------------")
 
     let accessTokenResponse = yield context.df.callActivity("TEC0001MsGraphAccessTokenCreateActivity", tenant);
 
@@ -59,6 +62,16 @@ const orchestrator = df.orchestrator(function* (context) {
             yield context.df.Task.all(provisioningTasks);
         }
     }
+
+    // Update Job
+    let finishedJobData = {
+        _id: job._id,
+        state: "FINISHED",
+    };
+    console.log("finished job data", finishedJobData);
+    let updatedJobResponse = yield context.df.callActivity("PAT0023JobUpdate", finishedJobData);
+    console.log("updated job", updatedJobResponse);
+
     return outputs;
 });
 
