@@ -24,11 +24,11 @@ const orchestrator = df.orchestrator(function* (context) {
         state: "STARTED",
         tenant: queryParameters.tenant._id
     };
-    let job = yield context.df.callActivity("PAT0022JobCreate", jobData);
+    let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
     // console.log("new job", job);
 
     // Query Resources
-    let msGraphResource = yield context.df.callActivity("TEC0010MsGraphResourcesQuery", queryParameters);
+    let msGraphResource = yield context.df.callActivity("ACT2000GraphQuery", queryParameters);
     // console.log("ms graph resource");
     // console.log(msGraphResource);
 
@@ -45,19 +45,18 @@ const orchestrator = df.orchestrator(function* (context) {
 
         switch (queryParameters.graphResourceUrl) {
             case '/deviceManagement/managedDevices':
-                response = yield context.df.callActivity("PAT0030HandleDevice", msGraphResponseValue);
+                response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", msGraphResponseValue);
                 break;
             /*case 'groupPolicyConfigurations':
                 handlerResponse = await handleGroupPolicyConfigurations(graphResponseValue, tenantObject, graphResource, accessToken);
                 break;*/
             default:
-                response = yield context.df.callActivity("PAT0040HandleConfigurations", parameter);
+                response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break
         }
     }
-    // console.log(msGraphResource);
-
     // anaylze response 
+    // todo
 
     // Update Job
     let finishedJobData = {
@@ -65,7 +64,7 @@ const orchestrator = df.orchestrator(function* (context) {
         state: "FINISHED",
     };
     
-    let updatedJobResponse = yield context.df.callActivity("PAT0023JobUpdate", finishedJobData);
+    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobData);
     // console.log("finished job data", finishedJobData);
     // console.log("updated job", updatedJobResponse);
 

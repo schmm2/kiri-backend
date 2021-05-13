@@ -6,5 +6,5 @@
       "direction": "in"
     }
   ],
-  "scriptFile": "../dist/TEC0001MsGraphAccessTokenCreateActivity/index.js"
+  "scriptFile": "../dist/ACT3000AzureDataCollectHandleDevice/index.js"
 }

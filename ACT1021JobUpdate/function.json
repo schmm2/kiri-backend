@@ -6,5 +6,5 @@
       "direction": "in"
     }
   ],
-  "scriptFile": "../dist/PAT0021TenantGetById/index.js"
+  "scriptFile": "../dist/ACT1021JobUpdate/index.js"
 }

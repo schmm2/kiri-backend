@@ -6,5 +6,5 @@
       "direction": "in"
     }
   ],
-  "scriptFile": "../dist/SOL0001AzureDataCollectOrchestrator/index.js"
+  "scriptFile": "../dist/ORC1001AzureDataCollectPerMsGraphResourceType/index.js"
 }

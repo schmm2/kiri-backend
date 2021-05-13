@@ -25,7 +25,7 @@ const orchestrator = df.orchestrator(function* (context) {
         state: "STARTED",
         tenant: tenantDbId
     };
-    let job = yield context.df.callActivity("PAT0022JobCreate", jobData);
+    let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
     console.log("new job", job);
 
     // Get Tenant Object
@@ -33,17 +33,17 @@ const orchestrator = df.orchestrator(function* (context) {
         tenantDbId = tenantDbId;
         console.log("tenantDbId", tenantDbId);
     }
-    let tenant = yield context.df.callActivity("PAT0021TenantGetById", tenantDbId);
+    let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
     console.log(tenant);
 
-    let accessTokenResponse = yield context.df.callActivity("TEC0001MsGraphAccessTokenCreateActivity", tenant);
+    let accessTokenResponse = yield context.df.callActivity("ACT2001GraphAccessTokenCreate", tenant);
 
     if (accessTokenResponse && accessTokenResponse.body) {
         if (accessTokenResponse.body.ok) {
             //console.log(accessTokenResponse.body.accessToken);
             createMongooseClient();
 
-            let msGraphResources = yield context.df.callActivity("PAT0010MsGraphResourceGet");
+            let msGraphResources = yield context.df.callActivity("ACT1000MsGraphResourceGetAll");
 
             const provisioningTasks = [];
 
@@ -56,7 +56,7 @@ const orchestrator = df.orchestrator(function* (context) {
                     version: msGraphResources[i].version,
                     tenant: tenant,
                 }
-                const provisionTask = context.df.callSubOrchestrator("SOL0002AzureDataCollectSubOrchestrator", payload, child_id);
+                const provisionTask = context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id);
                 provisioningTasks.push(provisionTask);
             }
 
@@ -70,7 +70,7 @@ const orchestrator = df.orchestrator(function* (context) {
         state: "FINISHED",
     };
     console.log("finished job data", finishedJobData);
-    let updatedJobResponse = yield context.df.callActivity("PAT0023JobUpdate", finishedJobData);
+    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobData);
     console.log("updated job", updatedJobResponse);
 
     return outputs;
