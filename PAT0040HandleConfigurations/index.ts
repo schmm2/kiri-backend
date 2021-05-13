@@ -14,14 +14,14 @@ var mongoose = require('mongoose');
 const crypto = require('crypto')
 
 const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<string> {
-    console.log("PAT0040HandleConfigurations: parameter");
-    console.log(JSON.stringify(parameter));
+    /* console.log("PAT0040HandleConfigurations: parameter");
+    console.log(JSON.stringify(parameter));*/
 
     let configurationListGraph = parameter.graphValue;
     let graphResourceUrl = parameter.graphResourceUrl;
     let tenant = parameter.tenant;
 
-    console.log("pat0040", tenant);
+    // console.log("pat0040", tenant);
     // console.log("graphValue");
     // console.log(JSON.stringify(configurationListGraph));
 

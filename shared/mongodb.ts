@@ -32,8 +32,12 @@ async function createConnection() {
     // connect db
     let db = await mongoose.connect(mongodbConnectionString, {
         useNewUrlParser: true,
+        useCreateIndex: true ,
         dbName: config.dbName
     });
+
+    //console.log(db);
+    //db.models.Job.createIndex({"_ts":1}, {expireAfterSeconds: 10});
 
     return db;
 }

@@ -52,6 +52,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 let payload = {
                     accessToken: accessTokenResponse.body.accessToken,
                     graphResourceUrl: msGraphResources[i].resource,
+                    msGraphResourceName: msGraphResources[i].name,
                     version: msGraphResources[i].version,
                     tenant: tenant,
                 }

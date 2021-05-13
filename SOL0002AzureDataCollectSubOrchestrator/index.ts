@@ -15,12 +15,22 @@ import { convertSchemaToGraphQL } from "graphql-compose-mongoose";
 const orchestrator = df.orchestrator(function* (context) {
     let response = null;
     const queryParameters: any = context.df.getInput();
-    console.log("query parameters - url");
-    console.log(queryParameters.graphResourceUrl);
+    /*console.log("query parameters - url");
+    console.log(queryParameters.graphResourceUrl);*/
 
+    // Create Job
+    let jobData = {
+        type: "GRAPH_QUERY_" + (queryParameters.msGraphResourceName).toUpperCase(),
+        state: "STARTED",
+        tenant: queryParameters.tenant._id
+    };
+    let job = yield context.df.callActivity("PAT0022JobCreate", jobData);
+    console.log("new job", job);
+
+    // Query Resources
     let msGraphResource = yield context.df.callActivity("TEC0010MsGraphResourcesQuery", queryParameters);
-    console.log("ms graph resource");
-    console.log(msGraphResource);
+    /*console.log("ms graph resource");
+    console.log(msGraphResource);*/
 
     if (msGraphResource && msGraphResource.result && msGraphResource.result.value) {
         let msGraphResponseValue = msGraphResource.result.value
@@ -69,10 +79,16 @@ const orchestrator = df.orchestrator(function* (context) {
                 break
         }
     }
+    // console.log(msGraphResource);
 
-
-    console.log(msGraphResource);
-
+    // Update Job
+    let finishedJobData = {
+        _id: job._id,
+        state: "FINISHED",
+    };
+    console.log("finished job data", finishedJobData);
+    let updatedJobResponse = yield context.df.callActivity("PAT0023JobUpdate", finishedJobData);
+    console.log("updated job", updatedJobResponse);
 
     return msGraphResource;
 });

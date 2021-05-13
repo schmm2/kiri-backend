@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 import { TenantTC } from '../models/tenant';
 import { createObjectTC } from '../graphql/createObjectTC';
 
+const expireAfterSeconds = 3600;
+
 const jobSchema = new mongoose.Schema({
     type: {
         type: String,
@@ -15,15 +17,15 @@ const jobSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tenant',
         require: true
-    },
+    }
 }, {
     timestamps: true
 });
 
+jobSchema.index({"_ts":1}, {expireAfterSeconds: expireAfterSeconds});
 
 export const Job = mongoose.models.Job || mongoose.model('Job', jobSchema);
 export const JobTC = createObjectTC({ model: Job, customizationOptions: {} });
-
 
 JobTC.addRelation(
     'tenant',
@@ -34,4 +36,4 @@ JobTC.addRelation(
         },
         projection: { tenant: true }, // point fields in source object, which should be fetched from DB
     }
-);
+); 
