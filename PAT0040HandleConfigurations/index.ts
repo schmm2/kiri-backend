@@ -26,6 +26,8 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     // console.log(JSON.stringify(configurationListGraph));
 
     console.log("handle configurations")
+    console.log(graphResourceUrl);
+
     let Tenant = mongoose.model('Tenant');
     let Configuration = mongoose.model('Configuration');
     let ConfigurationType = mongoose.model('ConfigurationType');
@@ -34,32 +36,35 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     // check for new configurations
     for (var i = 0; i < configurationListGraph.length; i++) {
         let configurationObjectFromGraph = configurationListGraph[i];
-        console.log("handle configuration: " + configurationObjectFromGraph.id);
+        // console.log("handle configuration: " + configurationObjectFromGraph.id);
 
         let configurations = await Configuration.find({ graphId: configurationObjectFromGraph.id });
         // if id does not exist in db, we found a new config
         if (configurations.length == 0) {
-            console.log("found new configuration " + configurationObjectFromGraph.id);
+            // console.log("found new configuration " + configurationObjectFromGraph.id);
 
             // get config type from configuration
             // this information is important to link the configuration doc to a configurationType doc
-            let dataType = null
+            let configurationTypeName = null
             if (configurationObjectFromGraph["@odata.type"]) {
-                dataType = configurationObjectFromGraph["@odata.type"].replace("#microsoft.graph.", "");
+                configurationTypeName = configurationObjectFromGraph["@odata.type"].replace("#microsoft.graph.", "");
             }
 
             // Graph Exceptions
             // Exception: Some resource do not contain a odata property (example: App Protection Policy)
             else {
                 switch (graphResourceUrl) {
-                    case "/deviceManagement/iosManagedAppProtections":
-                        dataType = "iosManagedAppProtection";
+                    case "/deviceAppManagement/targetedManagedAppConfigurations":
+                        configurationTypeName = "targetedManagedAppConfiguration";
                         break;
-                    case "/deviceManagement/androidManagedAppProtections":
-                        dataType = "androidManagedAppProtection";
+                    case "/deviceAppManagement/iosManagedAppProtections":
+                        configurationTypeName = "iosManagedAppProtection";
+                        break;
+                    case "/deviceAppManagement/androidManagedAppProtections":
+                        configurationTypeName = "androidManagedAppProtection";
                         break;
                     case "/deviceManagement/groupPolicyConfigurations":
-                        dataType = "groupPolicyConfiguration";
+                        configurationTypeName = "groupPolicyConfiguration";
                         break;
                     default:
                         break;
@@ -67,20 +72,20 @@ const activityFunction: AzureFunction = async function (context: Context, parame
             }
 
             // check data Type
-            if (!dataType) {
-                console.log('dataType not defined');
+            if (!configurationTypeName) {
+                console.log('configurationTypeName not defined');
                 console.log(configurationObjectFromGraph);
             } else {
-                console.log("dataType defined: " + dataType);
-            }
+                console.log("configurationTypeName defined: " + configurationTypeName);
+            } 
 
             // find configurationType Id
             let configurationTypeId = null;
-            let configurationTypes = await ConfigurationType.find({ name: dataType });
-            console.log("found configurationtypes: " + JSON.stringify(configurationTypes));
+            let configurationTypes = await ConfigurationType.find({ name: configurationTypeName });
+            // console.log("found configurationtypes: " + JSON.stringify(configurationTypes));
 
             if (configurationTypes.length > 0) {
-                console.log("found configuration type: " + configurationTypes[0].name);
+                // console.log("found configuration type: " + configurationTypes[0].name);
 
                 // Create Configuration
                 configurationTypeId = configurationTypes[0].id
@@ -129,38 +134,38 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     (err, doc) => { if (err) { console.log("mongoose: error updating configuration") } }
                 )
 
-                console.log("created new configuration version element");
-                console.log("created configuration version response: " + JSON.stringify(addConfigurationVersionResponse));
+                // console.log("created new configuration version element");
+                // console.log("created configuration version response: " + JSON.stringify(addConfigurationVersionResponse));
 
             } else {
-                console.log("unable to find configuration type");
+                // console.log("unable to find configuration type");
             }
         } else {
             let configuration = configurations[0];
-            console.log("configuration does already exist:" + configuration._id); 
+            // console.log("configuration does already exist:" + configuration._id);
 
             // get newest configuration versions of this configuration
             let newestStoredConfigurationVersion = null;
-            let storedConfigurationVersions = await ConfigurationVersion.find({configuration: configuration._id, isNewest: true});
-            console.log("stored version",storedConfigurationVersions[0]);
+            let storedConfigurationVersions = await ConfigurationVersion.find({ configuration: configuration._id, isNewest: true });
+            // console.log("stored version", storedConfigurationVersions[0]);
 
             if (storedConfigurationVersions[0]) {
                 // we have to make sure the version property exists
                 if (storedConfigurationVersions[0].version) {
                     newestStoredConfigurationVersion = storedConfigurationVersions[0];
-                    console.log("newest stored version: ", newestStoredConfigurationVersion);
+                    // console.log("newest stored version: ", newestStoredConfigurationVersion);
                 }
             }
 
             // we are unable to use the version property as it does not exist on all graph resources => use md5 hash instead
             let configurationObjectFromGraphVersion = crypto.createHash('md5').update(JSON.stringify(configurationObjectFromGraph)).digest("hex");
-            console.log("graph hash version", configurationObjectFromGraphVersion);
-            console.log("stored hash version", newestStoredConfigurationVersion.version);
+            // console.log("graph hash version", configurationObjectFromGraphVersion);
+            // console.log("stored hash version", newestStoredConfigurationVersion.version);
 
             // compare version of object from graph and stored in dynamodb
             // new version found, need to add the new version
             if (configurationObjectFromGraphVersion != newestStoredConfigurationVersion.version) {
-                console.log("configuration " + configuration.id + " new version found, add new configuration version");
+                // console.log("configuration " + configuration.id + " new version found, add new configuration version");
 
                 let addConfigurationVersionResponse = await ConfigurationVersion.create({
                     value: JSON.stringify(configurationObjectFromGraph),
@@ -171,7 +176,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime
                 });
 
-                console.log("new version: ", addConfigurationVersionResponse);
+                // console.log("new version: ", addConfigurationVersionResponse);
 
                 // establish relationship, update configuration
                 Configuration.update(
@@ -182,11 +187,11 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
                 // set active configurationversion to old state
                 newestStoredConfigurationVersion.isNewest = false;
-                newestStoredConfigurationVersion.save();       
-            } else{
-                 // else: no newer version, nothing needs to be done
-                console.log("same version")
-            }     
+                newestStoredConfigurationVersion.save();
+            } else {
+                // else: no newer version, nothing needs to be done
+                // console.log("same version")
+            }
         }
     };
     return;

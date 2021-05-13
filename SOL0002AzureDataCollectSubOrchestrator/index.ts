@@ -25,17 +25,17 @@ const orchestrator = df.orchestrator(function* (context) {
         tenant: queryParameters.tenant._id
     };
     let job = yield context.df.callActivity("PAT0022JobCreate", jobData);
-    console.log("new job", job);
+    // console.log("new job", job);
 
     // Query Resources
     let msGraphResource = yield context.df.callActivity("TEC0010MsGraphResourcesQuery", queryParameters);
-    /*console.log("ms graph resource");
-    console.log(msGraphResource);*/
+    // console.log("ms graph resource");
+    // console.log(msGraphResource);
 
     if (msGraphResource && msGraphResource.result && msGraphResource.result.value) {
         let msGraphResponseValue = msGraphResource.result.value
-        //console.log(msGraphResponseValue);
-        console.log("value ok")
+        // console.log(msGraphResponseValue);
+        // console.log("value ok")
 
         let parameter = {
             graphValue: msGraphResponseValue,
@@ -47,48 +47,27 @@ const orchestrator = df.orchestrator(function* (context) {
             case '/deviceManagement/managedDevices':
                 response = yield context.df.callActivity("PAT0030HandleDevice", msGraphResponseValue);
                 break;
-            /*case 'deviceCompliancePolicies':
-                handlerResponse = await handleConfigurations(graphResponseValue, tenantObject, graphResource.name);
-                break;*/
-            case '/deviceManagement/deviceConfigurations':
-                response = yield context.df.callActivity("PAT0040HandleConfigurations", parameter);
-                break;
-            /*case 'iosManagedAppProtections':
-                handlerResponse = await handleConfigurations(graphResponseValue, tenantObject, graphResource.name);
-                break;
-            case 'androidManagedAppProtections':
-                handlerResponse = await handleConfigurations(graphResponseValue, tenantObject, graphResource.name);
-                break;
-            case 'deviceEnrollmentConfigurations':
-                handlerResponse = await handleConfigurations(graphResponseValue, tenantObject, graphResource.name);
-                break;
-            case 'mobileAppConfigurations':
-                handlerResponse = await handleConfigurations(graphResponseValue, tenantObject, graphResource.name);
-                break;
-            case 'windowsAutopilotDeploymentProfiles':
-                handlerResponse = await handleConfigurations(graphResponseValue, tenantObject, graphResource.name);
-                break;
-            case 'groupPolicyConfigurations':
+            /*case 'groupPolicyConfigurations':
                 handlerResponse = await handleGroupPolicyConfigurations(graphResponseValue, tenantObject, graphResource, accessToken);
-                break;
-            case 'intuneBrand':
-                handlerResponse = await handleConfigurations(graphResponseValue, tenantObject, graphResource.name);
                 break;*/
             default:
-                //handlerResponse.error = "ERROR_HANDLER_NOT_IMPLEMENTED";
+                response = yield context.df.callActivity("PAT0040HandleConfigurations", parameter);
                 break
         }
     }
     // console.log(msGraphResource);
+
+    // anaylze response 
 
     // Update Job
     let finishedJobData = {
         _id: job._id,
         state: "FINISHED",
     };
-    console.log("finished job data", finishedJobData);
+    
     let updatedJobResponse = yield context.df.callActivity("PAT0023JobUpdate", finishedJobData);
-    console.log("updated job", updatedJobResponse);
+    // console.log("finished job data", finishedJobData);
+    // console.log("updated job", updatedJobResponse);
 
     return msGraphResource;
 });

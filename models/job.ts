@@ -22,6 +22,7 @@ const jobSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// set expire index
 jobSchema.index({"_ts":1}, {expireAfterSeconds: expireAfterSeconds});
 
 export const Job = mongoose.models.Job || mongoose.model('Job', jobSchema);

@@ -6,8 +6,32 @@
         "configurationTypes": [
             {
                 "name": "androidManagedAppProtection",
-                "category": "approtection",
+                "category": "appprotection",
                 "platform": "android"
+            }
+        ]
+    },
+    {
+        "name": "iosManagedAppProtections",
+        "resource": "/deviceAppManagement/iosManagedAppProtections",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "iosManagedAppProtection",
+                "category": "appprotection",
+                "platform": "iosipados"
+            }
+        ]
+    },
+    {
+        "name": "targetedManagedAppConfigurations",
+        "resource": "/deviceAppManagement/targetedManagedAppConfigurations",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "targetedManagedAppConfiguration",
+                "category": "appconfiguration",
+                "platform": "general"
             }
         ]
     },
@@ -62,30 +86,40 @@
                 "name": "windows10GeneralConfiguration",
                 "category": "configurationprofile",
                 "platform": "windows"
+            },
+            {
+                "name": "windowsIdentityProtectionConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
             }
         ]
     },
     {
         "name": "deviceenrollmentconfigurations",
         "resource": "/deviceManagement/deviceEnrollmentConfigurations",
-        "version": "beta"
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "deviceEnrollmentLimitConfiguration",
+                "category": "enrollment",
+                "platform": "general"
+            },
+            {
+                "name": "deviceEnrollmentPlatformRestrictionsConfiguration",
+                "category": "enrollment",
+                "platform": "general"
+            },
+            {
+                "name": "deviceEnrollmentWindowsHelloForBusinessConfiguration",
+                "category": "enrollment",
+                "platform": "windows"
+            }
+        ]
     },
     {
         "name": "groupPolicyConfigurations",
         "resource": "/deviceManagement/groupPolicyConfigurations",
         "version": "beta"
-    },
-    {
-        "name": "iosManagedAppProtections",
-        "resource": "/deviceAppManagement/iosManagedAppProtections",
-        "version": "beta",
-        "configurationTypes": [
-            {
-                "name": "iosManagedAppProtection",
-                "category": "appprotection",
-                "platform": "iosipados"
-            }
-        ]
     },
     {
         "name": "managedDevices",
@@ -95,6 +129,13 @@
     {
         "name": "windowsAutopilotDeploymentProfiles",
         "resource": "/deviceManagement/windowsAutopilotDeploymentProfiles",
-        "version": "beta"
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "azureADWindowsAutopilotDeploymentProfile",
+                "category": "autopilot",
+                "platform": "windows"
+            }
+        ]
     }
 ]
