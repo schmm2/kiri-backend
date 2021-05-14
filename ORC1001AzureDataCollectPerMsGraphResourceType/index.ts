@@ -51,11 +51,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 break;
             case '/deviceManagement/groupPolicyConfigurations':
                 let groupPolicyConfiguration = yield context.df.callSubOrchestrator("ORC1002AzureDataCollectHandleGroupPolicy", parameter);                
-                // yield context.df.Task.all(provisioningTasks);
-                //console.log("FOUNDGPO");
-                //console.log(groupPolicyConfiguration);
                 parameter.graphValue = groupPolicyConfiguration;
-                //console.log(parameter);*/
                 response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break;
             default:

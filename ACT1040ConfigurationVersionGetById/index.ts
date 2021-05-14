@@ -10,12 +10,13 @@
  */
 
 import { AzureFunction, Context } from "@azure/functions"
-import { Tenant } from "../models/tenant";
+import { ConfigurationVersion } from "../models/configurationversion";
 const createMongooseClient = require('../shared/mongodb');
 
-const activityFunction: AzureFunction = async function (context: Context, tenantId): Promise<string> {
+const activityFunction: AzureFunction = async function (context: Context, configurationVersionId): Promise<string> {
     await createMongooseClient();
-    return Tenant.findById(tenantId);
+    return ConfigurationVersion.findById(configurationVersionId);
 };
 
 export default activityFunction;
+ 
