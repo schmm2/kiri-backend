@@ -19,10 +19,10 @@ const orchestrator = df.orchestrator(function* (context) {
     let graphResourceUrl = queryParameters.graphResourceUrl;
 
     console.log("ORC1002AzureDataCollectHandleGroupPolicy", "prepare " + configurationListGraph.length + " GPOs")
-       
+
     // loop through all items collected via graph
     for (let i = 0; i < configurationListGraph.length; i++) {
-        console.log("ORC1002AzureDataCollectHandleGroupPolicy", "prepare GPO " + (i+1) + " of " + configurationListGraph.length)
+        console.log("ORC1002AzureDataCollectHandleGroupPolicy", "prepare GPO " + (i + 1) + " of " + configurationListGraph.length)
 
         let configurationListGraphItem = configurationListGraph[i];
         console.log("ORC1002AzureDataCollectHandleGroupPolicy", "Gpo Name: " + configurationListGraphItem.displayName)
@@ -61,12 +61,12 @@ const orchestrator = df.orchestrator(function* (context) {
                     accessToken: queryParameters.accessToken
                 }
 
-                let gpoPresentationValuesResponse = yield context.df.callActivity("ACT2000GraphQuery", graphQueryPresentationValues);
+                let gpoPresentationValuesResponse = yield context.df.callActivity("ACT2000MsGraphQuery", graphQueryPresentationValues);
 
-                if(gpoPresentationValuesResponse && gpoPresentationValuesResponse.result && gpoPresentationValuesResponse.result.value){
+                if (gpoPresentationValuesResponse && gpoPresentationValuesResponse.result && gpoPresentationValuesResponse.result.value) {
                     let gpoPresentationValues = gpoPresentationValuesResponse.result.value;
 
-                    if(gpoPresentationValues.length > 0){
+                    if (gpoPresentationValues.length > 0) {
                         settingsObj["presentationValues"] = []
 
                         for (let p = 0; p < gpoPresentationValues.length; p++) {
@@ -99,7 +99,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 if (keyA < keyB) return -1;
                 if (keyA > keyB) return 1;
                 return 0;
-            });      
+            });
         }
 
         // append gpo settings into main gpo graph object
@@ -110,7 +110,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
     //queryParameters["graphValue"] = configurationListGraph; 
     //let response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", queryParameters);
-                
+
     return configurationListGraph;
 });
 

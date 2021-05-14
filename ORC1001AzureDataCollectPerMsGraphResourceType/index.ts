@@ -36,7 +36,7 @@ const orchestrator = df.orchestrator(function* (context) {
     };
 
     // Query Resources
-    let msGraphResource = yield context.df.callActivity("ACT2000GraphQuery", queryParameters);
+    let msGraphResource = yield context.df.callActivity("ACT2000MsGraphQuery", queryParameters);
     // console.log("ms graph resource");
     // console.log(msGraphResource);
 

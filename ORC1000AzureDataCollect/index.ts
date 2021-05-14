@@ -43,7 +43,7 @@ const orchestrator = df.orchestrator(function* (context) {
     let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
     // console.log(tenant);
 
-    let accessTokenResponse = yield context.df.callActivity("ACT2001GraphAccessTokenCreate", tenant);
+    let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
 
     if (accessTokenResponse && accessTokenResponse.body) {
         if (accessTokenResponse.body.ok) {
@@ -69,12 +69,12 @@ const orchestrator = df.orchestrator(function* (context) {
 
             yield context.df.Task.all(provisioningTasks);
         }
-    }else{
+    } else {
         finishedJobState.state = 'ERROR';
         finishedJobState.message = 'Unable to aquire access token';
     }
 
-    
+
     // console.log("finished job data", finishedJobData);
     let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
     // console.log("updated job", updatedJobResponse);

@@ -39,7 +39,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // get Tenant & AccessToken
     let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
-    let accessTokenResponse = yield context.df.callActivity("ACT2001GraphAccessTokenCreate", tenant);
+    let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
     // console.log("ORC1100MsGraphConfigurationUpdate, accessTokenResponse", accessTokenResponse);
 
     // get ConfigurationVersion
