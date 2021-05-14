@@ -28,6 +28,13 @@ const orchestrator = df.orchestrator(function* (context) {
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
     // console.log("new job", job);
 
+    // Update Job
+    let finishedJobState = {
+        _id: job._id,
+        state: "FINISHED",
+        message: ""
+    };
+
     // Get Tenant Object
     if (queryParameters) {
         tenantDbId = tenantDbId;
@@ -62,15 +69,14 @@ const orchestrator = df.orchestrator(function* (context) {
 
             yield context.df.Task.all(provisioningTasks);
         }
+    }else{
+        finishedJobState.state = 'ERROR';
+        finishedJobState.message = 'Unable to aquire access token';
     }
 
-    // Update Job
-    let finishedJobData = {
-        _id: job._id,
-        state: "FINISHED",
-    };
+    
     // console.log("finished job data", finishedJobData);
-    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobData);
+    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
     // console.log("updated job", updatedJobResponse);
 
     return outputs;

@@ -22,7 +22,7 @@ const activityFunction: AzureFunction = async function (context: Context, jobDat
     // update job
     let updatedJob = Job.update(
         { _id: jobData._id },
-        { $set: { state: jobData.state } },
+        { $set: { state: jobData.state, message: jobData.message } },
         (err, doc) => { if (err) { console.log("mongoose: error updating job " + jobData._id) } }
     );
 

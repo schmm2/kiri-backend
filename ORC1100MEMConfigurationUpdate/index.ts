@@ -15,7 +15,7 @@ const orchestrator = df.orchestrator(function* (context) {
     console.log("ORC1100MsGraphConfigurationUpdate", "start");
 
     const queryParameters: any = context.df.getInput();
-    console.log(queryParameters);
+    // console.log(queryParameters);
 
     let tenantDbId = queryParameters.tenantDbId;
     let configurationVersionDbId = queryParameters.configurationVersionDbId;
@@ -29,28 +29,35 @@ const orchestrator = df.orchestrator(function* (context) {
         tenant: tenantDbId
     };
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
-   
+
+    // finished Job Data
+    let finishedJobState = {
+        _id: job._id,
+        state: "FINISHED",
+        message: ""
+    };
+
     // get Tenant & AccessToken
     let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
     let accessTokenResponse = yield context.df.callActivity("ACT2001GraphAccessTokenCreate", tenant);
-    console.log("ORC1100MsGraphConfigurationUpdate, accessTokenResponse", accessTokenResponse);
+    // console.log("ORC1100MsGraphConfigurationUpdate, accessTokenResponse", accessTokenResponse);
 
     // get ConfigurationVersion
     let newConfigurationVersion = yield context.df.callActivity("ACT1040ConfigurationVersionGetById", configurationVersionDbId);
-    console.log("ORC1100MsGraphConfigurationUpdate, new Configuration Version", newConfigurationVersion);
+    // console.log("ORC1100MsGraphConfigurationUpdate, new Configuration Version", newConfigurationVersion);
 
-    if(accessTokenResponse.body.accessToken && newConfigurationVersion){
+    if (accessTokenResponse.body.accessToken && newConfigurationVersion) {
         console.log("ORC1100MsGraphConfigurationUpdate", "parameters ok");
 
         let accessToken = accessTokenResponse.body.accessToken;
         let newConfigurationVersionValue = JSON.parse(newConfigurationVersion.value);
 
         let dataValidationParameter = {
-            msGraphResourceUrl : msGraphResourceUrl,
+            msGraphResourceUrl: msGraphResourceUrl,
             dataObject: newConfigurationVersionValue
         }
-        
-        console.log("ORC1100MsGraphConfigurationUpdate, data validation parameter", dataValidationParameter);
+
+        // console.log("ORC1100MsGraphConfigurationUpdate, data validation parameter", dataValidationParameter);
         let newConfigurationVersionValueValidated = yield context.df.callActivity("ACT2010MsGraphPatchDataValidation", dataValidationParameter);
 
         let patchParameter = {
@@ -59,17 +66,23 @@ const orchestrator = df.orchestrator(function* (context) {
             msGraphResourceUrl: msGraphResourceUrl
         }
 
-        console.log("ORC1100MsGraphConfigurationUpdate, patch parameter", patchParameter);
+        // console.log("ORC1100MsGraphConfigurationUpdate, patch parameter", patchParameter);
         let msGraphPatchResponse = yield context.df.callActivity("ACT2002MsGraphPatch", patchParameter);
-        console.log(msGraphPatchResponse);
+        // console.log(msGraphPatchResponse);
+
+        if (!msGraphPatchResponse.ok) {
+            if (msGraphPatchResponse.message && msGraphPatchResponse.message.code) {
+                finishedJobState.message = msGraphPatchResponse.message.code;
+            }
+            finishedJobState.state = 'ERROR'
+        }
+    } else {
+        finishedJobState.message = 'Invalid Parameters';
+        finishedJobState.state = 'ERROR'
     }
 
-    // Update Job
-    let finishedJobData = {
-        _id: job._id,
-        state: "FINISHED",
-    };
-    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobData);
+    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
+    // console.log(updatedJobResponse);
 });
 
 export default orchestrator;

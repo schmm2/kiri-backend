@@ -11,7 +11,14 @@ const jobSchema = new mongoose.Schema({
     },
     state: {
         type: String,
+        enum: ['STARTED', 'RUNNING', 'FINISHED', 'WARNING', 'ERROR'],
+        default: 'STARTED',
         required: true
+    },
+    message: {
+        type: String,
+        required: false,
+        default: '' 
     },
     tenant: {
         type: mongoose.Schema.Types.ObjectId,

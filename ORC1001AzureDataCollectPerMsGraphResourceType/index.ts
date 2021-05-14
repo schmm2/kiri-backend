@@ -28,6 +28,13 @@ const orchestrator = df.orchestrator(function* (context) {
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
     // console.log("new job", job);
 
+    // Update Job
+    let finishedJobState = {
+        _id: job._id,
+        state: "FINISHED",
+        message: ""
+    };
+
     // Query Resources
     let msGraphResource = yield context.df.callActivity("ACT2000GraphQuery", queryParameters);
     // console.log("ms graph resource");
@@ -58,17 +65,15 @@ const orchestrator = df.orchestrator(function* (context) {
                 response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break
         }
+
+        // analyze response
+        // TODO
+    }else{
+        finishedJobState.state = 'ERROR';
+        finishedJobState.message = 'Unable to query MS Graph API';
     }
-    // anaylze response 
-    // todo
 
-    // Update Job
-    let finishedJobData = {
-        _id: job._id,
-        state: "FINISHED",
-    };
-
-    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobData);
+    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
     // console.log("finished job data", finishedJobData);
     // console.log("updated job", updatedJobResponse);
 
