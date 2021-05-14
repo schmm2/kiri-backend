@@ -14,19 +14,19 @@ var mongoose = require('mongoose');
 const crypto = require('crypto')
 
 const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<string> {
-    /* console.log("PAT0040HandleConfigurations: parameter");
-    console.log(JSON.stringify(parameter));*/
+    console.log("ACT3001AzureDataCollectHandleConfiguration", "Start Configuration Handeling");
+    // console.log(JSON.stringify(parameter));*/
 
     let configurationListGraph = parameter.graphValue;
-    let graphResourceUrl = parameter.graphResourceUrl;
+    let graphResourceUrl = parameter.graphResourceUrl; 
     let tenant = parameter.tenant;
 
     // console.log("pat0040", tenant);
     // console.log("graphValue");
     // console.log(JSON.stringify(configurationListGraph));
 
-    console.log("handle configurations")
-    console.log(graphResourceUrl);
+    // console.log("handle configurations")
+    // console.log(graphResourceUrl);
 
     let Tenant = mongoose.model('Tenant');
     let Configuration = mongoose.model('Configuration');
@@ -41,7 +41,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
         let configurations = await Configuration.find({ graphId: configurationObjectFromGraph.id });
         // if id does not exist in db, we found a new config
         if (configurations.length == 0) {
-            // console.log("found new configuration " + configurationObjectFromGraph.id);
+            console.log("found new configuration " + configurationObjectFromGraph.id);
 
             // get config type from configuration
             // this information is important to link the configuration doc to a configurationType doc
@@ -138,7 +138,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 // console.log("created configuration version response: " + JSON.stringify(addConfigurationVersionResponse));
 
             } else {
-                // console.log("unable to find configuration type");
+                console.log("unable to find configuration type");
             }
         } else {
             let configuration = configurations[0];

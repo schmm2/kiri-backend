@@ -13,7 +13,7 @@ import { AzureFunction, Context } from "@azure/functions"
 var mongoose = require('mongoose');
 
 const activityFunction: AzureFunction = async function (context: Context, deviceListGraph): Promise<string> {
-    console.log("handle Devices")
+    console.log("ACT3000AzureDataCollectHandleDevice", "Start Device handeling");
     let Device = mongoose.model('Device');
        
     // check for new devices

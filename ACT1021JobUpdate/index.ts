@@ -14,7 +14,7 @@ const createMongooseClient = require('../shared/mongodb');
 var mongoose = require('mongoose');
 
 const activityFunction: AzureFunction = async function (context: Context, jobData): Promise<string> {
-    console.log("PAT0023JobUpdate", jobData);
+    console.log("ACT1021JobUpdate", jobData);
 
     const db = await createMongooseClient()
     let Job = mongoose.model('Job');

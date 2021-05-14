@@ -11,10 +11,11 @@
 
 import * as df from "durable-functions"
 import { convertSchemaToGraphQL } from "graphql-compose-mongoose";
+let queryParameters: any;
 
 const orchestrator = df.orchestrator(function* (context) {
     let response = null;
-    const queryParameters: any = context.df.getInput();
+    queryParameters = context.df.getInput();
     /*console.log("query parameters - url");
     console.log(queryParameters.graphResourceUrl);*/
 
@@ -40,16 +41,23 @@ const orchestrator = df.orchestrator(function* (context) {
         let parameter = {
             graphValue: msGraphResponseValue,
             graphResourceUrl: queryParameters.graphResourceUrl,
-            tenant: queryParameters.tenant
+            tenant: queryParameters.tenant,
+            accessToken: queryParameters.accessToken
         }
 
         switch (queryParameters.graphResourceUrl) {
             case '/deviceManagement/managedDevices':
                 response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", msGraphResponseValue);
                 break;
-            /*case 'groupPolicyConfigurations':
-                handlerResponse = await handleGroupPolicyConfigurations(graphResponseValue, tenantObject, graphResource, accessToken);
-                break;*/
+            case '/deviceManagement/groupPolicyConfigurations':
+                let groupPolicyConfiguration = yield context.df.callSubOrchestrator("ORC1002AzureDataCollectHandleGroupPolicy", parameter);                
+                // yield context.df.Task.all(provisioningTasks);
+                //console.log("FOUNDGPO");
+                //console.log(groupPolicyConfiguration);
+                parameter.graphValue = groupPolicyConfiguration;
+                //console.log(parameter);*/
+                response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
+                break;
             default:
                 response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break
@@ -63,7 +71,7 @@ const orchestrator = df.orchestrator(function* (context) {
         _id: job._id,
         state: "FINISHED",
     };
-    
+
     let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobData);
     // console.log("finished job data", finishedJobData);
     // console.log("updated job", updatedJobResponse);

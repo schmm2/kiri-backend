@@ -13,7 +13,7 @@ import * as df from "durable-functions"
 const createMongooseClient = require('../shared/mongodb');
 
 const orchestrator = df.orchestrator(function* (context) {
-    console.log("start SOL0001");
+    console.log("start ORC1000AzureDataCollect");
 
     const queryParameters: any = context.df.getInput();
     const outputs = [];
@@ -26,15 +26,15 @@ const orchestrator = df.orchestrator(function* (context) {
         tenant: tenantDbId
     };
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
-    console.log("new job", job);
+    // console.log("new job", job);
 
     // Get Tenant Object
     if (queryParameters) {
         tenantDbId = tenantDbId;
-        console.log("tenantDbId", tenantDbId);
+        // console.log("tenantDbId", tenantDbId);
     }
     let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
-    console.log(tenant);
+    // console.log(tenant);
 
     let accessTokenResponse = yield context.df.callActivity("ACT2001GraphAccessTokenCreate", tenant);
 
@@ -69,9 +69,9 @@ const orchestrator = df.orchestrator(function* (context) {
         _id: job._id,
         state: "FINISHED",
     };
-    console.log("finished job data", finishedJobData);
+    // console.log("finished job data", finishedJobData);
     let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobData);
-    console.log("updated job", updatedJobResponse);
+    // console.log("updated job", updatedJobResponse);
 
     return outputs;
 });

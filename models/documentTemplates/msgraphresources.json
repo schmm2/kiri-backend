@@ -119,7 +119,14 @@
     {
         "name": "groupPolicyConfigurations",
         "resource": "/deviceManagement/groupPolicyConfigurations",
-        "version": "beta"
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "groupPolicyConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
+            }
+        ]
     },
     {
         "name": "managedDevices",

@@ -14,14 +14,14 @@ var mongoose = require('mongoose');
 const createMongooseClient = require('../shared/mongodb');
 
 const activityFunction: AzureFunction = async function (context: Context, jobParameters): Promise<string> {
-    console.log(jobParameters);
+    //console.log(jobParameters);
 
     const db = await createMongooseClient()
     let Job = mongoose.model('Job');
     let Tenant = mongoose.model('Tenant');
 
     const newJob = await Job.create(jobParameters);
-    console.log("created job", newJob._id);
+    //console.log("created job", newJob._id);
 
     // establish relationship, update tenant
     Tenant.update(

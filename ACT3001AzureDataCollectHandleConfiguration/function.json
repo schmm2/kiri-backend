@@ -6,5 +6,5 @@
       "direction": "in"
     }
   ],
-  "scriptFile": "../dist/ACT3000AzureDataCollectHandleDevice/index.js"
+  "scriptFile": "../dist/ACT3001AzureDataCollectHandleConfiguration/index.js"
 }
