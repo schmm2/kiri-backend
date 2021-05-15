@@ -59,6 +59,11 @@
                 "name": "iosCompliancePolicy",
                 "category": "compliance",
                 "platform": "iosipados"
+            },
+            {
+                "name": "windows10CompliancePolicy",
+                "category": "compliance",
+                "platform": "windows"
             }
         ]
     },
@@ -91,6 +96,21 @@
                 "name": "windowsIdentityProtectionConfiguration",
                 "category": "configurationprofile",
                 "platform": "windows"
+            },
+            {
+                "name": "windowsHealthMonitoringConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
+            },
+            {
+                "name": "windows10EndpointProtectionConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
+            },
+            {
+                "name": "androidWorkProfileGeneralDeviceConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
             }
         ]
     },
@@ -113,7 +133,12 @@
                 "name": "deviceEnrollmentWindowsHelloForBusinessConfiguration",
                 "category": "enrollment",
                 "platform": "windows"
-            }
+            },
+            {
+                "name": "windows10EnrollmentCompletionPageConfiguration",
+                "category": "enrollment",
+                "platform": "windows"
+            }    
         ]
     },
     {

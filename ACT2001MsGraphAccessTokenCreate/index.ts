@@ -11,7 +11,7 @@ var RESOURCEURL = "https://graph.microsoft.com/";
 
 if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config();
-}
+} 
 
 const keyVaultName = process.env["KEY_VAULT_NAME"];
 const KVUri = "https://" + keyVaultName + ".vault.azure.net";

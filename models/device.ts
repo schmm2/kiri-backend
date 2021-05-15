@@ -4,13 +4,21 @@ const { composeWithMongoose } = require("graphql-compose-mongoose");
 
 const deviceSchema = new Schema({
     deviceId: {
-       type: String,
-       required: true
-    },
-    deviceName: {
         type: String,
         required: true
-     },
+    },
+    value: {
+        type: String,
+        required: true
+    },
+    manufacturer: {
+        type: String,
+        required: false
+    },
+    version: {
+        type: String,
+        require: true
+    }
 }, {
     timestamps: true
 });

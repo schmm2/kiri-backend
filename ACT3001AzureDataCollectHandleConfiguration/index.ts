@@ -13,13 +13,15 @@ import { AzureFunction, Context } from "@azure/functions"
 var mongoose = require('mongoose');
 const crypto = require('crypto')
 
-const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<string> {
+const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<any> {
     console.log("ACT3001AzureDataCollectHandleConfiguration", "Start Configuration Handeling");
     // console.log(JSON.stringify(parameter));*/
 
     let configurationListGraph = parameter.graphValue;
     let graphResourceUrl = parameter.graphResourceUrl; 
     let tenant = parameter.tenant;
+
+    let configurationTypeNotDefined = [];
 
     // console.log("pat0040", tenant);
     // console.log("graphValue");
@@ -136,9 +138,9 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
                 // console.log("created new configuration version element");
                 // console.log("created configuration version response: " + JSON.stringify(addConfigurationVersionResponse));
-
             } else {
-                console.log("unable to find configuration type");
+                console.log("unable to find configuration type for name: "+configurationTypeName);
+                configurationTypeNotDefined.push(configurationTypeName);
             }
         } else {
             let configuration = configurations[0];
@@ -194,6 +196,8 @@ const activityFunction: AzureFunction = async function (context: Context, parame
             }
         }
     };
-    return;
+    return {
+        configurationTypeNotDefined
+    };
 };
 export default activityFunction;

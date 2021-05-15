@@ -23,7 +23,7 @@ function getClient(accessToken, version = "beta") {
             done(null, accessToken);
         },
     });
-}
+} 
 
 // Query Graph API
 function queryGraphAPI(client, apiUrl, filter = "") {

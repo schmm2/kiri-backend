@@ -41,7 +41,7 @@ const activityFunction: AzureFunction = async function (context: Context, queryP
     let accessToken = queryParameters.accessToken;
     let msGraphResourceUrl = queryParameters.msGraphResourceUrl;
     let dataObject = queryParameters.dataObject
-
+ 
     let client = await getClient(accessToken);
     let msGraphApiUrl = msGraphResourceUrl + "/" + dataObject.id;
 

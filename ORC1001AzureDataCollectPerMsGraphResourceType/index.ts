@@ -38,7 +38,7 @@ const orchestrator = df.orchestrator(function* (context) {
     // Query Resources
     let msGraphResource = yield context.df.callActivity("ACT2000MsGraphQuery", queryParameters);
     // console.log("ms graph resource");
-    // console.log(msGraphResource);
+    // console.log(msGraphResource);  
 
     if (msGraphResource && msGraphResource.result && msGraphResource.result.value) {
         let msGraphResponseValue = msGraphResource.result.value
@@ -57,7 +57,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", msGraphResponseValue);
                 break;
             case '/deviceManagement/groupPolicyConfigurations':
-                let groupPolicyConfiguration = yield context.df.callSubOrchestrator("ORC1002AzureDataCollectHandleGroupPolicy", parameter);                
+                let groupPolicyConfiguration = yield context.df.callSubOrchestrator("ORC1002AzureDataCollectHandleGroupPolicy", parameter);
                 parameter.graphValue = groupPolicyConfiguration;
                 response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break;
@@ -66,9 +66,14 @@ const orchestrator = df.orchestrator(function* (context) {
                 break
         }
 
-        // analyze response
-        // TODO
-    }else{
+        // analyze response, set job state sccordingly
+        if (response) {
+            if (response.configurationTypeNotDefined && response.configurationTypeNotDefined.length > 0) {
+                finishedJobState.state = 'WARNING';
+                finishedJobState.message = 'ConfigurationType not yet implemented: ' + JSON.stringify(response.configurationTypeNotDefined);
+            }
+        }
+    } else {
         finishedJobState.state = 'ERROR';
         finishedJobState.message = 'Unable to query MS Graph API';
     }
