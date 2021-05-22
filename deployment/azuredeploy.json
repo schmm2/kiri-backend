@@ -4,7 +4,6 @@
   "parameters": {
     "appName": {
       "type": "string",
-      "defaultValue": "fnapp-kiri",
       "metadata": {
         "description": "The name of the function app that you wish to create."
       }
@@ -20,7 +19,7 @@
   "variables": {
     "functionAppName": "[parameters('appName')]",
     "hostingPlanName": "[parameters('appName')]",
-    "storageAccountName": "[concat('kiri', uniqueString(resourceGroup().id))]",
+    "storageAccountName": "[concat('kiri-', uniqueString(resourceGroup().id))]",
     "functionWorkerRuntime": "node",
     "storageAccountType": "Standard_LRS"
   },
