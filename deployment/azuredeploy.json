@@ -17,7 +17,7 @@
     }
   },
   "variables": {
-    "appNameUnique":"[concat(parameters('appName'),'')]",
+    "appNameUnique":"[uniqueString(parameters('appName'))]",
     "storageAccountName": "[concat('kiri', uniqueString(resourceGroup().id))]",
     "functionWorkerRuntime": "node",
     "storageAccountType": "Standard_LRS"
