@@ -2,24 +2,9 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "appName": {
-      "type": "string",
-      "defaultValue": "[concat('fnapp', uniqueString(resourceGroup().id))]",
-      "metadata": {
-        "description": "The name of the function app that you wish to create."
-      }
-    },
-    "storageAccountType": {
-      "type": "string",
-      "defaultValue": "Standard_LRS",
-      "allowedValues": [
-        "Standard_LRS",
-        "Standard_GRS",
-        "Standard_RAGRS"
-      ],
-      "metadata": {
-        "description": "Storage Account type"
-      }
+    "siteName": {
+      "defaultValue": "Enter a unique hostname for SQL, Web Server and Log Analytics ",
+      "type": "string"
     },
     "location": {
       "type": "string",
@@ -27,32 +12,13 @@
       "metadata": {
         "description": "Location for all resources."
       }
-    },
-    "appInsightsLocation": {
-      "type": "string",
-      "metadata": {
-        "description": "Location for Application Insights"
-      }
-    },
-    "runtime": {
-      "type": "string",
-      "defaultValue": "node",
-      "allowedValues": [
-        "node",
-        "dotnet",
-        "java"
-      ],
-      "metadata": {
-        "description": "The language worker runtime to load in the function app."
-      }
     }
   },
   "variables": {
-    "functionAppName": "[parameters('appName')]",
-    "hostingPlanName": "[parameters('appName')]",
-    "applicationInsightsName": "[parameters('appName')]",
+    "functionAppName": "[parameters('siteName')]",
+    "hostingPlanName": "[parameters('siteName')]",
     "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'azfunctions')]",
-    "functionWorkerRuntime": "[parameters('runtime')]"
+    "functionWorkerRuntime": "node"
   },
   "resources": [
     {
@@ -61,7 +27,7 @@
       "name": "[variables('storageAccountName')]",
       "location": "[parameters('location')]",
       "sku": {
-        "name": "[parameters('storageAccountType')]"
+        "name": "Standard_LRS"
       },
       "kind": "Storage"
     },
@@ -123,19 +89,6 @@
             }
           ]
         }
-      }
-    },
-    {
-      "type": "microsoft.insights/components",
-      "apiVersion": "2020-02-02-preview",
-      "name": "[variables('applicationInsightsName')]",
-      "location": "[parameters('appInsightsLocation')]",
-      "tags": {
-        "[concat('hidden-link:', resourceId('Microsoft.Web/sites', variables('applicationInsightsName')))]": "Resource"
-      },
-      "properties": {
-        "ApplicationId": "[variables('applicationInsightsName')]",
-        "Request_Source": "IbizaWebAppExtensionCreate"
       }
     }
   ]
