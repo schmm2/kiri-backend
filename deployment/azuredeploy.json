@@ -19,7 +19,9 @@
   "variables": {
     "appNameUnique": "[concat(parameters('appName'),'')]",
     "storageAccountName": "[concat('kiri', uniqueString(resourceGroup().id))]",
+    "functionAppName": "[concat(parameters('appName'),'-fa')]", 
     "functionWorkerRuntime": "node",
+    "keyVaulName": "[concat(parameters('appName'),'-kv')]", 
     "storageAccountType": "Standard_LRS"
   },
   "resources": [
@@ -36,7 +38,7 @@
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2020-06-01",
-      "name": "[variables('appNameUnique')]",
+      "name": "[variables('functionAppName')]",
       "location": "[parameters('location')]",
       "kind": "functionapp",
       "identity": {
@@ -58,7 +60,7 @@
             },
             {
               "name": "WEBSITE_CONTENTSHARE",
-              "value": "[toLower(variables('appNameUnique'))]"
+              "value": "[toLower(variables('functionAppName'))]"
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
@@ -86,14 +88,14 @@
             "IsManualIntegration": true
           },
           "dependsOn": [
-            "[resourceId('Microsoft.Web/sites', variables('appNameUnique'))]"
+            "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
           ]
         }
       ]
     },
     {
       "type": "Microsoft.KeyVault/vaults",
-      "name": "[variables('appNameUnique')]",
+      "name": "[variables('keyVaulName')]",
       "apiVersion": "2019-09-01",
       "location": "[parameters('location')]",
       "properties": {
@@ -105,7 +107,7 @@
         "accessPolicies": [
           {
             "tenantId": "[subscription().tenantid]",
-            "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('appNameUnique')),'2019-08-01', 'full').identity.principalId]",
+            "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')),'2019-08-01', 'full').identity.principalId]",
             "permissions": {
               "secrets": [
                 "get",
