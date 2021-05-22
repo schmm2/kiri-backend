@@ -1,0 +1,173 @@
+[
+    {
+        "name": "androidManagedAppProtections",
+        "resource": "/deviceAppManagement/androidManagedAppProtections",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "androidManagedAppProtection",
+                "category": "appprotection",
+                "platform": "android"
+            }
+        ]
+    },
+    {
+        "name": "iosManagedAppProtections",
+        "resource": "/deviceAppManagement/iosManagedAppProtections",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "iosManagedAppProtection",
+                "category": "appprotection",
+                "platform": "iosipados"
+            }
+        ]
+    },
+    {
+        "name": "targetedManagedAppConfigurations",
+        "resource": "/deviceAppManagement/targetedManagedAppConfigurations",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "targetedManagedAppConfiguration",
+                "category": "appconfiguration",
+                "platform": "general"
+            }
+        ]
+    },
+    {
+        "name": "devicecompliancepolicies",
+        "resource": "/deviceManagement/deviceCompliancePolicies",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "androidCompliancePolicy",
+                "category": "compliance",
+                "platform": "android"
+            },
+            {
+                "name": "androidWorkProfileCompliancePolicy",
+                "category": "compliance",
+                "platform": "android"
+            },
+            {
+                "name": "androidWorkProfileCompliancePolicy",
+                "category": "compliance",
+                "platform": "android"
+            },
+            {
+                "name": "iosCompliancePolicy",
+                "category": "compliance",
+                "platform": "iosipados"
+            },
+            {
+                "name": "windows10CompliancePolicy",
+                "category": "compliance",
+                "platform": "windows"
+            }
+        ]
+    },
+    {
+        "name": "deviceConfigurations",
+        "resource": "/deviceManagement/deviceConfigurations",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "windowsUpdateForBusinessConfiguration",
+                "category": "update",
+                "platform": "windows"
+            },
+            {
+                "name": "iosGeneralDeviceConfiguration",
+                "category": "configurationprofile",
+                "platform": "iosipados"
+            },
+            {
+                "name": "windows10CustomConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
+            },
+            {
+                "name": "windows10GeneralConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
+            },
+            {
+                "name": "windowsIdentityProtectionConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
+            },
+            {
+                "name": "windowsHealthMonitoringConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
+            },
+            {
+                "name": "windows10EndpointProtectionConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
+            },
+            {
+                "name": "androidWorkProfileGeneralDeviceConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
+            }
+        ]
+    },
+    {
+        "name": "deviceenrollmentconfigurations",
+        "resource": "/deviceManagement/deviceEnrollmentConfigurations",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "deviceEnrollmentLimitConfiguration",
+                "category": "enrollment",
+                "platform": "general"
+            },
+            {
+                "name": "deviceEnrollmentPlatformRestrictionsConfiguration",
+                "category": "enrollment",
+                "platform": "general"
+            },
+            {
+                "name": "deviceEnrollmentWindowsHelloForBusinessConfiguration",
+                "category": "enrollment",
+                "platform": "windows"
+            },
+            {
+                "name": "windows10EnrollmentCompletionPageConfiguration",
+                "category": "enrollment",
+                "platform": "windows"
+            }    
+        ]
+    },
+    {
+        "name": "groupPolicyConfigurations",
+        "resource": "/deviceManagement/groupPolicyConfigurations",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "groupPolicyConfiguration",
+                "category": "configurationprofile",
+                "platform": "windows"
+            }
+        ]
+    },
+    {
+        "name": "managedDevices",
+        "resource": "/deviceManagement/managedDevices",
+        "version": "beta"
+    },
+    {
+        "name": "windowsAutopilotDeploymentProfiles",
+        "resource": "/deviceManagement/windowsAutopilotDeploymentProfiles",
+        "version": "beta",
+        "configurationTypes": [
+            {
+                "name": "azureADWindowsAutopilotDeploymentProfile",
+                "category": "autopilot",
+                "platform": "windows"
+            }
+        ]
+    }
+]
