@@ -15,19 +15,11 @@
       "metadata": {
         "description": "Location for all resources."
       }
-    },
-    "appInsightsLocation": {
-      "type": "string",
-      "defaultValue": "[resourceGroup().location]",
-      "metadata": {
-        "description": "Location for Application Insights"
-      }
     }
   },
   "variables": {
     "functionAppName": "[parameters('appName')]",
     "hostingPlanName": "[parameters('appName')]",
-    "applicationInsightsName": "[parameters('appName')]",
     "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'azfunctions')]",
     "functionWorkerRuntime": "node",
     "storageAccountType": "Standard_LRS"
@@ -42,20 +34,6 @@
         "name": "[variables('storageAccountType')]"
       },
       "kind": "Storage"
-    },
-    {
-      "type": "Microsoft.Web/serverfarms",
-      "apiVersion": "2020-06-01",
-      "name": "[variables('hostingPlanName')]",
-      "location": "[parameters('location')]",
-      "sku": {
-        "name": "Y1",
-        "tier": "Dynamic"
-      },
-      "properties": {
-        "name": "[variables('hostingPlanName')]",
-        "computeMode": "Dynamic"
-      }
     },
     {
       "type": "Microsoft.Web/sites",
@@ -92,28 +70,11 @@
               "value": "~10"
             },
             {
-              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-              "value": "[reference(resourceId('microsoft.insights/components', variables('applicationInsightsName')), '2020-02-02-preview').InstrumentationKey]"
-            },
-            {
               "name": "FUNCTIONS_WORKER_RUNTIME",
               "value": "[variables('functionWorkerRuntime')]"
             }
           ]
         }
-      }
-    },
-    {
-      "type": "microsoft.insights/components",
-      "apiVersion": "2020-02-02-preview",
-      "name": "[variables('applicationInsightsName')]",
-      "location": "[parameters('appInsightsLocation')]",
-      "tags": {
-        "[concat('hidden-link:', resourceId('Microsoft.Web/sites', variables('applicationInsightsName')))]": "Resource"
-      },
-      "properties": {
-        "ApplicationId": "[variables('applicationInsightsName')]",
-        "Request_Source": "IbizaWebAppExtensionCreate"
       }
     }
   ]
