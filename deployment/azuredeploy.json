@@ -20,6 +20,7 @@
   "variables": {
     "functionAppName": "[parameters('appName')]",
     "hostingPlanName": "[parameters('appName')]",
+    "applicationInsightsName": "[parameters('appName')]",
     "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'azfunctions')]",
     "functionWorkerRuntime": "node",
     "storageAccountType": "Standard_LRS"
@@ -82,6 +83,10 @@
             {
               "name": "WEBSITE_NODE_DEFAULT_VERSION",
               "value": "~10"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('microsoft.insights/components', variables('applicationInsightsName')), '2020-02-02-preview').InstrumentationKey]"
             },
             {
               "name": "FUNCTIONS_WORKER_RUNTIME",
