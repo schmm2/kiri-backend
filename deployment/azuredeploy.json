@@ -20,7 +20,7 @@
   "variables": {
     "functionAppName": "[parameters('appName')]",
     "hostingPlanName": "[parameters('appName')]",
-    "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'azfunctions')]",
+    "storageAccountName": "[concat('kiri', uniqueString(resourceGroup().id))]",
     "functionWorkerRuntime": "node",
     "storageAccountType": "Standard_LRS"
   },
@@ -42,7 +42,6 @@
       "location": "[parameters('location')]",
       "kind": "functionapp",
       "dependsOn": [
-        "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
       ],
       "properties": {
