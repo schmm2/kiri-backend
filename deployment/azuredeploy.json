@@ -17,8 +17,7 @@
     }
   },
   "variables": {
-    "functionAppName": "[parameters('appName')]",
-    "hostingPlanName": "[parameters('appName')]",
+    "appNameUnique":"[concat(parameters('appName'),'')]",
     "storageAccountName": "[concat('kiri-', uniqueString(resourceGroup().id))]",
     "functionWorkerRuntime": "node",
     "storageAccountType": "Standard_LRS"
@@ -37,14 +36,13 @@
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2020-06-01",
-      "name": "[variables('functionAppName')]",
+      "name": "[variables('appNameUnique')]",
       "location": "[parameters('location')]",
       "kind": "functionapp",
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
       ],
       "properties": {
-        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
         "siteConfig": {
           "appSettings": [
             {
@@ -57,7 +55,7 @@
             },
             {
               "name": "WEBSITE_CONTENTSHARE",
-              "value": "[toLower(variables('functionAppName'))]"
+              "value": "[toLower(variables('appNameUnique'))]"
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
