@@ -17,7 +17,7 @@
     }
   },
   "variables": {
-    "appNameUnique":"[concat(parameters('appName'),'')]",
+    "appNameUnique": "[concat(parameters('appName'),'')]",
     "storageAccountName": "[concat('kiri', uniqueString(resourceGroup().id))]",
     "functionWorkerRuntime": "node",
     "storageAccountType": "Standard_LRS"
@@ -72,6 +72,40 @@
           ]
         }
       }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "name": "[variables('appNameUnique')]",
+      "apiVersion": "2019-09-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "family": "A",
+          "name": "standard"
+        },
+        "tenantId": "[subscription().tenantid]",
+        "accessPolicies": [
+          {
+            "tenantId": "[subscription().tenantid]",
+            "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('appNameUnique')),'2019-08-01', 'full').identity.principalId]",
+            "permissions": {
+              "secrets": [
+                "get",
+                "list",
+                "set"
+              ]
+            }
+          }
+        ],
+        "enabledForDeployment": false,
+        "enabledForDiskEncryption": false,
+        "enabledForTemplateDeployment": false,
+        "enableSoftDelete": true,
+        "softDeleteRetentionInDays": 90
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+     ]
     }
   ]
 }
