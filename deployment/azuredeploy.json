@@ -22,7 +22,7 @@
       "metadata": {
         "description": "Location for Application Insights"
       }
-    },
+    }
   },
   "variables": {
     "functionAppName": "[parameters('appName')]",
