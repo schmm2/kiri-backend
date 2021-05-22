@@ -18,7 +18,7 @@ const msgraphresourceSchema = new Schema({
     configurationTypes: [{
         type: Schema.Types.ObjectId,
         ref: 'ConfigurationType'
-      }]
+    }]
 }, {
     timestamps: true
 });
