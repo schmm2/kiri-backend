@@ -74,7 +74,22 @@
             }
           ]
         }
-      }
+      },
+      "resources": [
+        {
+          "name": "web",
+          "type": "sourcecontrols",
+          "apiVersion": "2019-08-01",
+          "properties": {
+            "RepoUrl": "https://github.com/schmm2/kiri-backend",
+            "branch": "dev",
+            "IsManualIntegration": true
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/sites', variables('appNameUnique'))]"
+          ]
+        }
+      ]
     },
     {
       "type": "Microsoft.KeyVault/vaults",
@@ -108,7 +123,7 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
-     ]
+      ]
     }
   ]
 }
