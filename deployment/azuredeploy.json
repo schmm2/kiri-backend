@@ -59,6 +59,20 @@
       "kind": "Storage"
     },
     {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('frontendASPName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Y1",
+        "tier": "Dynamic"
+      },
+      "properties": {
+        "name": "[variables('functionASPName')]",
+        "computeMode": "Dynamic"
+      }
+    },
+    {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2020-06-01",
       "name": "[variables('functionAppName')]",
@@ -68,9 +82,11 @@
         "type": "SystemAssigned"
       },
       "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('functionASPName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
       ],
       "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('functionASPName'))]",
         "siteConfig": {
           "appSettings": [
             {
@@ -87,7 +103,7 @@
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
-              "value": "~3"
+              "value": "~2"
             },
             {
               "name": "WEBSITE_NODE_DEFAULT_VERSION",
