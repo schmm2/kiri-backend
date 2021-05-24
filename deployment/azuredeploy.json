@@ -43,22 +43,7 @@
     "storageAccountType": "Standard_LRS",
     "mongoDbName": "kiri",
     "mongoDbServerVersion": "4.0",
-    "mongoDbThroughput": 400,
-    "cosmosDbDefaultConsistencyLevel": "Session",
-    "cosmosDbConsistencyPolicy": {
-      "Eventual": {
-        "defaultConsistencyLevel": "Eventual"
-      },
-      "ConsistentPrefix": {
-        "defaultConsistencyLevel": "ConsistentPrefix"
-      },
-      "Session": {
-        "defaultConsistencyLevel": "Session"
-      },
-      "Strong": {
-        "defaultConsistencyLevel": "Strong"
-      }
-    }
+    "mongoDbThroughput": 400
   },
   "resources": [
     {
@@ -192,7 +177,9 @@
       "location": "[parameters('location')]",
       "kind": "MongoDB",
       "properties": {
-        "consistencyPolicy": "[variables('cosmosDbConsistencyPolicy')[variables('cosmosDbDefaultConsistencyLevel')]]",
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session"
+        },
         "locations": [
           {
             "id": "[concat(variables('cosmosName'), '-', parameters('location'))]",
