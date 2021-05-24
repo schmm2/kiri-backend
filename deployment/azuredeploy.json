@@ -23,8 +23,7 @@
     "frontendAppName":  "[concat(parameters('appName'),'-webfrontend')]", 
     "functionWorkerRuntime": "node",
     "keyVaulName": "[concat(parameters('appName'),'-keyvault')]", 
-    "storageAccountType": "Standard_LRS",
-    "location": "[resourceGroup().location]"
+    "storageAccountType": "Standard_LRS"
   },
   "resources": [
     {
