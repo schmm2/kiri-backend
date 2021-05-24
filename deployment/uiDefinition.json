@@ -70,6 +70,10 @@
                         {
                             "isValid": "[or(less(length(basics('siteName')),4),not(equals(basics('nameApiKeyVault').nameAvailable, false)))]",
                             "message": "Please use another name. The name is not available for a key vault"
+                        },
+                        {
+                            "isValid": "[or(less(length(basics('siteName')),4),not(equals(basics('nameApiCosmis').nameAvailable, false)))]",
+                            "message": "Please use another name. The name is not available for a cosmos db"
                         }
                     ]
                 }
