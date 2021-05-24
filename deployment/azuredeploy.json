@@ -59,42 +59,18 @@
       "kind": "Storage"
     },
     {
-         "type":"Microsoft.Web/serverfarms",
-         "apiVersion":"2019-08-01",
-         "name":"[variables('functionASPName')]",
-         "location":"[parameters('location')]",
-         "tags":"[ if(contains(parameters('tagsByResource'), 'Microsoft.Web/serverfarms'), parameters('tagsByResource')['Microsoft.Web/serverfarms'], json('{}')) ]",
-         "sku":{
-            "name":"S1",
-            "tier":"Standard",
-            "size":"S1",
-            "family":"S",
-            "capacity":1
-         },
-         "kind":"app",
-         "properties":{
-            "name":"[variables('functionASPName')]",
-            "perSiteScaling":false,
-            "reserved":false,
-            "targetWorkerCount":0,
-            "targetWorkerSizeId":0
-         }
-      },
-    {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2020-06-01",
       "name": "[variables('functionAppName')]",
       "location": "[parameters('location')]",
-      "kind": "functionapp",
+      "kind": "functionapp,linux",
       "identity": {
         "type": "SystemAssigned"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
-        "[resourceId('Microsoft.Web/serverfarms', variables('functionASPName'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
       ],
       "properties": {
-        "serverFarmId":"[resourceId('Microsoft.Web/serverfarms',variables('functionASPName'))]",
         "siteConfig": {
           "appSettings": [
             {
@@ -102,16 +78,8 @@
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';EndpointSuffix=', environment().suffixes.storage, ';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]"
             },
             {
-              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';EndpointSuffix=', environment().suffixes.storage, ';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]"
-            },
-            {
-              "name": "WEBSITE_CONTENTSHARE",
-              "value": "[toLower(variables('functionAppName'))]"
-            },
-            {
               "name": "FUNCTIONS_EXTENSION_VERSION",
-              "value": "~2"
+              "value": "~3"
             },
             {
               "name": "WEBSITE_NODE_DEFAULT_VERSION",
@@ -122,7 +90,8 @@
               "value": "[variables('functionWorkerRuntime')]"
             }
           ]
-        }
+        },
+        "reserved": true
       },
       "resources": [
         {
@@ -139,6 +108,28 @@
           ]
         }
       ]
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2019-08-01",
+      "name": "[variables('frontendASPName')]",
+      "location": "[parameters('location')]",
+      "tags": "[ if(contains(parameters('tagsByResource'), 'Microsoft.Web/serverfarms'), parameters('tagsByResource')['Microsoft.Web/serverfarms'], json('{}')) ]",
+      "sku": {
+        "name": "S1",
+        "tier": "Standard",
+        "size": "S1",
+        "family": "S",
+        "capacity": 1
+      },
+      "kind": "app",
+      "properties": {
+        "name": "[variables('frontendASPName')]",
+        "perSiteScaling": false,
+        "reserved": false,
+        "targetWorkerCount": 0,
+        "targetWorkerSizeId": 0
+      }
     },
     {
       "type": "Microsoft.KeyVault/vaults",
@@ -175,4 +166,4 @@
       ]
     }
   ]
-} 
+}
