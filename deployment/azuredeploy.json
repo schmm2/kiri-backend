@@ -21,7 +21,9 @@
     },
     "tagsByResource": {
       "type": "object",
-      "defaultValue": {}
+      "defaultValue": {
+
+      }
     }
   },
   "variables": {
