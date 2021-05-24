@@ -23,6 +23,15 @@
                 }
             },
             {
+                "name": "nameApiCosmos",
+                "type": "Microsoft.Solutions.ArmApiControl",
+                "request": {
+                    "method": "POST",
+                    "path": "[concat(subscription().id,'/providers/Microsoft.DocumentDb/checkNameAvailability?api-version=2019-08-01')]",
+                    "body": "[parse(concat('{\"name\":\"',basics('siteName'),-db'\",\"type\":\"Microsoft.DocumentDb/sites\"}',''))]"
+                }
+            },
+            {
                 "name": "nameApiWebBackend",
                 "type": "Microsoft.Solutions.ArmApiControl",
                 "request": {
@@ -44,7 +53,7 @@
                 "name": "siteName",
                 "type": "Microsoft.Common.TextBox",
                 "label": "Name of your deployment",
-                "toolTip": "That is the name of the web portal (e.g.: my-wvd-portal - you can late access this site by using my-wvd-portal.azurewebsites.net).\nThe name should include 4-22 lower-case letters, digits or '-'. The '-' shouldn't be the first symbol.",
+                "toolTip": "That is the name of the web portal (e.g.: my-kiri-portal - you can late access this site by using my-kiri-portal.azurewebsites.net).\nThe name should include 4-22 lower-case letters, digits or '-'. The '-' shouldn't be the first symbol.",
                 "constraints": {
                     "required": true,
                     "regex": "^[a-z0-9]{1}[a-z0-9-]{3,21}$",
@@ -56,11 +65,15 @@
                         },
                         {
                             "isValid": "[or(less(length(basics('siteName')),4),not(equals(basics('nameApiWebBackend').nameAvailable, false)))]",
-                            "message": "Please use another name. The name is not available for a backend web site"
+                            "message": "Please use another name. The name is not available for a function app"
                         },
                         {
                             "isValid": "[or(less(length(basics('siteName')),4),not(equals(basics('nameApiKeyVault').nameAvailable, false)))]",
                             "message": "Please use another name. The name is not available for a key vault"
+                        },
+                        {
+                            "isValid": "[or(less(length(basics('siteName')),4),not(equals(basics('nameApiCosmos').nameAvailable, false)))]",
+                            "message": "Please use another name. The name is not available for a cosmos db"
                         }
                     ]
                 }
