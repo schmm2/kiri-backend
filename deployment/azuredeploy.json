@@ -4,9 +4,8 @@
   "parameters": {
     "siteName": {
       "type": "string",
-      "defaultValue": "[concat('kiri-', uniqueString(resourceGroup().id))]",
       "metadata": {
-        "description": "The name of the function app that you wish to create."
+        "description": "The name of the app that you wish to create."
       }
     },
     "location": {
