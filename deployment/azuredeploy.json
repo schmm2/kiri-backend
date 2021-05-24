@@ -72,6 +72,7 @@
       ],
       "properties": {
         "siteConfig": {
+          "alwaysOn": true,
           "appSettings": [
             {
               "name": "AzureWebJobsStorage",
@@ -83,13 +84,14 @@
             },
             {
               "name": "WEBSITE_NODE_DEFAULT_VERSION",
-              "value": "~15"
+              "value": "~14"
             },
             {
               "name": "FUNCTIONS_WORKER_RUNTIME",
               "value": "[variables('functionWorkerRuntime')]"
             }
-          ]
+          ],
+          "linuxFxVersion": "node|14"
         },
         "reserved": true
       },
