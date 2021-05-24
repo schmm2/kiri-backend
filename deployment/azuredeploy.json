@@ -14,15 +14,23 @@
       "metadata": {
         "description": "Location for all resources."
       }
+    },
+    "admins": {
+      "defaultValue": "Administrators of this solutions",
+      "type": "string"
+    },
+    "tagsByResource": {
+      "type": "object",
+      "defaultValue": {}
     }
   },
   "variables": {
     "appNameUnique": "[concat(parameters('appName'),'')]",
     "storageAccountName": "[concat('kiri', uniqueString(resourceGroup().id))]",
-    "functionAppName": "[concat(parameters('appName'),'-webbackend')]", 
-    "frontendAppName":  "[concat(parameters('appName'),'-webfrontend')]", 
+    "functionAppName": "[concat(parameters('appName'),'-webbackend')]",
+    "frontendAppName": "[concat(parameters('appName'),'-webfrontend')]",
     "functionWorkerRuntime": "node",
-    "keyVaulName": "[concat(parameters('appName'),'-keyvault')]", 
+    "keyVaulName": "[concat(parameters('appName'),'-keyvault')]",
     "storageAccountType": "Standard_LRS"
   },
   "resources": [
