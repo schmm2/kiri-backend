@@ -37,7 +37,7 @@
                 "request": {
                     "method": "POST",
                     "path": "[concat(subscription().id,'/providers/Microsoft.KeyVault/checkNameAvailability?api-version=2019-09-01')]",
-                    "body": "[parse(concat('{\"name\":\"',basics('siteName'),'\",\"type\":\"Microsoft.KeyVault/vaults\"}',''))]"
+                    "body": "[parse(concat('{\"name\":\"',basics('siteName'),'-keyvault\",\"type\":\"Microsoft.KeyVault/vaults\"}',''))]"
                 }
             },
             {
