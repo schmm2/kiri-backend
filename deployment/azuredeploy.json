@@ -137,7 +137,7 @@
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms',variables('frontendASPName'))]",
         "siteConfig": {
-          "linuxFxVersion": "NODE|15.3.0"
+          "linuxFxVersion": "NODE|14"
         }
       },
       "dependsOn": [
