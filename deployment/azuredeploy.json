@@ -72,7 +72,6 @@
       ],
       "properties": {
         "siteConfig": {
-          "alwaysOn": true,
           "appSettings": [
             {
               "name": "AzureWebJobsStorage",
