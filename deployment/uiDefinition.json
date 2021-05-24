@@ -41,6 +41,15 @@
                 }
             },
             {
+                "name": "nameApiCosmos",
+                "type": "Microsoft.Solutions.ArmApiControl",
+                "request": {
+                    "method": "POST",
+                    "path": "[concat(subscription().id,'/providers/Microsoft.DocumentDb/checkNameAvailability?api-version=2021-01-15')]",
+                    "body": "[parse(concat('{\"name\":\"',basics('siteName'),'-db\",\"type\":\"Microsoft.DocumentDb/databaseAccounts\"}',''))]"
+                }
+            },
+            {
                 "name": "siteName",
                 "type": "Microsoft.Common.TextBox",
                 "label": "Name of your deployment",
