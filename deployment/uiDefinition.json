@@ -28,7 +28,7 @@
                 "request": {
                     "method": "POST",
                     "path": "[concat(subscription().id,'/providers/Microsoft.Web/checkNameAvailability?api-version=2019-08-01')]",
-                    "body": "[parse(concat('{\"name\":\"',basics('siteName')-backend,'\",\"type\":\"Microsoft.Web/sites\"}',''))]"
+                    "body": "[parse(concat('{\"name\":\"',basics('siteName'),'\",\"type\":\"Microsoft.Web/sites\"}',''))]"
                 }
             },
             {
@@ -49,7 +49,20 @@
                     "required": true,
                     "regex": "^[a-z0-9]{1}[a-z0-9-]{3,21}$",
                     "validationMessage": "The name should include 4-22 letters, digits or '-'. The '-' shouldn't be the first symbol.",
-                    
+                    "validations": [
+                        {
+                            "isValid": "[or(less(length(basics('siteName')),4),not(equals(basics('nameApiWeb').nameAvailable, false)))]",
+                            "message": "Please use another name. The name is not available for a web site"
+                        },
+                        {
+                            "isValid": "[or(less(length(basics('siteName')),4),not(equals(basics('nameApiWebBackend').nameAvailable, false)))]",
+                            "message": "Please use another name. The name is not available for a backend web site"
+                        },
+                        {
+                            "isValid": "[or(less(length(basics('siteName')),4),not(equals(basics('nameApiKeyVault').nameAvailable, false)))]",
+                            "message": "Please use another name. The name is not available for a key vault"
+                        }
+                    ]
                 }
             }
         ],
