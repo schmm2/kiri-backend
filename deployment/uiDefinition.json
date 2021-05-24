@@ -73,6 +73,16 @@
                         }
                     ]
                 }
+            },
+            {
+                "name": "infoBoxSp",
+                "type": "Microsoft.Common.InfoBox",
+                "visible": true,
+                "options": {
+                    "icon": "Info",
+                    "label": " XXX",
+                    "text": "[concat(basics('siteName'),'')]"
+                }
             }
         ],
         "steps": [
