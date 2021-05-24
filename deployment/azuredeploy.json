@@ -152,7 +152,7 @@
             "[resourceId('Microsoft.Web/sites', variables('frontendAppName'))]"
           ],
           "properties": {
-            "RepoUrl": "https://github.com/schmm2/kiri-frontend",
+            "RepoUrl": "https://github.com/schmm2/kiri-app",
             "branch": "dev",
             "IsManualIntegration": true
           }
