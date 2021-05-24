@@ -169,29 +169,6 @@
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
       ]
-    },
-    {
-      "type": "Microsoft.DocumentDB/databaseAccounts",
-      "name": "[variables('cosmosName')]",
-      "apiVersion": "2021-01-15",
-      "location": "[parameters('location')]",
-      "kind": "MongoDB",
-      "properties": {
-        "consistencyPolicy": {
-          "defaultConsistencyLevel": "Session"
-        },
-        "locations": [
-          {
-            "isZoneRedundant": false,
-            "failoverPriority": 0,
-            "locationName": "Switzerland North"
-          }
-        ],
-        "databaseAccountOfferType": "Standard",
-        "apiProperties": {
-          "serverVersion": "[variables('mongoDbServerVersion')]"
-        }
-      }
     }
   ]
 } 
