@@ -116,11 +116,7 @@
       "location": "[parameters('location')]",
       "tags": "[ if(contains(parameters('tagsByResource'), 'Microsoft.Web/serverfarms'), parameters('tagsByResource')['Microsoft.Web/serverfarms'], json('{}')) ]",
       "sku": {
-        "name": "S1",
-        "tier": "Standard",
-        "size": "S1",
-        "family": "S",
-        "capacity": 1
+        "name": "F1"
       },
       "kind": "linux",
       "properties": {
