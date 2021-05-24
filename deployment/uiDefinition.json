@@ -10,7 +10,8 @@
             "Microsoft.KeyVault/vaults",
             "Microsoft.Web/serverfarms",
             "Microsoft.Storage/storageAccounts",
-            "Microsoft.Web/sites"
+            "Microsoft.Web/sites",
+            "Microsoft.DocumentDb/databaseAccounts"
         ],
         "basics": [
             {
