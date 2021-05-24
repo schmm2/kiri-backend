@@ -182,7 +182,7 @@
         },
         "locations": [
           {
-            "id": "[concat(variables('cosmosName'), '-', parameters('location'))]",
+            "isZoneRedundant": false,
             "failoverPriority": 0,
             "locationName": "Switzerland North"
           }
