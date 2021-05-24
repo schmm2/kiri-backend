@@ -37,7 +37,8 @@
     "storageAccountName": "[concat('kiri', uniqueString(resourceGroup().id))]",
     "frontendAppName": "[concat(parameters('siteName'),'')]",
     "functionAppName": "[concat(parameters('siteName'),'-backend')]",
-    "appPlanName": "[concat(parameters('siteName'),'-appplan')]",
+    "frontendASPName": "[concat(parameters('siteName'),'-aspbackend')]",
+    "functionASPName": "[concat(parameters('siteName'),'-aspfrontend')]",
     "keyVaulName": "[concat(parameters('siteName'),'-keyvault')]",
     "cosmosName": "[concat(parameters('siteName'),'-db')]",
     "functionWorkerRuntime": "node",
@@ -60,7 +61,7 @@
     {
          "type":"Microsoft.Web/serverfarms",
          "apiVersion":"2019-08-01",
-         "name":"[variables('appPlanName')]",
+         "name":"[variables('functionASPName')]",
          "location":"[parameters('location')]",
          "tags":"[ if(contains(parameters('tagsByResource'), 'Microsoft.Web/serverfarms'), parameters('tagsByResource')['Microsoft.Web/serverfarms'], json('{}')) ]",
          "sku":{
@@ -72,7 +73,7 @@
          },
          "kind":"app",
          "properties":{
-            "name":"[variables('appPlanName')]",
+            "name":"[variables('functionASPName')]",
             "perSiteScaling":false,
             "reserved":false,
             "targetWorkerCount":0,
@@ -90,10 +91,10 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
-        "[resourceId('Microsoft.Web/serverfarms', variables('appPlanName'))]"
+        "[resourceId('Microsoft.Web/serverfarms', variables('functionASPName'))]"
       ],
       "properties": {
-        "serverFarmId":"[resourceId('Microsoft.Web/serverfarms',variables('appPlanName'))]",
+        "serverFarmId":"[resourceId('Microsoft.Web/serverfarms',variables('functionASPName'))]",
         "siteConfig": {
           "appSettings": [
             {
