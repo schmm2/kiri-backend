@@ -23,21 +23,21 @@
                 }
             },
             {
-                "name": "nameApiCosmos",
-                "type": "Microsoft.Solutions.ArmApiControl",
-                "request": {
-                    "method": "POST",
-                    "path": "[concat(subscription().id,'/providers/Microsoft.DocumentDb/checkNameAvailability?api-version=2019-08-01')]",
-                    "body": "[parse(concat('{\"name\":\"',basics('siteName'),'-db\",\"type\":\"Microsoft.DocumentDb/sites\"}',''))]"
-                }
-            },
-            {
                 "name": "nameApiWebBackend",
                 "type": "Microsoft.Solutions.ArmApiControl",
                 "request": {
                     "method": "POST",
                     "path": "[concat(subscription().id,'/providers/Microsoft.Web/checkNameAvailability?api-version=2019-08-01')]",
                     "body": "[parse(concat('{\"name\":\"',basics('siteName'),'-backend\",\"type\":\"Microsoft.Web/sites\"}',''))]"
+                }
+            },
+            {
+                "name": "nameApiCosmos",
+                "type": "Microsoft.Solutions.ArmApiControl",
+                "request": {
+                    "method": "POST",
+                    "path": "[concat(subscription().id,'/providers/Microsoft.DocumentDb/checkNameAvailability?api-version=2019-08-01')]",
+                    "body": "[parse(concat('{\"name\":\"',basics('siteName'),'-db\",\"type\":\"Microsoft.DocumentDb/databaseAccounts\"}',''))]"
                 }
             },
             {
