@@ -197,7 +197,7 @@
           {
             "id": "[concat(variables('cosmosName'), '-', parameters('location'))]",
             "failoverPriority": 0,
-            "locationName": "[parameters('location')]"
+            "locationName": "Switzerland North"
           }
         ],
         "databaseAccountOfferType": "Standard",
