@@ -32,15 +32,6 @@
                 }
             },
             {
-                "name": "nameApiCosmos",
-                "type": "Microsoft.Solutions.ArmApiControl",
-                "request": {
-                    "method": "POST",
-                    "path": "[concat(subscription().id,'/providers/Microsoft.DocumentDb/checkNameAvailability?api-version=2019-08-01')]",
-                    "body": "[parse(concat('{\"name\":\"',basics('siteName'),'-db\",\"type\":\"Microsoft.DocumentDb/databaseAccounts\"}',''))]"
-                }
-            },
-            {
                 "name": "nameApiKeyVault",
                 "type": "Microsoft.Solutions.ArmApiControl",
                 "request": {
