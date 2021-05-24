@@ -28,7 +28,7 @@
                 "request": {
                     "method": "POST",
                     "path": "[concat(subscription().id,'/providers/Microsoft.Web/checkNameAvailability?api-version=2019-08-01')]",
-                    "body": "[parse(concat('{\"name\":\"',basics('siteName'),'\",\"type\":\"Microsoft.Web/sites\"}',''))]"
+                    "body": "[parse(concat('{\"name\":\"',basics('siteName'),'-backend\",\"type\":\"Microsoft.Web/sites\"}',''))]"
                 }
             },
             {
