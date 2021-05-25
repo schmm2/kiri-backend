@@ -16,7 +16,7 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 :: Setup
-:: -----
+:: ------
 
 setlocal enabledelayedexpansion
 
