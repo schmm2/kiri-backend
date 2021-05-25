@@ -144,10 +144,6 @@
         "size": "S1",
         "family": "S",
         "capacity": 1
-      },
-      "kind": "linux",
-      "properties": {
-        "reserved": true
       }
     },
     {
@@ -159,7 +155,12 @@
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms',variables('frontendASPName'))]",
         "siteConfig": {
-          "linuxFxVersion": "NODE|14"
+          "appSettings": [
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "~14"
+            }
+          ]
         }
       },
       "dependsOn": [
