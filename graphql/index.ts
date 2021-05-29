@@ -7,18 +7,18 @@ import * as msgraphResourcesTemplate from '../models/documentTemplates/msgraphre
 
 const BASIC_LOGGING = {
   requestDidStart(requestContext) {
-    console.log("request started");
-    console.log(requestContext.request.query);
-    console.log(requestContext.request.variables);
+    requestContext.log("request started");
+    requestContext.log(requestContext.request.query);
+    requestContext.log(requestContext.request.variables);
     return {
       didEncounterErrors(requestContext) {
-        console.log("an error happened in response to query " + requestContext.request.query);
-        console.log(requestContext.errors);
+        requestContext.log("an error happened in response to query " + requestContext.request.query);
+        requestContext.log(requestContext.errors);
       }
     };
   },
   willSendResponse(requestContext) {
-    console.log("response sent", requestContext.response);
+    requestContext.log("response sent", requestContext.response);
   }
 };
 
@@ -82,11 +82,9 @@ for (let m = 0; m < msgraphResourcesTemplate.length; m++) {
     });
 }
 
-
 const server = new ApolloServer({
   schema: graphqlSchema,
   plugins: [BASIC_LOGGING]
 });
-
 
 export default server.createHandler();
