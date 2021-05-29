@@ -4,7 +4,6 @@ const createMongooseClient = require('../shared/mongodb');
 const { ConfigurationType } = require('../models/configurationtype');
 const { MsGraphResource } = require('../models/msgraphresource');
 import * as msgraphResourcesTemplate from '../models/documentTemplates/msgraphresources.json';
-// import IsValidJSONString from '../utils/isvalidjsonstring';
 
 const BASIC_LOGGING = {
   requestDidStart(requestContext) {
@@ -18,7 +17,6 @@ const BASIC_LOGGING = {
       }
     };
   },
-
   willSendResponse(requestContext) {
     console.log("response sent", requestContext.response);
   }
@@ -89,5 +87,6 @@ const server = new ApolloServer({
   schema: graphqlSchema,
   plugins: [BASIC_LOGGING]
 });
+
 
 export default server.createHandler();

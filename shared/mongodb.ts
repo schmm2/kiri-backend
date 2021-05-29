@@ -10,23 +10,23 @@ async function createConnection() {
     mongoose.Promise = Promise
 
     mongoose.connection.on('connected', () => {
-        console.log('Connection Established')
+        console.log('MongoDB Connection Established')
     })
 
     mongoose.connection.on('reconnected', () => {
-        console.log('Connection Reestablished')
+        console.log('MongoDB Connection Reestablished')
     })
 
     mongoose.connection.on('disconnected', () => {
-        console.log('Connection Disconnected')
+        console.log('MongoDB Connection Disconnected')
     })
 
     mongoose.connection.on('close', () => {
-        console.log('Connection Closed')
+        console.log('MongoDB Connection Closed')
     })
 
     mongoose.connection.on('error', (error) => {
-        console.log('ERROR: ' + error)
+        console.log('MongoDB ERROR: ' + error)
     })
 
     // connect db
@@ -35,9 +35,6 @@ async function createConnection() {
         useCreateIndex: true ,
         dbName: config.dbName
     });
-
-    //console.log(db);
-    //db.models.Job.createIndex({"_ts":1}, {expireAfterSeconds: 10});
 
     return db;
 }
