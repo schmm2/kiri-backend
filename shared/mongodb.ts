@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const mongodbConnectionString = "mongodb://kiri-database-dev:SROaS8VyaeHotu5p3RvY9CtQqzheuf8GNlZ6fn5hJbCgZyeMWME5PsgPzXbCAzIz2Kia9jq71NQjuYnj7Yqdyg%3D%3D@kiri-database-dev.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@kiri-database-dev@"
 
 const config = {
     dbName: "kiri"
@@ -29,14 +28,21 @@ async function createConnection() {
         console.log('MongoDB ERROR: ' + error)
     })
 
-    // connect db
-    let db = await mongoose.connect(mongodbConnectionString, {
-        useNewUrlParser: true,
-        useCreateIndex: true ,
-        dbName: config.dbName
-    });
+    const mongodbConnectionString = process.env["mongodbConnectionString"];
 
-    return db;
+    if (mongodbConnectionString) {
+        console.log("mongodb: connectionstring defined");
+        
+        // connect db
+        let db = await mongoose.connect(mongodbConnectionString, {
+            useNewUrlParser: true,
+            useCreateIndex: true,
+            dbName: config.dbName
+        });
+        return db;
+    }else{
+        console.log("mongodb: connectionstring missing");
+    }
 }
 
 module.exports = createConnection;
