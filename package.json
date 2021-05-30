@@ -16,7 +16,7 @@
     "@microsoft/microsoft-graph-client": "^2.2.1",
     "adal-node": "^0.2.2",
     "adm-zip": "^0.5.5",
-    "apollo-server-azure-functions": "^2.24.0",
+    "apollo-server-azure-functions": "^2.25.0",
     "crypto": "^1.0.1",
     "dotenv": "^8.2.0",
     "durable-functions": "^1.4.6",
