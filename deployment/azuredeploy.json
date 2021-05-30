@@ -122,6 +122,10 @@
             {
               "name": "FUNCTIONS_WORKER_RUNTIME",
               "value": "[variables('functionWorkerRuntime')]"
+            },
+            {
+              "name": "mongodbConnectionString",
+              "value": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts',variables('cosmosName')), '2020-04-01').connectionStrings[0].connectionString]"
             }
           ],
           "use32BitWorkerProcess": true
