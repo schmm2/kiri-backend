@@ -175,12 +175,17 @@
             {
               "name": "WEBSITE_NODE_DEFAULT_VERSION",
               "value": "~14"
+            },
+            {
+              "name": "SCM_COMMAND_IDLE_TIMEOUT",
+              "value": 1200
             }
           ]
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/serverfarms', variables('frontendASPName'))]"
+        "[resourceId('Microsoft.Web/serverfarms', variables('frontendASPName'))]",
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
       ],
       "resources": [
         {
