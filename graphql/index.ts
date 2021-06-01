@@ -87,4 +87,9 @@ const server = new ApolloServer({
   plugins: [BASIC_LOGGING]
 });
 
-export default server.createHandler();
+module.exports = server.createHandler({
+  cors: {
+    origin: '*',
+    credentials: true,
+  }
+})
