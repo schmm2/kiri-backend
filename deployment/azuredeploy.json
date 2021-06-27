@@ -189,10 +189,6 @@
             {
               "name": "REACT_APP_BACKENDAPIURL",
               "value": "[concat(reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2020-06-01').defaultHostName,'/api')]" 
-            },
-            {
-              "name": "REACT_APP_HOSTKEY",
-              "value": "[listkeys(concat(variables('functionAppName'), '/host/default/'),'2020-06-01').functionKeys.default]"
             }
           ]
         }
