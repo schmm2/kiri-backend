@@ -5,7 +5,7 @@ import { ConfigurationVersion } from '../models/configurationversion';
 import { ConfigurationType, ConfigurationTypeTC } from '../models/configurationtype';
 
 const AdmZip = require('adm-zip');
-const createMongooseClient = require('../shared/mongodb');
+//const createMongooseClient = require('../shared/mongodb');
 const zipFileNamePrefix = "kiri-backup-"
 const zipFileNameSuffix = ".zip"
 const dateNow = new Date()
@@ -16,7 +16,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     let tenantDbId = (req.body && req.body.tenantDbId)
     
     if (tenantDbId) {
-        createMongooseClient();
+        //createMongooseClient();
 
         let tenantData = null;
         try {

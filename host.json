@@ -9,9 +9,9 @@
     },
     "fileLoggingMode": "always",
     "logLevel": {
-      "default": "Information",
+      "default": "Debug",
       "Host.Results": "Error",
-      "Function": "Trace",
+      "Function": "Debug",
       "Host.Aggregator": "Trace"
     }
   },
