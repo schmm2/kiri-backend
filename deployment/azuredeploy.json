@@ -129,6 +129,11 @@
               "value": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts',variables('cosmosName')), '2020-04-01').connectionStrings[0].connectionString]"
             }
           ],
+          "cors": {
+            "allowedOrigins": [
+              "*"
+            ]
+          },
           "use32BitWorkerProcess": true
         }
       },
@@ -171,6 +176,7 @@
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms',variables('frontendASPName'))]",
         "siteConfig": {
+          "AlwaysOn": true,
           "appSettings": [
             {
               "name": "WEBSITE_NODE_DEFAULT_VERSION",
@@ -186,7 +192,7 @@
             },
             {
               "name": "REACT_APP_HOSTKEY",
-              "value": "[listkeys(concat(variables('functionAppName'), '/host/default/'),'2020-06-01').masterKey]"
+              "value": "[listkeys(concat(variables('functionAppName'), '/host/default/'),'2020-06-01').functionKeys.default]"
             }
           ]
         }
