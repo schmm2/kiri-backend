@@ -20,15 +20,7 @@ const tenantSchema = new mongoose.Schema({
       type: Boolean,
       required: false,
       default: false
-   },
-   configurations: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Configuration'
-   }],
-   jobs: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Job'
-   }]
+   }
 }, {
    timestamps: true
 });
@@ -39,9 +31,11 @@ export const TenantTC = createObjectTC({ model: Tenant, customizationOptions: {}
 TenantTC.addRelation(
    'configurations',
    {
-      resolver: () => ConfigurationTC.getResolver("findByIds"),
-      prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
-         _ids: (source) => source.configurations,
+      resolver: () => ConfigurationTC.getResolver("findMany"),
+      prepareArgs: {
+         filter: source => ({
+            tenant: source._id
+         }),
       },
       projection: { configurations: true }, // point fields in source object, which should be fetched from DB
    }
@@ -50,9 +44,11 @@ TenantTC.addRelation(
 TenantTC.addRelation(
    'jobs',
    {
-      resolver: () => JobTC.getResolver("findByIds"),
-      prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
-         _ids: (source) => source.jobs,
+      resolver: () => JobTC.getResolver("findMany"),
+      prepareArgs: {
+         filter: source => ({
+            tenant: source._id
+         }),
       },
       projection: { jobs: true }, // point fields in source object, which should be fetched from DB
    }
