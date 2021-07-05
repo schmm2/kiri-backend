@@ -16,5 +16,5 @@
       "name": "res"
     }
   ],
-  "scriptFile": "../dist/TRG4010ConfigurationTypeDelete/index.js"
+  "scriptFile": "../dist/TRG3001ClearDatabase/index.js"
 }

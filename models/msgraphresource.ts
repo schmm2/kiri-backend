@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 import { createObjectTC } from '../graphql/createObjectTC';
 import { ConfigurationTypeTC } from '../models/configurationtype';
-
+import { ConfigurationType } from '../models/configurationtype';
 
 const msgraphresourceSchema = new Schema({
     name: {
@@ -30,7 +30,7 @@ MsGraphResourceTC.addRelation(
     'configurationTypes',
     {
         resolver: () => ConfigurationTypeTC.getResolver('findMany'),
-        prepareArgs: { 
+        prepareArgs: {
             filter: source => ({
                 msGraphResource: source._id
             }),
@@ -38,3 +38,19 @@ MsGraphResourceTC.addRelation(
         projection: { configurationTypes: true }, // point fields in source object, which should be fetched from DB
     }
 );
+
+MsGraphResourceTC.wrapResolverResolve('removeById', next => async rp => {
+    // extend resolve params with hook
+    rp.beforeRecordMutate = async (doc, resolveParams) => {
+        console.log("MsGraphResourceTC: check if doc can be delete safely");
+        let relatedMsGraphResources = await ConfigurationType.find({ msGraphResource: doc._id });
+
+        if (relatedMsGraphResources.length > 0) {
+            console.log("MsGraphResourceTC: found " + relatedMsGraphResources.length + " related docs. unable to proceed.");
+        } else {
+            // continue with mutation
+            return doc;
+        }
+    };
+    return next(rp);
+});

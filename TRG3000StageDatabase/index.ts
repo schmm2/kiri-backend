@@ -53,12 +53,6 @@ async function stageDatabase(context) {
                                         context.log("mongoose, created resourcetype document: " + configurationTypeCreated.name);
                                         configurationTypeObjectCount++;
 
-                                        // establish relationship, update msGraphResource
-                                        MsGraphResource.update(
-                                            { _id: msGraphResourceCreated._id },
-                                            { $push: { configurationTypes: configurationTypeCreated } },
-                                            (err, doc) => { if (err) { context.log("mongoose: error updating msgraphresource") } }
-                                        )
                                     } catch (error) {
                                         context.log("unable to create configurationtype: " + configurationTypeTemplate.name)
                                         context.log(error);

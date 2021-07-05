@@ -7,5 +7,6 @@ export const msGraphResourceQuery = {
 }
 
 export const msGraphResourceMutation = {
-  msGraphResourceCreateOne: MsGraphResourceTC.getResolver("createOne")
+  msGraphResourceCreateOne: MsGraphResourceTC.getResolver("createOne"),
+  msGraphResourceRemoveById: MsGraphResourceTC.getResolver("removeById")
 }
