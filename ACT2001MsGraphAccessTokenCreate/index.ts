@@ -15,7 +15,6 @@ if (process.env.NODE_ENV !== 'production') {
 
 const keyVaultName = process.env["KEY_VAULT_NAME"];
 const KVUri = "https://" + keyVaultName + ".vault.azure.net";
-// console.log(keyVaultName);
 
 const credential = new DefaultAzureCredential();
 const client = new SecretClient(KVUri, credential);
@@ -44,8 +43,10 @@ function getAccessToken(url, resource, tenantId, appId, secret): Promise<any> {
     });
 }
 
-const TEC0001MsGraphAccessTokenCreateActivity: AzureFunction = async function (context: Context, tenantDetails): Promise<void> {
-    //context.log(tenantDetails);
+const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: Context, tenantDetails): Promise<void> {
+    context.log("ACT2001MsGraphAccessTokenCreate: TenantDetais");
+    context.log(tenantDetails);
+    context.log("ACT2001MsGraphAccessTokenCreate: KeyVault " + KVUri);
 
     let response = null;
     // console.log(payload);
@@ -57,11 +58,11 @@ const TEC0001MsGraphAccessTokenCreateActivity: AzureFunction = async function (c
             retrievedSecret = await client.getSecret(tenantDetails.appId);
         }
         catch (error) {
-            console.log(error);
+            context.log(error);
         }
 
         if (retrievedSecret && retrievedSecret.value) {
-            console.log("all parameters ok");
+            context.log("all parameters ok");
 
             let tokenResponse = await getAccessToken(
                 AUTHORITYHOSTURL,
@@ -86,7 +87,7 @@ const TEC0001MsGraphAccessTokenCreateActivity: AzureFunction = async function (c
                     }
                 }
             } else {
-                console.log("unable to request access token");
+                context.log("unable to request access token");
                 // console.log(tokenResponse);
 
                 response = {
@@ -98,7 +99,7 @@ const TEC0001MsGraphAccessTokenCreateActivity: AzureFunction = async function (c
                 }
             }
         } else {
-            console.log("unable to get secret")
+            context.log("unable to get secret")
             response = {
                 status: 400,
                 body: {
@@ -108,7 +109,7 @@ const TEC0001MsGraphAccessTokenCreateActivity: AzureFunction = async function (c
             }
         }
     } else {
-        console.log("No tenant id defined")
+        context.log("No tenant id defined")
         response = {
             status: 400,
             body: {
@@ -120,4 +121,4 @@ const TEC0001MsGraphAccessTokenCreateActivity: AzureFunction = async function (c
     return response
 };
 
-export default TEC0001MsGraphAccessTokenCreateActivity;
+export default ACT2001MsGraphAccessTokenCreate;

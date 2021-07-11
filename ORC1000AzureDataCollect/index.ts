@@ -15,20 +15,25 @@ const createMongooseClient = require('../shared/mongodb');
 const orchestrator = df.orchestrator(function* (context) {
     console.log("start ORC1000AzureDataCollect");
 
-    const queryParameters: any = context.df.getInput();
     const outputs = [];
-    let tenantDbId = queryParameters.tenantDbId;
+
+    // precheck parameter
+    const queryParameters: any = context.df.getInput();
+    let tenantMongoDbId = queryParameters.tenantMongoDbId;
+    if(!tenantMongoDbId){
+        return outputs;
+    }
 
     // Create Job
     let jobData = {
         type: "TENENAT_REFRESH",
         state: "STARTED",
-        tenant: tenantDbId
+        tenant: tenantMongoDbId
     };
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
     // console.log("new job", job);
 
-    // Update Job
+    // Job, finished State
     let finishedJobState = {
         _id: job._id,
         state: "FINISHED",
@@ -37,10 +42,10 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // Get Tenant Object
     if (queryParameters) {
-        tenantDbId = tenantDbId;
-        // console.log("tenantDbId", tenantDbId);
+        tenantMongoDbId = tenantMongoDbId;
+        // console.log("tenantMongoDbId", tenantMongoDbId);
     }
-    let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
+    let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantMongoDbId);
     // console.log(tenant);
 
     let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
