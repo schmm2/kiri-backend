@@ -8,5 +8,6 @@ export const configurationQuery = {
 
 export const configurationMutation = {
     configurationCreateOne: ConfigurationTC.getResolver("createOne"),
-    configurationRemoveById: ConfigurationTC.getResolver("removeById")
+    configurationRemoveById: ConfigurationTC.getResolver("removeById"),
+    configurationRemoveMany: ConfigurationTC.getResolver("removeMany")
 }

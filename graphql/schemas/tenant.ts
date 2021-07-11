@@ -7,5 +7,6 @@ export const tenantQuery = {
 
 export const tenantMutation = {
     tenantCreateOne: TenantTC.getResolver("createOne"),
-    tenantUpdateOne: TenantTC.getResolver("updateOne")
+    tenantUpdateOne: TenantTC.getResolver("updateOne"),
+    tenantRemoveById: TenantTC.getResolver("removeById")
 }
