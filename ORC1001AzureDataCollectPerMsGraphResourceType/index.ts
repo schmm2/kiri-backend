@@ -10,11 +10,13 @@
  */
 
 import * as df from "durable-functions"
-import { convertSchemaToGraphQL } from "graphql-compose-mongoose";
 let queryParameters: any;
+import { performance } from 'perf_hooks';
 
 const orchestrator = df.orchestrator(function* (context) {
     let response = null;
+    var t0 = performance.now()
+
     queryParameters = context.df.getInput();
     /*console.log("query parameters - url");
     console.log(queryParameters.graphResourceUrl);*/
@@ -66,7 +68,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 break
         }
 
-        // analyze response, set job state sccordingly
+        // analyze response, set job state accordingly
         if (response) {
             if (response.configurationTypeNotDefined && response.configurationTypeNotDefined.length > 0) {
                 finishedJobState.state = 'WARNING';
@@ -82,6 +84,8 @@ const orchestrator = df.orchestrator(function* (context) {
     // console.log("finished job data", finishedJobData);
     // console.log("updated job", updatedJobResponse);
 
+    var t1 = performance.now()
+    context.log("ORC1001AzureDataCollectPerMsGraphResourceType: finished tasks in " + (t1 - t0) + " milliseconds.")
     return msGraphResource;
 });
 

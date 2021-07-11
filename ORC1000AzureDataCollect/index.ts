@@ -46,8 +46,6 @@ const orchestrator = df.orchestrator(function* (context) {
         // console.log("tenantMongoDbId", tenantMongoDbId);
     }
     let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantMongoDbId);
-    // console.log(tenant);
-
     let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
 
     if (accessTokenResponse && accessTokenResponse.body) {
@@ -71,7 +69,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 const provisionTask = context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id);
                 provisioningTasks.push(provisionTask);
             }
-
+            context.log("ORC1000AzureDataCollect: started " + provisioningTasks.length + " tasks")
             yield context.df.Task.all(provisioningTasks);
         }
     } else {
