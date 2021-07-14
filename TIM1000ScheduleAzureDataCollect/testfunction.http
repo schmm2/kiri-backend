@@ -1,0 +1,6 @@
+POST http://localhost:7071/admin/functions/TIM1000ScheduleAzureDataCollect
+Content-Type: application/json
+
+{
+    "input": null
+}

@@ -10,6 +10,13 @@ const configurationversionSchema = new Schema({
     },
     graphModifiedAt: {
         type: String,
+        required: true,
+        index: true
+    },
+    state: {
+        type: String,
+        enum : ['new','modified','deleted'],
+        default: 'new',
         required: true
     },
     value: {

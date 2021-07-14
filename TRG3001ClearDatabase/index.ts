@@ -2,15 +2,22 @@ import { AzureFunction, Context, HttpRequest } from "@azure/functions"
 const createMongooseClient = require('../shared/mongodb');
 const { ConfigurationType } = require('../models/configurationtype');
 const { MsGraphResource } = require('../models/msgraphresource');
+const { Configuration } = require('../models/configuration');
+const { ConfigurationVersion } = require('../models/configurationVersion');
+
 
 async function clearDatabase(context) {
     context.log("start clear database");
     let msGraphResources = await MsGraphResource.deleteMany({});
     let configurationTypes = await ConfigurationType.deleteMany({});
+    let configuration = await Configuration.deleteMany({});
+    let configurationVersion = await ConfigurationVersion.deleteMany({});
 
     return {
         msGraphResources,
-        configurationTypes
+        configurationTypes,
+        configuration,
+        configurationVersion
     };
 }
 

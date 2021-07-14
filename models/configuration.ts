@@ -5,10 +5,6 @@ import { ConfigurationTypeTC } from '../models/configurationtype';
 import { createObjectTC } from '../graphql/createObjectTC';
 
 const configurationSchema = new mongoose.Schema({
-    graphIsDeleted: {
-        type: Boolean,
-        required: true
-    },
     graphId: {
         type: String,
         required: true
@@ -20,12 +16,12 @@ const configurationSchema = new mongoose.Schema({
     tenant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tenant',
-        require: true
+        required: true
     },
     configurationType: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ConfigurationType',
-        require: true
+        required: true
     }
 }, {
     timestamps: true
@@ -70,13 +66,14 @@ ConfigurationTC.addRelation(
 );
 
 ConfigurationTC.addRelation(
-    'newestConfigurationVersions',
+    'newestActiveConfigurationVersions',
     {
         resolver: () => ConfigurationVersionTC.getResolver("findMany"),
         prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
             filter: (source) => ({
                 configuration: source.id,
-                isNewest: true
+                isNewest: true,
+                state: { "$ne": 'deleted'}
             }),
         },
         projection: { configuration: true, isNewest: true }, // point fields in source object, which should be fetched from DB
