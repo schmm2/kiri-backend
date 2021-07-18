@@ -13,7 +13,7 @@ import * as df from "durable-functions"
 const createMongooseClient = require('../shared/mongodb');
 
 const orchestrator = df.orchestrator(function* (context) {
-    console.log("start ORC1000AzureDataCollect");
+    context.log("ORC1000AzureDataCollect", "start");
 
     const outputs = [];
 
@@ -31,7 +31,7 @@ const orchestrator = df.orchestrator(function* (context) {
         tenant: tenantMongoDbId
     };
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
-    // console.log("new job", job);
+    // context.log("new job", job);
 
     // Job, finished State
     let finishedJobState = {
@@ -43,17 +43,18 @@ const orchestrator = df.orchestrator(function* (context) {
     // Get Tenant Object
     if (queryParameters) {
         tenantMongoDbId = tenantMongoDbId;
-        // console.log("tenantMongoDbId", tenantMongoDbId);
+        // context.log("tenantMongoDbId", tenantMongoDbId);
     }
     let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantMongoDbId);
     let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
 
     if (accessTokenResponse && accessTokenResponse.body) {
         if (accessTokenResponse.body.ok) {
-            //console.log(accessTokenResponse.body.accessToken);
+            //context.log(accessTokenResponse.body.accessToken);
             createMongooseClient();
 
             let msGraphResources = yield context.df.callActivity("ACT1000MsGraphResourceGetAll");
+            context.log(msGraphResources);
 
             const provisioningTasks = [];
 
@@ -69,7 +70,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 const provisionTask = context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id);
                 provisioningTasks.push(provisionTask);
             }
-            context.log("ORC1000AzureDataCollect: started " + provisioningTasks.length + " tasks")
+            context.log("ORC1000AzureDataCollect", "started " + provisioningTasks.length + " tasks")
             yield context.df.Task.all(provisioningTasks);
         }
     } else {
@@ -78,9 +79,9 @@ const orchestrator = df.orchestrator(function* (context) {
     }
 
 
-    // console.log("finished job data", finishedJobData);
+    // context.log("finished job data", finishedJobData);
     let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
-    // console.log("updated job", updatedJobResponse);
+    // context.log("updated job", updatedJobResponse);
 
     return outputs;
 });

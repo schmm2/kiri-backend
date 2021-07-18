@@ -11,15 +11,29 @@
 
 import * as df from "durable-functions"
 let queryParameters: any;
-import { performance } from 'perf_hooks';
+
+function handleGroupPolicyConfigurations(context, paramter){
+    const provisioningTasks = [];
+    // context.log("Instance ID:", context.df.instanceId)
+
+    for (let i = 0; i < paramter.graphValue.length; i++) {
+        const child_id = context.df.instanceId + `:${i}`;
+        let payload = {...paramter}
+        payload.graphValue = paramter.graphValue[i];
+        context.log("ORC1001AzureDataCollectPerMsGraphResourceType: start group policy handler " + i + " for " + paramter.graphValue[i].displayName)
+        const provisionTask = context.df.callSubOrchestrator("ORC1002AzureDataCollectHandleGroupPolicy", payload, child_id);
+        provisioningTasks.push(provisionTask);
+    }
+    context.log("ORC1001AzureDataCollectPerMsGraphResourceType: started " + provisioningTasks.length + " tasks")
+    return provisioningTasks;
+}
 
 const orchestrator = df.orchestrator(function* (context) {
+    context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "start");
+    
     let response = null;
-    var t0 = performance.now()
-
     queryParameters = context.df.getInput();
-    /*console.log("query parameters - url");
-    console.log(queryParameters.graphResourceUrl);*/
+    context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "url: "+ queryParameters.graphResourceUrl);
 
     // Create Job
     let jobData = {
@@ -39,9 +53,8 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // Query Resources
     let msGraphResource = yield context.df.callActivity("ACT2000MsGraphQuery", queryParameters);
-    // console.log("ms graph resource");
-    // console.log(msGraphResource);  
-
+    context.log("ORC1001AzureDataCollectPerMsGraphResourceType: query ms Graph Resources");
+    
     if (msGraphResource && msGraphResource.result && msGraphResource.result.value) {
         let msGraphResponseValue = msGraphResource.result.value
         // console.log(msGraphResponseValue);
@@ -59,7 +72,10 @@ const orchestrator = df.orchestrator(function* (context) {
                 response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", msGraphResponseValue);
                 break;
             case '/deviceManagement/groupPolicyConfigurations':
-                let groupPolicyConfiguration = yield context.df.callSubOrchestrator("ORC1002AzureDataCollectHandleGroupPolicy", parameter);
+                // call gpo handler
+                let tasks = handleGroupPolicyConfigurations(context, parameter);   
+                let groupPolicyConfiguration = yield context.df.Task.all(tasks);
+                context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "query group policy configurations completed");
                 parameter.graphValue = groupPolicyConfiguration;
                 response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break;
@@ -84,8 +100,6 @@ const orchestrator = df.orchestrator(function* (context) {
     // console.log("finished job data", finishedJobData);
     // console.log("updated job", updatedJobResponse);
 
-    var t1 = performance.now()
-    context.log("ORC1001AzureDataCollectPerMsGraphResourceType: finished tasks in " + (t1 - t0) + " milliseconds.")
     return msGraphResource;
 });
 
