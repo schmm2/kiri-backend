@@ -11,18 +11,12 @@
 
 import * as df from "durable-functions"
 
-async function test(context, definitionValue, graphResourceUrl, graphItemId, queryParameters) {
-
-
-}
-
 const orchestrator = df.orchestrator(function* (context) {
     context.log("ORC1002AzureDataCollectHandleGroupPolicy", "Start GPO Handler");
 
     let queryParameters: any = context.df.getInput();
     let configurationListGraph = queryParameters.graphValue;
     let graphResourceUrl = queryParameters.graphResourceUrl;
-
 
     let configurationListGraphItem = configurationListGraph;
     context.log("ORC1002AzureDataCollectHandleGroupPolicy", "Gpo Name: " + configurationListGraphItem.displayName)
@@ -69,7 +63,6 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // append gpo settings into main gpo graph object
     configurationListGraphItem["gpoSettings"] = gpoSettings;
-
     return configurationListGraphItem;
 });
 

@@ -54,7 +54,7 @@ const orchestrator = df.orchestrator(function* (context) {
             createMongooseClient();
 
             let msGraphResources = yield context.df.callActivity("ACT1000MsGraphResourceGetAll");
-            context.log(msGraphResources);
+            // context.log(msGraphResources);
 
             const provisioningTasks = [];
 
@@ -67,8 +67,7 @@ const orchestrator = df.orchestrator(function* (context) {
                     version: msGraphResources[i].version,
                     tenant: tenant,
                 }
-                const provisionTask = context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id);
-                provisioningTasks.push(provisionTask);
+                provisioningTasks.push(context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id));
             }
             context.log("ORC1000AzureDataCollect", "started " + provisioningTasks.length + " tasks")
             yield context.df.Task.all(provisioningTasks);
@@ -78,8 +77,6 @@ const orchestrator = df.orchestrator(function* (context) {
         finishedJobState.message = 'Unable to aquire access token';
     }
 
-
-    // context.log("finished job data", finishedJobData);
     let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
     // context.log("updated job", updatedJobResponse);
 
