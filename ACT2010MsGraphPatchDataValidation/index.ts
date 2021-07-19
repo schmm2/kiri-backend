@@ -15,6 +15,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     console.log("ACT2010MsGraphPatchDataValidation", "start");
 
     let msGraphResourceUrl = parameter.msGraphResourceUrl;
+    console.log(msGraphResourceUrl);
     let dataObject = parameter.dataObject;
 
     // modify data, otherwise it will be rejected by graph api
@@ -26,7 +27,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     delete dataObject.roleScopeTagIds
 
     switch (msGraphResourceUrl) {
-        case 'deviceEnrollmentConfiguration':
+        case '/deviceManagement/deviceEnrollmentConfigurations':
             delete dataObject.priority
             break;
         default:

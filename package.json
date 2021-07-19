@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "prestart": "npm run build",
+    "postinstall": "npm run build",
     "start": "func start",
     "test": "echo \"No tests yet...\""
   },
@@ -16,7 +16,7 @@
     "@microsoft/microsoft-graph-client": "^2.2.1",
     "adal-node": "^0.2.2",
     "adm-zip": "^0.5.5",
-    "apollo-server-azure-functions": "^2.24.0",
+    "apollo-server-azure-functions": "^2.25.0",
     "crypto": "^1.0.1",
     "dotenv": "^8.2.0",
     "durable-functions": "^1.4.6",
@@ -24,10 +24,10 @@
     "graphql-compose": "^8.0.1",
     "graphql-compose-mongoose": "^9.3.0",
     "isomorphic-fetch": "^3.0.0",
-    "mongoose": "^5.12.7"
+    "mongoose": "^5.12.7",
+    "typescript": "^4.3.2"
   },
   "devDependencies": {
-    "@azure/functions": "^1.2.3",
-    "typescript": "^4.0.0"
+    "@azure/functions": "^1.2.3"
   }
 }

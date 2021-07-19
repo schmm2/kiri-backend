@@ -5,10 +5,6 @@ import { ConfigurationTypeTC } from '../models/configurationtype';
 import { createObjectTC } from '../graphql/createObjectTC';
 
 const configurationSchema = new mongoose.Schema({
-    graphIsDeleted: {
-        type: Boolean,
-        required: true
-    },
     graphId: {
         type: String,
         required: true
@@ -20,17 +16,13 @@ const configurationSchema = new mongoose.Schema({
     tenant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tenant',
-        require: true
+        required: true
     },
     configurationType: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ConfigurationType',
-        require: true
-    },
-    configurationVersions: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ConfigurationVersion'
-    }]
+        required: true
+    }
 }, {
     timestamps: true
 });
@@ -63,11 +55,28 @@ ConfigurationTC.addRelation(
 ConfigurationTC.addRelation(
     'configurationVersions',
     {
-        resolver: () => ConfigurationVersionTC.getResolver("findByIds"),
-        prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
-            _ids: (source) => source.configurationVersions,
+        resolver: () => ConfigurationVersionTC.getResolver("findMany"),
+        prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
+            filter: (source) => ({
+                configuration: source.id
+            }),
         },
         projection: { configurationVersions: true }, // point fields in source object, which should be fetched from DB
+    }
+);
+
+ConfigurationTC.addRelation(
+    'newestActiveConfigurationVersions',
+    {
+        resolver: () => ConfigurationVersionTC.getResolver("findMany"),
+        prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
+            filter: (source) => ({
+                configuration: source.id,
+                isNewest: true,
+                state: { "$ne": 'deleted'}
+            }),
+        },
+        projection: { configuration: true, isNewest: true }, // point fields in source object, which should be fetched from DB
     }
 );
 
@@ -77,14 +86,10 @@ ConfigurationTC.addRelation(
         resolver: () => ConfigurationVersionTC.getResolver("findMany"),
         prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
             filter: (source) => ({
-              _operators : { // Applying criteria on fields which have
-                             // operators enabled for them (by default, indexed fields only)
-                 _id : { in: source.configurationVersions },           
-              },
-              isNewest: true
+                configuration: source.id,
+                isNewest: true
             }),
-          },
-
-        projection: { configurationVersions: true, isNewest: true }, // point fields in source object, which should be fetched from DB
+        },
+        projection: { configuration: true, isNewest: true }, // point fields in source object, which should be fetched from DB
     }
 );

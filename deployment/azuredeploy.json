@@ -2,10 +2,10 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "appName": {
+    "siteName": {
       "type": "string",
       "metadata": {
-        "description": "The name of the function app that you wish to create."
+        "description": "The name of the app that you wish to create."
       }
     },
     "location": {
@@ -14,15 +14,47 @@
       "metadata": {
         "description": "Location for all resources."
       }
+    },
+    "locationName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "admins": {
+      "defaultValue": "Administrators of this solutions",
+      "type": "string"
+    },
+    "tagsByResource": {
+      "type": "object",
+      "defaultValue": {
+
+      }
+    },
+    "autoscaleMaxThroughput": {
+      "type": "int",
+      "defaultValue": 4000,
+      "minValue": 4000,
+      "maxValue": 1000000,
+      "metadata": {
+        "description": "Maximum throughput when using Autoscale Throughput Policy for the Database"
+      }
     }
   },
   "variables": {
-    "appNameUnique": "[concat(parameters('appName'),'')]",
     "storageAccountName": "[concat('kiri', uniqueString(resourceGroup().id))]",
-    "functionAppName": "[concat(parameters('appName'),'-fa')]", 
+    "frontendAppName": "[concat(parameters('siteName'),'')]",
+    "functionAppName": "[concat(parameters('siteName'),'-backend')]",
+    "frontendASPName": "[concat(parameters('siteName'),'-aspfrontend')]",
+    "functionASPName": "[concat(parameters('siteName'),'-aspbackend')]",
+    "keyVaulName": "[concat(parameters('siteName'),'-keyvault')]",
+    "cosmosName": "[concat(parameters('siteName'),'-db')]",
     "functionWorkerRuntime": "node",
-    "keyVaulName": "[concat(parameters('appName'),'-kv')]", 
-    "storageAccountType": "Standard_LRS"
+    "storageAccountType": "Standard_LRS",
+    "mongoDbName": "kiri",
+    "mongoDbServerVersion": "4.0",
+    "mongoDbThroughput": 400
   },
   "resources": [
     {
@@ -36,6 +68,20 @@
       "kind": "Storage"
     },
     {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('functionASPName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Y1",
+        "tier": "Dynamic"
+      },
+      "properties": {
+        "name": "[variables('functionASPName')]",
+        "computeMode": "Dynamic"
+      }
+    },
+    {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2020-06-01",
       "name": "[variables('functionAppName')]",
@@ -45,9 +91,13 @@
         "type": "SystemAssigned"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+        "[resourceId('Microsoft.Web/serverfarms', variables('functionASPName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+        "[resourceId('Microsoft.DocumentDb/databaseAccounts', variables('cosmosName'))]"
       ],
       "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('functionASPName'))]",
+        "clientAffinityEnabled": false,
         "siteConfig": {
           "appSettings": [
             {
@@ -64,32 +114,103 @@
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
-              "value": "~2"
+              "value": "~3"
             },
             {
               "name": "WEBSITE_NODE_DEFAULT_VERSION",
-              "value": "~10"
+              "value": "~14"
             },
             {
               "name": "FUNCTIONS_WORKER_RUNTIME",
               "value": "[variables('functionWorkerRuntime')]"
+            },
+            {
+              "name": "mongodbConnectionString",
+              "value": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts',variables('cosmosName')), '2020-04-01').connectionStrings[0].connectionString]"
             }
-          ]
+          ],
+          "cors": {
+            "allowedOrigins": [
+              "*"
+            ]
+          },
+          "use32BitWorkerProcess": true
         }
       },
       "resources": [
         {
           "name": "web",
           "type": "sourcecontrols",
-          "apiVersion": "2019-08-01",
+          "apiVersion": "2020-06-01",
           "properties": {
-            "RepoUrl": "https://github.com/schmm2/kiri-backend",
+            "RepoUrl": "https://github.com/schmm2/kiri-backend.git",
             "branch": "dev",
             "IsManualIntegration": true
           },
           "dependsOn": [
             "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
           ]
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('frontendASPName')]",
+      "location": "[parameters('location')]",
+      "tags": "[ if(contains(parameters('tagsByResource'), 'Microsoft.Web/serverfarms'), parameters('tagsByResource')['Microsoft.Web/serverfarms'], json('{}')) ]",
+      "sku": {
+        "name": "S1",
+        "tier": "Standard",
+        "size": "S1",
+        "family": "S",
+        "capacity": 1
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('frontendAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "app",
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms',variables('frontendASPName'))]",
+        "siteConfig": {
+          "AlwaysOn": true,
+          "appSettings": [
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "~14"
+            },
+            {
+              "name": "SCM_COMMAND_IDLE_TIMEOUT",
+              "value": 1200
+            },
+            {
+              "name": "REACT_APP_BACKENDAPIURL",
+              "value": "[concat(reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2020-06-01').defaultHostName,'/api')]" 
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('frontendASPName'))]",
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
+      ],
+      "resources": [
+        {
+          "name": "web",
+          "type": "sourcecontrols",
+          "apiVersion": "2020-06-01",
+          "location": "[parameters('location')]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/sites', variables('frontendAppName'))]"
+          ],
+          "properties": {
+            "RepoUrl": "https://github.com/schmm2/kiri-app.git",
+            "branch": "dev",
+            "IsManualIntegration": true
+          }
         }
       ]
     },
@@ -126,6 +247,67 @@
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
       ]
+    },
+    {
+      "apiVersion": "2020-04-01",
+      "kind": "MongoDB",
+      "type": "Microsoft.DocumentDb/databaseAccounts",
+      "name": "[variables('cosmosName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "locations": [
+          {
+            "id": "[concat(variables('cosmosName'), '-', parameters('location'))]",
+            "failoverPriority": 0,
+            "locationName": "[parameters('location')]"
+          }
+        ],
+        "backupPolicy": {
+          "type": "Periodic",
+          "periodicModeProperties": {
+            "backupIntervalInMinutes": 240,
+            "backupRetentionIntervalInHours": 8,
+            "backupStorageRedundancy": "Geo"
+          }
+        },
+        "isVirtualNetworkFilterEnabled": false,
+        "virtualNetworkRules": [],
+        "ipRules": [],
+        "dependsOn": [],
+        "enableMultipleWriteLocations": false,
+        "capabilities": [
+          {
+            "name": "EnableMongo"
+          },
+          {
+            "name": "DisableRateLimitingResponses"
+          }
+        ],
+        "apiProperties": {
+          "serverVersion": "4.0"
+        },
+        "enableFreeTier": false
+      },
+      "tags": {}
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/mongodbDatabases",
+      "name": "[concat(variables('cosmosName'), '/', variables('mongoDbName'))]",
+      "apiVersion": "2021-01-15",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/', variables('cosmosName'))]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "[variables('mongoDbName')]"
+        },
+        "options": {
+          "autoscaleSettings": {
+            "maxThroughput": "[parameters('autoscaleMaxThroughput')]"
+          }
+        }
+      }
     }
   ]
 }

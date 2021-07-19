@@ -7,5 +7,6 @@ export const jobQuery = {
 }
 
 export const jobMutation = {
-  jobCreateOne: JobTC.getResolver("createOne")
+  jobCreateOne: JobTC.getResolver("createOne"),
+  jobRemoveMany: JobTC.getResolver("removeMany"),
 }

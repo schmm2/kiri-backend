@@ -13,22 +13,27 @@ import * as df from "durable-functions"
 const createMongooseClient = require('../shared/mongodb');
 
 const orchestrator = df.orchestrator(function* (context) {
-    console.log("start ORC1000AzureDataCollect");
+    context.log("ORC1000AzureDataCollect", "start");
 
-    const queryParameters: any = context.df.getInput();
     const outputs = [];
-    let tenantDbId = queryParameters.tenantDbId;
+
+    // precheck parameter
+    const queryParameters: any = context.df.getInput();
+    let tenantMongoDbId = queryParameters.tenantMongoDbId;
+    if(!tenantMongoDbId){
+        return outputs;
+    }
 
     // Create Job
     let jobData = {
         type: "TENENAT_REFRESH",
         state: "STARTED",
-        tenant: tenantDbId
+        tenant: tenantMongoDbId
     };
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
-    // console.log("new job", job);
+    // context.log("new job", job);
 
-    // Update Job
+    // Job, finished State
     let finishedJobState = {
         _id: job._id,
         state: "FINISHED",
@@ -37,20 +42,19 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // Get Tenant Object
     if (queryParameters) {
-        tenantDbId = tenantDbId;
-        // console.log("tenantDbId", tenantDbId);
+        tenantMongoDbId = tenantMongoDbId;
+        // context.log("tenantMongoDbId", tenantMongoDbId);
     }
-    let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
-    // console.log(tenant);
-
+    let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantMongoDbId);
     let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
 
     if (accessTokenResponse && accessTokenResponse.body) {
         if (accessTokenResponse.body.ok) {
-            //console.log(accessTokenResponse.body.accessToken);
+            //context.log(accessTokenResponse.body.accessToken);
             createMongooseClient();
 
             let msGraphResources = yield context.df.callActivity("ACT1000MsGraphResourceGetAll");
+            // context.log(msGraphResources);
 
             const provisioningTasks = [];
 
@@ -63,10 +67,9 @@ const orchestrator = df.orchestrator(function* (context) {
                     version: msGraphResources[i].version,
                     tenant: tenant,
                 }
-                const provisionTask = context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id);
-                provisioningTasks.push(provisionTask);
+                provisioningTasks.push(context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id));
             }
-
+            context.log("ORC1000AzureDataCollect", "started " + provisioningTasks.length + " tasks")
             yield context.df.Task.all(provisioningTasks);
         }
     } else {
@@ -74,10 +77,8 @@ const orchestrator = df.orchestrator(function* (context) {
         finishedJobState.message = 'Unable to aquire access token';
     }
 
-
-    // console.log("finished job data", finishedJobData);
     let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
-    // console.log("updated job", updatedJobResponse);
+    // context.log("updated job", updatedJobResponse);
 
     return outputs;
 });

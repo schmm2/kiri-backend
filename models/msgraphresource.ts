@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const { composeWithMongoose } = require("graphql-compose-mongoose");
+import { createObjectTC } from '../graphql/createObjectTC';
+import { ConfigurationTypeTC } from '../models/configurationtype';
+import { ConfigurationType } from '../models/configurationtype';
 
 const msgraphresourceSchema = new Schema({
     name: {
@@ -14,14 +16,41 @@ const msgraphresourceSchema = new Schema({
     version: {
         type: String,
         required: true
-    },
-    configurationTypes: [{
-        type: Schema.Types.ObjectId,
-        ref: 'ConfigurationType'
-    }]
+    }
 }, {
     timestamps: true
 });
 
-export const MsGraphResourceTC = composeWithMongoose(mongoose.model('MsGraphResource', msgraphresourceSchema));
-export const MsGraphResource = mongoose.model('MsGraphResource', msgraphresourceSchema);
+
+export const MsGraphResource = mongoose.models.MsGraphResource || mongoose.model('MsGraphResource', msgraphresourceSchema);
+export const MsGraphResourceTC = createObjectTC({ model: MsGraphResource, customizationOptions: {} });
+
+
+MsGraphResourceTC.addRelation(
+    'configurationTypes',
+    {
+        resolver: () => ConfigurationTypeTC.getResolver('findMany'),
+        prepareArgs: {
+            filter: source => ({
+                msGraphResource: source._id
+            }),
+        },
+        projection: { configurationTypes: true }, // point fields in source object, which should be fetched from DB
+    }
+);
+
+MsGraphResourceTC.wrapResolverResolve('removeById', next => async rp => {
+    // extend resolve params with hook
+    rp.beforeRecordMutate = async (doc, resolveParams) => {
+        console.log("MsGraphResourceTC: check if doc can be delete safely");
+        let relatedMsGraphResources = await ConfigurationType.find({ msGraphResource: doc._id });
+
+        if (relatedMsGraphResources.length > 0) {
+            console.log("MsGraphResourceTC: found " + relatedMsGraphResources.length + " related docs. unable to proceed.");
+        } else {
+            // continue with mutation
+            return doc;
+        }
+    };
+    return next(rp);
+});

@@ -22,5 +22,5 @@
       "direction": "in"
     }
   ],
-  "scriptFile": "../dist/SOL1000AzureDataCollectTrigger/index.js"
+  "scriptFile": "../dist/TRG1000HTTPTrigger/index.js"
 }

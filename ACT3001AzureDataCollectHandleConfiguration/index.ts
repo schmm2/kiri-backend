@@ -23,13 +23,6 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
     let configurationTypeNotDefined = [];
 
-    // console.log("pat0040", tenant);
-    // console.log("graphValue");
-    // console.log(JSON.stringify(configurationListGraph));
-
-    // console.log("handle configurations")
-    // console.log(graphResourceUrl);
-
     let Tenant = mongoose.model('Tenant');
     let Configuration = mongoose.model('Configuration');
     let ConfigurationType = mongoose.model('ConfigurationType');
@@ -41,7 +34,11 @@ const activityFunction: AzureFunction = async function (context: Context, parame
         // console.log("handle configuration: " + configurationObjectFromGraph.id);
 
         let configurations = await Configuration.find({ graphId: configurationObjectFromGraph.id });
+        
+        // ****
+        // New Configuration
         // if id does not exist in db, we found a new config
+        // ****
         if (configurations.length == 0) {
             console.log("found new configuration " + configurationObjectFromGraph.id);
 
@@ -98,21 +95,6 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     configurationType: configurationTypeId,
                     tenant: tenant._id
                 });
-
-                // establish relationship, update tenant
-                Tenant.update(
-                    { _id: tenant._id },
-                    { $push: { configurations: addConfigurationResponse._id } },
-                    (err, doc) => { if (err) { console.log("mongoose: error updating tenant") } }
-                )
-
-                // establish relationship, update configurationType
-                ConfigurationType.update(
-                    { _id: configurationTypeId },
-                    { $push: { configurations: addConfigurationResponse._id } },
-                    (err, doc) => { if (err) { console.log("mongoose: error updating configurationType") } }
-                )
-
                 // console.log("created new configuration element");
                 // console.log("created configuration response: " + JSON.stringify(addConfigurationResponse));
 
@@ -129,20 +111,18 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     configuration: addConfigurationResponse._id
                 });
 
-                // establish relationship, update configuration
-                Configuration.update(
-                    { _id: addConfigurationResponse._id },
-                    { $push: { configurationVersions: addConfigurationVersionResponse._id } },
-                    (err, doc) => { if (err) { console.log("mongoose: error updating configuration") } }
-                )
-
                 // console.log("created new configuration version element");
                 // console.log("created configuration version response: " + JSON.stringify(addConfigurationVersionResponse));
             } else {
                 console.log("unable to find configuration type for name: "+configurationTypeName);
                 configurationTypeNotDefined.push(configurationTypeName);
             }
-        } else {
+        } 
+        // ****
+        // Existing Configuration
+        // Configuration does already exist
+        // ****
+        else {
             let configuration = configurations[0];
             // console.log("configuration does already exist:" + configuration._id);
 
@@ -164,8 +144,10 @@ const activityFunction: AzureFunction = async function (context: Context, parame
             // console.log("graph hash version", configurationObjectFromGraphVersion);
             // console.log("stored hash version", newestStoredConfigurationVersion.version);
 
-            // compare version of object from graph and stored in dynamodb
-            // new version found, need to add the new version
+            // ****
+            // New Configuration Version
+            // New version found, need to add the new version
+            // ****
             if (configurationObjectFromGraphVersion != newestStoredConfigurationVersion.version) {
                 // console.log("configuration " + configuration.id + " new version found, add new configuration version");
 
@@ -174,18 +156,11 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     version: configurationObjectFromGraphVersion,
                     configuration: configuration._id,
                     isNewest: true,
+                    state: "modified",
                     displayName: configurationObjectFromGraph.displayName,
                     graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime
                 });
-
                 // console.log("new version: ", addConfigurationVersionResponse);
-
-                // establish relationship, update configuration
-                Configuration.update(
-                    { _id: configuration._id },
-                    { $push: { configurationVersions: addConfigurationVersionResponse._id } },
-                    (err, doc) => { if (err) { console.log("mongoose: error updating configuration") } }
-                )
 
                 // set active configurationversion to old state
                 newestStoredConfigurationVersion.isNewest = false;

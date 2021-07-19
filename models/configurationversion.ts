@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 import { createObjectTC } from "../graphql/createObjectTC";
-import { ConfigurationTC } from "./configuration"; 
+import { ConfigurationTC } from "./configuration";
 
 const configurationversionSchema = new Schema({
     displayName: {
@@ -10,6 +10,13 @@ const configurationversionSchema = new Schema({
     },
     graphModifiedAt: {
         type: String,
+        required: true,
+        index: true
+    },
+    state: {
+        type: String,
+        enum : ['new','modified','deleted'],
+        default: 'new',
         required: true
     },
     value: {
@@ -34,7 +41,7 @@ const configurationversionSchema = new Schema({
 });
 
 export const ConfigurationVersion = mongoose.models.ConfigurationVersion || mongoose.model('ConfigurationVersion', configurationversionSchema);
-export const ConfigurationVersionTC = createObjectTC({model: ConfigurationVersion, customizationOptions: {}});
+export const ConfigurationVersionTC = createObjectTC({ model: ConfigurationVersion, customizationOptions: {} });
 
 ConfigurationVersionTC.addRelation(
     'configuration',

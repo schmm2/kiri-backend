@@ -1,45 +1,31 @@
+// source: https://acloudguru.com/blog/engineering/how-to-create-crud-applications-with-azure-functions-and-mongodb
 const mongoose = require('mongoose');
-const mongodbConnectionString = "mongodb://kiri-database-dev:SROaS8VyaeHotu5p3RvY9CtQqzheuf8GNlZ6fn5hJbCgZyeMWME5PsgPzXbCAzIz2Kia9jq71NQjuYnj7Yqdyg%3D%3D@kiri-database-dev.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@kiri-database-dev@"
 
 const config = {
     dbName: "kiri"
 };
 
-async function createConnection() {
+function createConnection() {
+    console.log("start mongodb connection");
 
-    mongoose.Promise = Promise
+    const mongodbConnectionString = process.env["mongodbConnectionString"];
 
-    mongoose.connection.on('connected', () => {
-        console.log('Connection Established')
-    })
-
-    mongoose.connection.on('reconnected', () => {
-        console.log('Connection Reestablished')
-    })
-
-    mongoose.connection.on('disconnected', () => {
-        console.log('Connection Disconnected')
-    })
-
-    mongoose.connection.on('close', () => {
-        console.log('Connection Closed')
-    })
-
-    mongoose.connection.on('error', (error) => {
-        console.log('ERROR: ' + error)
-    })
-
-    // connect db
-    let db = await mongoose.connect(mongodbConnectionString, {
-        useNewUrlParser: true,
-        useCreateIndex: true ,
-        dbName: config.dbName
-    });
-
-    //console.log(db);
-    //db.models.Job.createIndex({"_ts":1}, {expireAfterSeconds: 10});
-
-    return db;
+    if (mongodbConnectionString) {
+        console.log("mongodb: connectionstring defined");
+        
+        // connect db
+        mongoose.connect(mongodbConnectionString, {
+            useNewUrlParser: true,
+            useCreateIndex: true,
+            dbName: config.dbName
+        }).then(() => {
+            console.log('MongoDB connected!!');
+        }).catch(err => {
+            console.log('Failed to connect to MongoDB', err);
+        });       
+    }else{
+        console.log("mongodb: connectionstring missing");
+        return;
+    }
 }
-
 module.exports = createConnection;

@@ -5,36 +5,32 @@ import { ConfigurationVersion } from '../models/configurationversion';
 import { ConfigurationType, ConfigurationTypeTC } from '../models/configurationtype';
 
 const AdmZip = require('adm-zip');
-const createMongooseClient = require('../shared/mongodb');
 const zipFileNamePrefix = "kiri-backup-"
 const zipFileNameSuffix = ".zip"
 const dateNow = new Date()
 
 
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
-    // console.log("TRG2000ConfigurationBackupCreate", "start");
-    let tenantDbId = (req.body && req.body.tenantDbId)
-    
-    if (tenantDbId) {
-        createMongooseClient();
+    context.log("TRG2000ConfigurationBackupCreate", "start");
+    let tenantMongoDbId = (req.body && req.body.tenantMongoDbId)
 
+    if (tenantMongoDbId) {
         let tenantData = null;
         try {
-            tenantData = await Tenant.findById(tenantDbId);
+            tenantData = await Tenant.findById(tenantMongoDbId);
         }
         catch (error) {
-            endWithBadResponse(context, "invalid tenantDbId");
+            endWithBadResponse(context, "invalid tenantMongoDbId");
         }
 
         if (tenantData._id) {
+            context.log("TRG2000ConfigurationBackupCreate", "processing tenant " + tenantData.name);
             // creating archive container
             var zip = new AdmZip();
 
             // find all configurations of this tenant
-            let configurations = await Configuration.find({
-                '_id': { $in: tenantData.configurations }
-            });
-            //console.log(configurations);
+            let configurations = await Configuration.find({ 'tenant': tenantData._id });
+            context.log("TRG2000ConfigurationBackupCreate", "found " + configurations.length + " to backup");
 
             for (let c = 0; c < configurations.length; c++) {
                 // find newest configurationVersion
@@ -43,8 +39,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
                     configuration: configuration._id,
                     isNewest: true
                 });
-                // console.log(configurationVersions);
-
+        
                 // add config version to zip
                 if (configurationVersions.length > 0) {
                     // find config type
@@ -79,17 +74,17 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
                 "-" +
                 formatDate(dateNow) +
                 zipFileNameSuffix;
-            
-            endWithResponse(context,zipBuffer, zipName);
+
+            endWithResponse(context, zipBuffer, zipName);
         } else {
             endWithBadResponse(context, "unable to find tenant")
         }
     } else {
-        endWithBadResponse(context, "invalid parameters, provide tenantDbId")
+        endWithBadResponse(context, "invalid parameters, provide tenantMongoDbId")
     }
 };
 
-function endWithResponse(context, zipBuffer, zipName){
+function endWithResponse(context, zipBuffer, zipName) {
     context.res = {
         body: zipBuffer,
         headers: {
