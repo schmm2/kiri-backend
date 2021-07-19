@@ -13,7 +13,6 @@ import * as df from "durable-functions"
 let queryParameters: any;
 
 const orchestrator = df.orchestrator(function* (context) {
-    const outputs = [];
     queryParameters = context.df.getInput();
     let definitionValue = queryParameters.definitionValue;
     let graphResourceUrl = queryParameters.graphResourceUrl;
@@ -56,8 +55,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 delete presentationValue.createdDateTime
 
                 // Add presentation value to the list
-                settingsObj["presentationValues"].push(presentationValue)
-                // context.log(presentationValue);
+                settingsObj["presentationValues"].push(presentationValue);
             }
         }
     }

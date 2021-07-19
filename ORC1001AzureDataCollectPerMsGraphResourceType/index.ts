@@ -75,6 +75,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 let tasks = handleGroupPolicyConfigurations(context, parameter);
                 let groupPolicyConfiguration = yield context.df.Task.all(tasks);
                 context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "query group policy configurations completed");
+                console.log(groupPolicyConfiguration);
                 parameter.graphValue = groupPolicyConfiguration;
                 response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break;

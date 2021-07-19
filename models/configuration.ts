@@ -79,3 +79,17 @@ ConfigurationTC.addRelation(
         projection: { configuration: true, isNewest: true }, // point fields in source object, which should be fetched from DB
     }
 );
+
+ConfigurationTC.addRelation(
+    'newestConfigurationVersions',
+    {
+        resolver: () => ConfigurationVersionTC.getResolver("findMany"),
+        prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
+            filter: (source) => ({
+                configuration: source.id,
+                isNewest: true
+            }),
+        },
+        projection: { configuration: true, isNewest: true }, // point fields in source object, which should be fetched from DB
+    }
+);

@@ -63,7 +63,7 @@ const orchestrator = df.orchestrator(function* (context) {
         let patchParameter = {
             accessToken: accessToken,
             dataObject: newConfigurationVersionValueValidated,
-            msGraphResourceUrl: msGraphResourceUrl
+            msGraphApiUrl: msGraphResourceUrl + "/" + newConfigurationVersionValueValidated.id
         }
 
         // console.log("ORC1100MsGraphConfigurationUpdate, patch parameter", patchParameter);
@@ -75,6 +75,61 @@ const orchestrator = df.orchestrator(function* (context) {
                 finishedJobState.message = msGraphPatchResponse.message.code;
             }
             finishedJobState.state = 'ERROR'
+        } else {
+            //console.log(msGraphPatchResponse)
+            //finishedJobState.message = msGraphPatchResponse
+
+            // group policy objects need to be handled differently, need to change definitionValues too
+            if (msGraphResourceUrl == "/deviceManagement/groupPolicyConfigurations" &&
+                (newConfigurationVersionValue.gpoSettings && newConfigurationVersionValue.gpoSettings.length > 0)) {
+
+                let groupPolicyUrl = "/deviceManagement/groupPolicyConfigurations/" + newConfigurationVersionValue.id + "/definitionValues";
+
+                // first query all defined active definitonValues
+                let graphQueryDefinitionValues = {
+                    graphResourceUrl: groupPolicyUrl,
+                    accessToken: accessToken
+                }
+
+                // query existing ids
+                let definitionValuesResponse = yield context.df.callActivity("ACT2000MsGraphQuery", graphQueryDefinitionValues);
+
+                if (definitionValuesResponse.ok) {
+                    let definitonValues = definitionValuesResponse.result.value;
+                    // extract all ids
+                    let definitonValuesIds = definitonValues.map(definitonValue => definitonValue.id);
+                    let updateDefinitionValuesUrl = "/deviceManagement/groupPolicyConfigurations/" + newConfigurationVersionValue.id + "/updateDefinitionValues"
+                    
+                    // delete all existing definitionValues
+                    let deleteDefinitionValuesPayload = {
+                        "added": [],
+                        "updated": [],
+                        "deletedIds": definitonValuesIds
+                    }
+
+                    let graphPostDefinitionValues = {
+                        msGraphApiUrl: updateDefinitionValuesUrl,
+                        accessToken: accessToken,
+                        dataObject: deleteDefinitionValuesPayload
+                    }
+                    // delete existing ids
+                    console.log(graphPostDefinitionValues);
+                    let deleteDefinitionValuesResponse = yield context.df.callActivity("ACT2003MsGraphPost", graphPostDefinitionValues);
+                    console.log(deleteDefinitionValuesResponse);
+
+                    // add new definitionValues
+                    for(let i = 0; i < newConfigurationVersionValue.gpoSettings.length; i++){
+                        let gpoSetting = newConfigurationVersionValue.gpoSettings[i];
+
+                        let newGpoDefinitionValue = {
+                            msGraphApiUrl: groupPolicyUrl,
+                            accessToken: accessToken,
+                            dataObject: gpoSetting
+                        }
+                        let createDefinitionValuesResponse = yield context.df.callActivity("ACT2003MsGraphPost", newGpoDefinitionValue);
+                    }  
+                }
+            }
         }
     } else {
         finishedJobState.message = 'Invalid Parameters';

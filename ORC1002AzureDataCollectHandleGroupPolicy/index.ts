@@ -14,14 +14,12 @@ import * as df from "durable-functions"
 const orchestrator = df.orchestrator(function* (context) {
     context.log("ORC1002AzureDataCollectHandleGroupPolicy", "Start GPO Handler");
 
+    let gpoSettings = [];
     let queryParameters: any = context.df.getInput();
-    let configurationListGraph = queryParameters.graphValue;
+    let configurationListGraphItem = queryParameters.graphValue;
     let graphResourceUrl = queryParameters.graphResourceUrl;
 
-    let configurationListGraphItem = configurationListGraph;
     context.log("ORC1002AzureDataCollectHandleGroupPolicy", "Gpo Name: " + configurationListGraphItem.displayName)
-
-    let gpoSettings = [];
 
     // build definitionValues URL of the specific gpo object
     let definitionValuesGraphApiUrl = graphResourceUrl + "/" + configurationListGraphItem.id + "/definitionValues?$expand=definition"
@@ -48,7 +46,7 @@ const orchestrator = df.orchestrator(function* (context) {
             }
             tasks.push(context.df.callSubOrchestrator("ORC1003AzureDataCollectHandleGroupPolicySettings", payload, child_id));
         }
-        let gpoSettings = yield context.df.Task.all(tasks);
+        gpoSettings = yield context.df.Task.all(tasks);
 
         // sort gpo settings by definition@odata.bind to get the same result after every data check
         gpoSettings.sort(function (a, b) {

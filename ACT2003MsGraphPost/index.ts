@@ -26,9 +26,9 @@ function getClient(accessToken) {
 }
 
 // Patch Graph API
-async function patchGraphAPI(client, apiUrl, dataObject) {
+async function postGraphAPI(client, apiUrl, dataObject) {
     try {
-        let result = await client.api(apiUrl).patch(dataObject);
+        let result = await client.api(apiUrl).post(dataObject);
         return { ok: true, message: result };
     } catch (error) {
         return { ok: false, message: error };
@@ -36,7 +36,7 @@ async function patchGraphAPI(client, apiUrl, dataObject) {
 }
 
 const activityFunction: AzureFunction = async function (context: Context, queryParameters): Promise<string> {
-    console.log("ACT2002MsGraphhPatch", "start script");
+    console.log("ACT2003MsGraphhPost", "start script");
 
     let accessToken = queryParameters.accessToken;
     let msGraphApiUrl = queryParameters.msGraphApiUrl;
@@ -45,8 +45,8 @@ const activityFunction: AzureFunction = async function (context: Context, queryP
     let client = await getClient(accessToken);
 
     // patch resource via graph api
-    let response: any = await patchGraphAPI(client, msGraphApiUrl, dataObject);
-    console.log("ACT2002MsGraphhPatch", response);
+    let response: any = await postGraphAPI(client, msGraphApiUrl, dataObject);
+    console.log("ACT2003MsGraphhPost", response);
 
     return response;
 };
