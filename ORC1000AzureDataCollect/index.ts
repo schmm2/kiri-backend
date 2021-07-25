@@ -43,14 +43,16 @@ const orchestrator = df.orchestrator(function* (context) {
     // Get Tenant Object
     if (queryParameters) {
         tenantMongoDbId = tenantMongoDbId;
-        // context.log("tenantMongoDbId", tenantMongoDbId);
+        context.log("ORC1000AzureDataCollect", "Tenant Mongo DB Id: " + tenantMongoDbId);
     }
     let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantMongoDbId);
     let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
 
     if (accessTokenResponse && accessTokenResponse.body) {
         if (accessTokenResponse.body.ok) {
-            //context.log(accessTokenResponse.body.accessToken);
+            context.log("ORC1000AzureDataCollect", "got an accessToken");
+
+            // connect DB
             createMongooseClient();
 
             let msGraphResources = yield context.df.callActivity("ACT1000MsGraphResourceGetAll");
