@@ -39,24 +39,24 @@ function getAccessToken(url, resource, tenantId, appId, secret): Promise<any> {
 
 const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: Context, tenantDetails): Promise<void> {
     let response = null;
-
     context.log("ACT2001MsGraphAccessTokenCreate", "TenantDetails");
     context.log(tenantDetails);
 
     const keyVaultName = process.env["KEYVAULT_NAME"];
 
-    if(!keyVaultName){
+    if (!keyVaultName) {
         context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault Name not defined");
         return response;
     }
-  
-    const KVUri = "https://" + keyVaultName + ".vault.azure.net";
 
+    const KVUri = "https://" + keyVaultName + ".vault.azure.net";
     const credential = new DefaultAzureCredential();
     const client = new SecretClient(KVUri, credential);
-    context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault " + KVUri); 
+    context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault " + KVUri);
 
     if (tenantDetails.tenantId && tenantDetails.appId) {
+        context.log("ACT2001MsGraphAccessTokenCreate", "all parameters ok");
+
         // Get Secret
         let retrievedSecret = null;
         try {
@@ -68,7 +68,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
         }
 
         if (retrievedSecret && retrievedSecret.value) {
-            context.log("ACT2001MsGraphAccessTokenCreate", "all parameters ok");
+            context.log("ACT2001MsGraphAccessTokenCreate", "Secret retrieved");
 
             let tokenResponse = await getAccessToken(
                 AUTHORITYHOSTURL,
@@ -93,8 +93,8 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
                     }
                 }
             } else {
-                context.log("unable to request access token");
-                // console.log(tokenResponse);
+                context.log("ACT2001MsGraphAccessTokenCreate", "unable to request access token");
+                context.log(tokenResponse);
 
                 response = {
                     status: 400,

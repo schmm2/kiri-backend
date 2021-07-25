@@ -20,11 +20,11 @@
     "dotenv": "^10.0.0",
     "durable-functions": "^1.4.6",
     "graphql": "^15.5.0",
-    "graphql-compose": "^9.0.1",
-    "graphql-compose-mongoose": "^9.3.0",
+    "graphql-compose": "^9.0.2",
+    "graphql-compose-mongoose": "^9.5.2",
     "isomorphic-fetch": "^3.0.0",
     "mongoose": "^5.12.7",
-    "typescript": "^4.3.2"
+    "typescript": "^4.3.5"
   },
   "devDependencies": {
     "@azure/functions": "^1.2.3"
