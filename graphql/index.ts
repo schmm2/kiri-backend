@@ -2,6 +2,7 @@ import { ApolloServer } from "apollo-server-azure-functions";
 const graphqlSchema = require('./schemas/index');
 const createMongooseClient = require('../shared/mongodb');
 
+/*
 const BASIC_LOGGING = {
   requestDidStart(requestContext) {
     console.log("request started");
@@ -18,7 +19,7 @@ const BASIC_LOGGING = {
   willSendResponse(requestContext) {
     console.log("response sent", requestContext.response);
   }
-};
+};*/
 
 // Source: https://github.com/maximivanov/azure-function-graphql-typescript-starter/blob/main/graphql/index.ts
 // connect db
@@ -26,7 +27,7 @@ createMongooseClient();
 
 const server = new ApolloServer({
   schema: graphqlSchema,
-  plugins: [BASIC_LOGGING]
+  /*plugins: [BASIC_LOGGING]*/
 });
 
 module.exports = server.createHandler({
