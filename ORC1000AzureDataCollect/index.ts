@@ -20,8 +20,12 @@ const orchestrator = df.orchestrator(function* (context) {
     // precheck parameter
     const queryParameters: any = context.df.getInput();
     let tenantMongoDbId = queryParameters.tenantMongoDbId;
-    if(!tenantMongoDbId){
+
+    if (!tenantMongoDbId) {
+        context.log("ORC1000AzureDataCollect", "Tenant Mongo DB ID not defined");
         return outputs;
+    } else {
+        context.log("ORC1000AzureDataCollect", "Tenant Mongo DB Id: " + tenantMongoDbId);
     }
 
     // Create Job
@@ -40,11 +44,6 @@ const orchestrator = df.orchestrator(function* (context) {
         message: ""
     };
 
-    // Get Tenant Object
-    if (queryParameters) {
-        tenantMongoDbId = tenantMongoDbId;
-        context.log("ORC1000AzureDataCollect", "Tenant Mongo DB Id: " + tenantMongoDbId);
-    }
     let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantMongoDbId);
     let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
 
