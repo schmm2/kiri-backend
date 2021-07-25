@@ -49,7 +49,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
         context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault Name not defined");
         return response;
     }
-
+  
     const KVUri = "https://" + keyVaultName + ".vault.azure.net";
 
     const credential = new DefaultAzureCredential();
