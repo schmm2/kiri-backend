@@ -11,13 +11,7 @@ var RESOURCEURL = "https://graph.microsoft.com/";
 
 if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config();
-} 
-
-const keyVaultName = process.env["KEY_VAULT_NAME"];
-const KVUri = "https://" + keyVaultName + ".vault.azure.net";
-
-const credential = new DefaultAzureCredential();
-const client = new SecretClient(KVUri, credential);
+}
 
 // Get Access Token for App
 function getAccessToken(url, resource, tenantId, appId, secret): Promise<any> {
@@ -44,10 +38,23 @@ function getAccessToken(url, resource, tenantId, appId, secret): Promise<any> {
 }
 
 const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: Context, tenantDetails): Promise<void> {
+    let response = null;
+
     context.log("ACT2001MsGraphAccessTokenCreate", "TenantDetails");
     context.log(tenantDetails);
-    context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault " + KVUri);
-    let response = null;
+
+    const keyVaultName = process.env["KEYVAULT_NAME"];
+
+    if(!keyVaultName){
+        context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault Name not defined");
+        return response;
+    }
+
+    const KVUri = "https://" + keyVaultName + ".vault.azure.net";
+
+    const credential = new DefaultAzureCredential();
+    const client = new SecretClient(KVUri, credential);
+    context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault " + KVUri); 
 
     if (tenantDetails.tenantId && tenantDetails.appId) {
         // Get Secret
@@ -56,7 +63,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
             retrievedSecret = await client.getSecret(tenantDetails.appId);
         }
         catch (error) {
-            context.log("ACT2001MsGraphAccessTokenCreate", "Error")
+            context.log("ACT2001MsGraphAccessTokenCreate", "Error, unable to get Secret from KeyVault")
             context.log(error)
         }
 
