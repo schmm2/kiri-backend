@@ -14,14 +14,14 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Get Access Token for App
-function getAccessToken(url, resource, tenantId, appId, secret): Promise<any> {
+function getAccessToken(url, resource, tenantId, appId, secret, logContext): Promise<any> {
     return new Promise((resolve) => {
         try {
             let authorityUrl = url + "/" + tenantId;
-            console.log(authorityUrl)
-            console.log(tenantId)
-            console.log(appId)
-            console.log(secret);
+            logContext.log(authorityUrl)
+            logContext.log(tenantId)
+            logContext.log(appId)
+            logContext.log(secret);
 
             const context = new AuthenticationContext(authorityUrl);
             context.acquireTokenWithClientCredentials(
@@ -30,7 +30,7 @@ function getAccessToken(url, resource, tenantId, appId, secret): Promise<any> {
                 secret,
                 function (err, tokenResponse: string) {
                     if (err) {
-                        console.log(err);
+                        logContext.log(err);
                         resolve({ ok: false, message: JSON.stringify(err) });
                     } else {
                         resolve({ ok: true, result: tokenResponse });
@@ -38,7 +38,7 @@ function getAccessToken(url, resource, tenantId, appId, secret): Promise<any> {
                 }
             );
         } catch (error) {
-            console.log(error);
+            logContext.log(error);
             resolve({ ok: false, message: error });
         }
     });
@@ -82,7 +82,8 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
                 RESOURCEURL,
                 tenantDetails.tenantId,
                 tenantDetails.appId,
-                retrievedSecret.value
+                retrievedSecret.value,
+                context
             );
 
             // build response object
