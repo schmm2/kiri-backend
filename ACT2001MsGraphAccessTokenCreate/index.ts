@@ -44,12 +44,10 @@ function getAccessToken(url, resource, tenantId, appId, secret): Promise<any> {
 }
 
 const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: Context, tenantDetails): Promise<void> {
-    context.log("ACT2001MsGraphAccessTokenCreate: TenantDetais");
+    context.log("ACT2001MsGraphAccessTokenCreate", "TenantDetails");
     context.log(tenantDetails);
-    context.log("ACT2001MsGraphAccessTokenCreate: KeyVault " + KVUri);
-
+    context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault " + KVUri);
     let response = null;
-    // console.log(payload);
 
     if (tenantDetails.tenantId && tenantDetails.appId) {
         // Get Secret
@@ -58,11 +56,12 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
             retrievedSecret = await client.getSecret(tenantDetails.appId);
         }
         catch (error) {
-            context.log(error);
+            context.log("ACT2001MsGraphAccessTokenCreate", "Error")
+            context.log(error)
         }
 
         if (retrievedSecret && retrievedSecret.value) {
-            context.log("all parameters ok");
+            context.log("ACT2001MsGraphAccessTokenCreate", "all parameters ok");
 
             let tokenResponse = await getAccessToken(
                 AUTHORITYHOSTURL,
@@ -74,7 +73,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
 
             // build response object
             if (tokenResponse.ok) {
-                console.log("requested access token successfully");
+                context.log("ACT2001MsGraphAccessTokenCreate", "requested access token successfully");
                 // console.log(tokenResponse);
 
                 if (tokenResponse.result) {
@@ -99,7 +98,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
                 }
             }
         } else {
-            context.log("unable to get secret")
+            context.log("ACT2001MsGraphAccessTokenCreate", "unable to get secret")
             response = {
                 status: 400,
                 body: {
@@ -109,7 +108,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
             }
         }
     } else {
-        context.log("No tenant id defined")
+        context.log("ACT2001MsGraphAccessTokenCreate", "No tenant id defined")
         response = {
             status: 400,
             body: {
