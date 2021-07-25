@@ -1,6 +1,6 @@
-﻿import { AzureFunction, Context, HttpRequest } from "@azure/functions"
+﻿import { AzureFunction, Context } from "@azure/functions"
+
 require("isomorphic-fetch");
-var adal = require("adal-node");
 var AuthenticationContext = require("adal-node").AuthenticationContext;
 
 const { DefaultAzureCredential } = require("@azure/identity");
