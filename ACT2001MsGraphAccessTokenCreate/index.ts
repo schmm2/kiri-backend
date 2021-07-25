@@ -31,6 +31,7 @@ function getAccessToken(url, resource, tenantId, appId, secret, logContext): Pro
                 function (err, tokenResponse: string) {
                     if (err) {
                         logContext.log(err);
+                        logContext.log("wwwww");
                         resolve({ ok: false, message: JSON.stringify(err) });
                     } else {
                         resolve({ ok: true, result: tokenResponse });
