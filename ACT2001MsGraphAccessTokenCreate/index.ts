@@ -39,8 +39,12 @@ function getAccessToken(url, resource, tenantId, appId, secret, logContext): Pro
                 }
             );
         } catch (error) {
+            let message = "error";
             logContext.log(error);
-            resolve({ ok: false, message: error });
+            if(error.error_description){
+                message = error.error_description
+            }
+            resolve({ ok: false, message: message });
         }
     });
 }
