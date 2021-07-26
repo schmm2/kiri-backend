@@ -13,15 +13,21 @@ if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config();
 }
 
+function createErrorResponse(message): any {
+    return {
+        status: 400,
+        body: {
+            "ok": false,
+            "message": message
+        }
+    }
+}
+
 // Get Access Token for App
-function getAccessToken(url, resource, tenantId, appId, secret, logContext): Promise<any> {
+function getAccessToken(url, resource, tenantId, appId, secret, functionContext): Promise<any> {
     return new Promise((resolve) => {
         try {
             let authorityUrl = url + "/" + tenantId;
-            logContext.log(authorityUrl)
-            logContext.log(tenantId)
-            logContext.log(appId)
-            logContext.log(secret);
 
             const context = new AuthenticationContext(authorityUrl);
             context.acquireTokenWithClientCredentials(
@@ -30,8 +36,6 @@ function getAccessToken(url, resource, tenantId, appId, secret, logContext): Pro
                 secret,
                 function (err, tokenResponse: string) {
                     if (err) {
-                        logContext.log(err);
-                        logContext.log("wwwww");
                         resolve({ ok: false, message: JSON.stringify(err) });
                     } else {
                         resolve({ ok: true, result: tokenResponse });
@@ -39,9 +43,8 @@ function getAccessToken(url, resource, tenantId, appId, secret, logContext): Pro
                 }
             );
         } catch (error) {
-            let message = "error";
-            logContext.log(error);
-            if(error.error_description){
+            let message = "undefined error";
+            if (error.error_description) {
                 message = error.error_description
             }
             resolve({ ok: false, message: message });
@@ -58,7 +61,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
 
     if (!keyVaultName) {
         context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault Name not defined");
-        return response;
+        return createErrorResponse("keyvault undefined");
     }
 
     const KVUri = "https://" + keyVaultName + ".vault.azure.net";
@@ -76,7 +79,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
         }
         catch (error) {
             context.log("ACT2001MsGraphAccessTokenCreate", "Error, unable to get Secret from KeyVault")
-            context.log(error)
+            return createErrorResponse("unable to get Secret from KeyVault");
         }
 
         if (retrievedSecret && retrievedSecret.value) {
@@ -108,34 +111,20 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
             } else {
                 context.log("ACT2001MsGraphAccessTokenCreate", "unable to request access token");
                 context.log(tokenResponse);
+                let message = "unable to request access token"
 
-                response = {
-                    status: 400,
-                    body: {
-                        "ok": false,
-                        "message": "unable to request access token"
-                    }
+                if (tokenResponse.message) {
+                    message += " error: " + tokenResponse.message
                 }
+                return createErrorResponse(message);
             }
         } else {
             context.log("ACT2001MsGraphAccessTokenCreate", "unable to get secret")
-            response = {
-                status: 400,
-                body: {
-                    "ok": false,
-                    "message": "unable to get secret"
-                }
-            }
+            return createErrorResponse("unable to get secret");
         }
     } else {
         context.log("ACT2001MsGraphAccessTokenCreate", "No tenant id defined")
-        response = {
-            status: 400,
-            body: {
-                "ok": false,
-                "message": "missing parameters"
-            }
-        }
+        return createErrorResponse("parameters missing");
     }
     return response
 };

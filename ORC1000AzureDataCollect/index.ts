@@ -73,19 +73,21 @@ const orchestrator = df.orchestrator(function* (context) {
             context.log("ORC1000AzureDataCollect", "started " + provisioningTasks.length + " tasks")
             yield context.df.Task.all(provisioningTasks);
         } else {
-            context.log("ORC1000AzureDataCollect", "unable to aquire access token")
+            let message = "unable to aquire access token"
+            if (accessTokenResponse.body.message) {
+                message = accessTokenResponse.body.message
+            }
+            context.log("ORC1000AzureDataCollect", message)
             finishedJobState.state = 'ERROR';
-            finishedJobState.message = 'Unable to aquire access token';
+            finishedJobState.message = message;
         }
     } else {
-        context.log("ORC1000AzureDataCollect", "unable to aquire access token")
+        context.log("ORC1000AzureDataCollect", "internal error")
         finishedJobState.state = 'ERROR';
-        finishedJobState.message = 'Unable to aquire access token';
+        finishedJobState.message = "internal error";
     }
 
-    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
-    // context.log("updated job", updatedJobResponse);
-
+    yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
     return outputs;
 });
 
