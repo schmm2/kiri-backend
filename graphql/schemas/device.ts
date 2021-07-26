@@ -6,5 +6,6 @@ export const deviceQuery = {
 }
 
 export const deviceMutation = {
-    deviceCreateOne: DeviceTC.getResolver("createOne")
+    deviceCreateOne: DeviceTC.getResolver("createOne"),
+    deviceRemoveMany: DeviceTC.getResolver("removeMany")
 }

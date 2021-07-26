@@ -4,7 +4,7 @@ const { ConfigurationType } = require('../models/configurationtype');
 const { MsGraphResource } = require('../models/msgraphresource');
 const { Configuration } = require('../models/configuration');
 const { ConfigurationVersion } = require('../models/configurationVersion');
-
+const { Device } = require('../models/device');
 
 async function clearDatabase(context) {
     context.log("start clear database");
@@ -12,12 +12,14 @@ async function clearDatabase(context) {
     let configurationTypes = await ConfigurationType.deleteMany({});
     let configuration = await Configuration.deleteMany({});
     let configurationVersion = await ConfigurationVersion.deleteMany({});
+    let devices = await Device.deleteMany({})
 
     return {
         msGraphResources,
         configurationTypes,
         configuration,
-        configurationVersion
+        configurationVersion,
+        devices
     };
 }
 
