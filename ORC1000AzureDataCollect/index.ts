@@ -71,7 +71,11 @@ const orchestrator = df.orchestrator(function* (context) {
                 provisioningTasks.push(context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id));
             }
             context.log("ORC1000AzureDataCollect", "started " + provisioningTasks.length + " tasks")
-            yield context.df.Task.all(provisioningTasks);
+
+            // durable funtion Task.all will fail if there are no tasks in array
+            if (provisioningTasks.length > 0) {
+                yield context.df.Task.all(provisioningTasks);
+            }
         } else {
             let message = "unable to aquire access token"
             if (accessTokenResponse.body.message) {
