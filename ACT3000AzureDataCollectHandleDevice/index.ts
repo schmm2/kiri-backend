@@ -13,9 +13,11 @@ import { AzureFunction, Context } from "@azure/functions"
 var mongoose = require('mongoose');
 const crypto = require('crypto')
 
-const activityFunction: AzureFunction = async function (context: Context, deviceListGraph): Promise<string> {
-    console.log("ACT3000AzureDataCollectHandleDevice", "Start Device handeling");
+const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<string> {
+    context.log("ACT3000AzureDataCollectHandleDevice", "Start Device handeling");
     let Device = mongoose.model('Device');
+    let deviceListGraph = parameter.graphValue;
+    let tenant = parameter.tenant;
 
     // check for new devices
     for (var i = 0; i < deviceListGraph.length; i++) {
@@ -26,7 +28,7 @@ const activityFunction: AzureFunction = async function (context: Context, device
         // console.log(devices);
 
         if (devices.length == 0) {
-            console.log("found new device " + graphDeviceId);
+            context.log("found new device " + graphDeviceId);
 
             // find manufacturer
             let manufacturer = "";
@@ -42,13 +44,14 @@ const activityFunction: AzureFunction = async function (context: Context, device
                 deviceId: graphDeviceId,
                 value: JSON.stringify(deviceListGraph[i]),
                 manufacturer: manufacturer,
-                version: deviceValueVersion
+                version: deviceValueVersion,
+                tenant: tenant._id
             }, function (err, newDevice) {
                 if (err) console.log(err);
                 else console.log(newDevice);
             });
         } else {
-            console.log("device " + graphDeviceId + " already exists in table");
+            context.log("device " + graphDeviceId + " already exists in table");
         }
     }
     return;
