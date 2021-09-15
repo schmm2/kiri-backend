@@ -54,14 +54,17 @@ function getAccessToken(url, resource, tenantId, appId, secret, functionContext)
 
 const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: Context, tenantDetails): Promise<void> {
     let response = null;
-    context.log("ACT2001MsGraphAccessTokenCreate", "TenantDetails");
-    context.log(tenantDetails);
+    // context.log("ACT2001MsGraphAccessTokenCreate", "TenantDetails");
+    // context.log(tenantDetails);
 
+    // get Keyvault name
     const keyVaultName = process.env["KEYVAULT_NAME"];
 
     if (!keyVaultName) {
         context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault Name not defined");
         return createErrorResponse("keyvault undefined");
+    } else {
+        context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault: " + keyVaultName);
     }
 
     const KVUri = "https://" + keyVaultName + ".vault.azure.net";
@@ -72,13 +75,16 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
     if (tenantDetails.tenantId && tenantDetails.appId) {
         context.log("ACT2001MsGraphAccessTokenCreate", "all parameters ok");
 
-        // Get Secret
+        // Get Secret from KeyVault
         let retrievedSecret = null;
         try {
             retrievedSecret = await client.getSecret(tenantDetails.appId);
         }
         catch (error) {
             context.log("ACT2001MsGraphAccessTokenCreate", "Error, unable to get Secret from KeyVault")
+            if(error.errorResponse && error.errorResponse.errorDescription ){
+                context.log("ACT2001MsGraphAccessTokenCreate", error.errorResponse.errorDescription)
+            }
             return createErrorResponse("unable to get Secret from KeyVault");
         }
 
