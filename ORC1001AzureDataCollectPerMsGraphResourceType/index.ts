@@ -68,7 +68,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
         switch (queryParameters.graphResourceUrl) {
             case '/deviceManagement/managedDevices':
-                response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", msGraphResponseValue);
+                response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", parameter);
                 break;
             case '/deviceManagement/groupPolicyConfigurations':
                 // call gpo handler
