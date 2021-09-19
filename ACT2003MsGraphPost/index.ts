@@ -46,7 +46,7 @@ const activityFunction: AzureFunction = async function (context: Context, queryP
 
     // patch resource via graph api
     let response: any = await postGraphAPI(client, msGraphApiUrl, dataObject);
-    console.log("ACT2003MsGraphhPost", response);
+    //console.log("ACT2003MsGraphhPost", response);
 
     return response;
 };

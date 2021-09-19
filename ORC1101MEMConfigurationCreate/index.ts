@@ -43,89 +43,58 @@ const orchestrator = df.orchestrator(function* (context) {
     let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
     // console.log("ORC1101MsGraphConfigurationCreate, accessTokenResponse", accessTokenResponse);
 
-    // get ConfigurationVersion
-    let newConfigurationVersion = yield context.df.callActivity("ACT1040ConfigurationVersionGetById", configurationVersionDbId);
-    // console.log("ORC1101MsGraphConfigurationCreate, new Configuration Version", newConfigurationVersion);
+    if (accessTokenResponse.body && accessTokenResponse.body.accessToken) {
+        // get ConfigurationVersion
+        let newConfigurationVersion = yield context.df.callActivity("ACT1040ConfigurationVersionGetById", configurationVersionDbId);
+        // console.log("ORC1101MsGraphConfigurationCreate, new Configuration Version", newConfigurationVersion);
 
-    if (accessTokenResponse.body.accessToken && newConfigurationVersion) {
-        console.log("ORC1101MsGraphConfigurationCreate", "parameters ok");
+        if (newConfigurationVersion) {
+            console.log("ORC1101MsGraphConfigurationCreate", "parameters ok");
 
-        let accessToken = accessTokenResponse.body.accessToken;
-        let newConfigurationVersionValue = JSON.parse(newConfigurationVersion.value);
+            let accessToken = accessTokenResponse.body.accessToken;
+            let newConfigurationVersionValue = JSON.parse(newConfigurationVersion.value);
 
-        // replace displayName
-        newConfigurationVersionValue.displayName  = configurationDisplayName;
+            // replace displayName
+            newConfigurationVersionValue.displayName = configurationDisplayName;
 
-        let dataValidationParameter = {
-            msGraphResourceUrl: msGraphResourceUrl,
-            dataObject: newConfigurationVersionValue
-        }
-
-        // console.log("ORC1101MsGraphConfigurationCreate, data validation parameter", dataValidationParameter);
-        let newConfigurationValidated = yield context.df.callActivity("ACT2011MsGraphCreateDataValidation", dataValidationParameter);
-
-        let createParameter = {
-            accessToken: accessToken,
-            dataObject: newConfigurationValidated,
-            msGraphApiUrl: msGraphResourceUrl
-        }
-        console.log(createParameter);
-
-        // console.log("ORC1101MsGraphConfigurationCreate, patch parameter", patchParameter);
-        let msGraphPatchResponse = yield context.df.callActivity("ACT2003MsGraphPost", createParameter); 
-        console.log(msGraphPatchResponse);
-
-        if (!msGraphPatchResponse.ok) {
-            if (msGraphPatchResponse.message && msGraphPatchResponse.message.code) {
-                finishedJobState.message = msGraphPatchResponse.message.code;
+            let dataValidationParameter = {
+                msGraphResourceUrl: msGraphResourceUrl,
+                dataObject: newConfigurationVersionValue
             }
-            finishedJobState.state = 'ERROR'
-        } else {
-            //console.log(msGraphPatchResponse)
-            //finishedJobState.message = msGraphPatchResponse
 
-            /*
-            // group policy objects need to be handled differently, need to change definitionValues too
-            if (msGraphResourceUrl == "/deviceManagement/groupPolicyConfigurations" &&
-                (newConfigurationVersionValue.gpoSettings && newConfigurationVersionValue.gpoSettings.length > 0)) {
+            // console.log("ORC1101MsGraphConfigurationCreate, data validation parameter", dataValidationParameter);
+            let newConfigurationValidated = yield context.df.callActivity("ACT2011MsGraphCreateDataValidation", dataValidationParameter);
 
-                let groupPolicyUrl = "/deviceManagement/groupPolicyConfigurations/" + newConfigurationVersionValue.id + "/definitionValues";
+            let createParameter = {
+                accessToken: accessToken,
+                dataObject: newConfigurationValidated,
+                msGraphApiUrl: msGraphResourceUrl
+            }
 
-                // first query all defined active definitonValues
-                let graphQueryDefinitionValues = {
-                    graphResourceUrl: groupPolicyUrl,
-                    accessToken: accessToken
+            // console.log("ORC1101MsGraphConfigurationCreate, patch parameter", patchParameter);
+            let msGraphResponse = yield context.df.callActivity("ACT2003MsGraphPost", createParameter);
+
+            if (!msGraphResponse.ok) {
+                if (msGraphResponse.message && msGraphResponse.message.code) {
+                    finishedJobState.message = msGraphResponse.message.code;
                 }
+                finishedJobState.state = 'ERROR'
+            } else {
+                // get id of just created new config
+                let newConfigurationId = msGraphResponse.message.id;
 
-                // query existing ids
-                let definitionValuesResponse = yield context.df.callActivity("ACT2000MsGraphQuery", graphQueryDefinitionValues);
+                // ***
+                // Group Policy
+                // group policy objects need to be handled differently, need to create definitionValues 
+                // ***
+                if (msGraphResourceUrl == "/deviceManagement/groupPolicyConfigurations" &&
+                    (newConfigurationValidated.gpoSettings && newConfigurationValidated.gpoSettings.length > 0)) {
 
-                if (definitionValuesResponse.ok) {
-                    let definitonValues = definitionValuesResponse.result.value;
-                    // extract all ids
-                    let definitonValuesIds = definitonValues.map(definitonValue => definitonValue.id);
-                    let updateDefinitionValuesUrl = "/deviceManagement/groupPolicyConfigurations/" + newConfigurationVersionValue.id + "/updateDefinitionValues"
-                    
-                    // delete all existing definitionValues
-                    let deleteDefinitionValuesPayload = {
-                        "added": [],
-                        "updated": [],
-                        "deletedIds": definitonValuesIds
-                    }
-
-                    let graphPostDefinitionValues = {
-                        msGraphApiUrl: updateDefinitionValuesUrl,
-                        accessToken: accessToken,
-                        dataObject: deleteDefinitionValuesPayload
-                    }
-                    // delete existing ids
-                    console.log(graphPostDefinitionValues);
-                    let deleteDefinitionValuesResponse = yield context.df.callActivity("ACT2003MsGraphPost", graphPostDefinitionValues);
-                    console.log(deleteDefinitionValuesResponse);
+                    let groupPolicyUrl = "/deviceManagement/groupPolicyConfigurations/" + newConfigurationId + "/definitionValues";
 
                     // add new definitionValues
-                    for(let i = 0; i < newConfigurationVersionValue.gpoSettings.length; i++){
-                        let gpoSetting = newConfigurationVersionValue.gpoSettings[i];
+                    for (let i = 0; i < newConfigurationValidated.gpoSettings.length; i++) {
+                        let gpoSetting = newConfigurationValidated.gpoSettings[i];
 
                         let newGpoDefinitionValue = {
                             msGraphApiUrl: groupPolicyUrl,
@@ -133,12 +102,19 @@ const orchestrator = df.orchestrator(function* (context) {
                             dataObject: gpoSetting
                         }
                         let createDefinitionValuesResponse = yield context.df.callActivity("ACT2003MsGraphPost", newGpoDefinitionValue);
-                    }  
+                        
+                        if(!createDefinitionValuesResponse.ok){
+                            // Todo
+                        }
+                    }
                 }
-            }*/
+            }
+        } else {
+            finishedJobState.message = 'Invalid Parameters, unable to find configurationVersion';
+            finishedJobState.state = 'ERROR'
         }
     } else {
-        finishedJobState.message = 'Invalid Parameters';
+        finishedJobState.message = 'Invalid Parameters, unable to create access token';
         finishedJobState.state = 'ERROR'
     }
 
