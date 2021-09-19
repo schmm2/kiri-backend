@@ -12,8 +12,11 @@
 import * as df from "durable-functions"
 const createMongooseClient = require('../shared/mongodb');
 
+// connect DB
+createMongooseClient();
+
 const orchestrator = df.orchestrator(function* (context) {
-    context.log("ORC1000AzureDataCollect", "start");
+    if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "start");
 
     const outputs = [];
 
@@ -22,10 +25,10 @@ const orchestrator = df.orchestrator(function* (context) {
     let tenantMongoDbId = queryParameters.tenantMongoDbId;
 
     if (!tenantMongoDbId) {
-        context.log("ORC1000AzureDataCollect", "Tenant Mongo DB ID not defined");
+        if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "Tenant Mongo DB ID not defined");
         return outputs;
     } else {
-        context.log("ORC1000AzureDataCollect", "Tenant Mongo DB Id: " + tenantMongoDbId);
+        if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "Tenant Mongo DB Id: " + tenantMongoDbId);
     }
 
     // Create Job
@@ -35,7 +38,7 @@ const orchestrator = df.orchestrator(function* (context) {
         tenant: tenantMongoDbId
     };
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
-    // context.log("new job", job);
+    // if (!context.df.isReplaying) context.log("new job", job);
 
     // Job, finished State
     let finishedJobState = {
@@ -49,13 +52,10 @@ const orchestrator = df.orchestrator(function* (context) {
 
     if (accessTokenResponse && accessTokenResponse.body) {
         if (accessTokenResponse.body.ok) {
-            context.log("ORC1000AzureDataCollect", "got an accessToken");
-
-            // connect DB
-            createMongooseClient();
+            if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "got an accessToken");
 
             let msGraphResources = yield context.df.callActivity("ACT1000MsGraphResourceGetAll");
-            // context.log(msGraphResources);
+            // if (!context.df.isReplaying) context.log(msGraphResources);
 
             const provisioningTasks = [];
 
@@ -65,12 +65,13 @@ const orchestrator = df.orchestrator(function* (context) {
                     accessToken: accessTokenResponse.body.accessToken,
                     graphResourceUrl: msGraphResources[i].resource,
                     msGraphResourceName: msGraphResources[i].name,
+                    objectDeepResolve: msGraphResources[i].objectDeepResolve,
                     version: msGraphResources[i].version,
                     tenant: tenant,
                 }
                 provisioningTasks.push(context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id));
             }
-            context.log("ORC1000AzureDataCollect", "started " + provisioningTasks.length + " tasks")
+            if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "started " + provisioningTasks.length + " tasks")
 
             // durable funtion Task.all will fail if there are no tasks in array
             if (provisioningTasks.length > 0) {
@@ -81,12 +82,12 @@ const orchestrator = df.orchestrator(function* (context) {
             if (accessTokenResponse.body.message) {
                 message = accessTokenResponse.body.message
             }
-            context.log("ORC1000AzureDataCollect", message)
+            if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", message)
             finishedJobState.state = 'ERROR';
             finishedJobState.message = message;
         }
     } else {
-        context.log("ORC1000AzureDataCollect", "internal error")
+        if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "internal error")
         finishedJobState.state = 'ERROR';
         finishedJobState.message = "internal error";
     }

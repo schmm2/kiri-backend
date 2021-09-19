@@ -18,7 +18,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     // console.log(JSON.stringify(parameter));*/
 
     let configurationListGraph = parameter.graphValue;
-    let graphResourceUrl = parameter.graphResourceUrl; 
+    let graphResourceUrl = parameter.graphResourceUrl;
     let tenant = parameter.tenant;
 
     let configurationTypeNotDefined = [];
@@ -34,7 +34,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
         // console.log("handle configuration: " + configurationObjectFromGraph.id);
 
         let configurations = await Configuration.find({ graphId: configurationObjectFromGraph.id });
-        
+
         // ****
         // New Configuration
         // if id does not exist in db, we found a new config
@@ -65,6 +65,9 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     case "/deviceManagement/groupPolicyConfigurations":
                         configurationTypeName = "groupPolicyConfiguration";
                         break;
+                    case "/deviceManagement/deviceManagementScripts":
+                        configurationTypeName = "deviceManagementScript";
+                        break;
                     default:
                         break;
                 }
@@ -76,7 +79,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 console.log(configurationObjectFromGraph);
             } else {
                 console.log("configurationTypeName defined: " + configurationTypeName);
-            } 
+            }
 
             // find configurationType Id
             let configurationTypeId = null;
@@ -114,10 +117,10 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 // console.log("created new configuration version element");
                 // console.log("created configuration version response: " + JSON.stringify(addConfigurationVersionResponse));
             } else {
-                console.log("unable to find configuration type for name: "+configurationTypeName);
+                console.log("unable to find configuration type for name: " + configurationTypeName);
                 configurationTypeNotDefined.push(configurationTypeName);
             }
-        } 
+        }
         // ****
         // Existing Configuration
         // Configuration does already exist

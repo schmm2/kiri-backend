@@ -2,24 +2,19 @@
  * This function is not intended to be invoked directly. Instead it will be
  * triggered by an HTTP starter function.
  * 
- * Before running this sample, please:
- * - create a Durable activity function (default name is "Hello")
- * - create a Durable HTTP starter function
- * - run 'npm install durable-functions' from the wwwroot folder of your 
- *    function app in Kudu
  */
 
 import * as df from "durable-functions"
 
 const orchestrator = df.orchestrator(function* (context) {
-    context.log("ORC1002AzureDataCollectHandleGroupPolicy", "Start GPO Handler");
+    if (!context.df.isReplaying) context.log("ORC1002AzureDataCollectHandleGroupPolicy", "Start GPO Handler");
 
     let gpoSettings = [];
     let queryParameters: any = context.df.getInput();
     let configurationListGraphItem = queryParameters.graphValue;
     let graphResourceUrl = queryParameters.graphResourceUrl;
 
-    context.log("ORC1002AzureDataCollectHandleGroupPolicy", "Gpo Name: " + configurationListGraphItem.displayName)
+    if (!context.df.isReplaying) context.log("ORC1002AzureDataCollectHandleGroupPolicy", "Gpo Name: " + configurationListGraphItem.displayName)
 
     // build definitionValues URL of the specific gpo object
     let definitionValuesGraphApiUrl = graphResourceUrl + "/" + configurationListGraphItem.id + "/definitionValues?$expand=definition"
@@ -46,7 +41,9 @@ const orchestrator = df.orchestrator(function* (context) {
             }
             tasks.push(context.df.callSubOrchestrator("ORC1003AzureDataCollectHandleGroupPolicySettings", payload, child_id));
         }
-        gpoSettings = yield context.df.Task.all(tasks);
+        if(tasks.length > 0){
+            gpoSettings = yield context.df.Task.all(tasks);
+        }   
 
         // sort gpo settings by definition@odata.bind to get the same result after every data check
         gpoSettings.sort(function (a, b) {
@@ -58,7 +55,7 @@ const orchestrator = df.orchestrator(function* (context) {
             return 0;
         });
     }
-
+    
     // append gpo settings into main gpo graph object
     configurationListGraphItem["gpoSettings"] = gpoSettings;
     return configurationListGraphItem;

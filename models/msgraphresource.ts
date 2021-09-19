@@ -16,6 +16,11 @@ const msgraphresourceSchema = new Schema({
     version: {
         type: String,
         required: true
+    },
+    objectDeepResolve: {
+        type: Boolean,
+        require: true,
+        default: false
     }
 }, {
     timestamps: true

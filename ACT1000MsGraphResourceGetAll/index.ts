@@ -12,9 +12,9 @@
 import { AzureFunction, Context } from "@azure/functions"
 import { MsGraphResource } from "../models/msgraphresource";
 const createMongooseClient = require('../shared/mongodb');
+createMongooseClient();
 
 const activityFunction: AzureFunction = async function (context: Context): Promise<string> {
-    await createMongooseClient();
     return MsGraphResource.find();
 };
 

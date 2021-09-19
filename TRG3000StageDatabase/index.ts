@@ -24,7 +24,8 @@ async function stageDatabase(context) {
                     msGraphResourceCreated = await MsGraphResource.create({
                         name: msgraphResourceTemplate.name,
                         resource: msgraphResourceTemplate.resource,
-                        version: msgraphResourceTemplate.version
+                        version: msgraphResourceTemplate.version,
+                        objectDeepResolve: msgraphResourceTemplate.objectDeepResolve ? true: false
                     });
                     context.log("mongoose, created msgraphresource document: " + msGraphResourceCreated.name);
                     msGraphResourceObjectCount++;

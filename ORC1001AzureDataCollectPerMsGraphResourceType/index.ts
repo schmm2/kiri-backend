@@ -14,25 +14,38 @@ let queryParameters: any;
 
 function handleGroupPolicyConfigurations(context, paramter) {
     const provisioningTasks = [];
-    // context.log("Instance ID:", context.df.instanceId)
+    // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
 
     for (let i = 0; i < paramter.graphValue.length; i++) {
         const child_id = context.df.instanceId + `:${i}`;
         let payload = { ...paramter }
         payload.graphValue = paramter.graphValue[i];
-        // context.log("ORC1001AzureDataCollectPerMsGraphResourceType",  "start group policy handler " + i + " for " + paramter.graphValue[i].displayName)
         provisioningTasks.push(context.df.callSubOrchestrator("ORC1002AzureDataCollectHandleGroupPolicy", payload, child_id));
     }
-    context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "started " + provisioningTasks.length + " tasks")
+    if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "started " + provisioningTasks.length + " tasks")
+    return provisioningTasks;
+}
+
+
+function createSubORCTasksForEachGraphValue(context, paramter, subOrchestrator, idOffset) {
+    const provisioningTasks = [];
+    // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
+
+    for (let i = 0; i < paramter.graphValue.length; i++) {
+        const child_id = context.df.instanceId + idOffset + `:${i}`;
+        let payload = { ...paramter }
+        payload.graphValue = paramter.graphValue[i];
+        provisioningTasks.push(context.df.callSubOrchestrator(subOrchestrator, payload, child_id));
+    }
     return provisioningTasks;
 }
 
 const orchestrator = df.orchestrator(function* (context) {
-    context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "start");
+    if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "start");
 
     let response = null;
     queryParameters = context.df.getInput();
-    context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "url: " + queryParameters.graphResourceUrl);
+    if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "url: " + queryParameters.graphResourceUrl);
 
     // Create Job
     let jobData = {
@@ -47,24 +60,36 @@ const orchestrator = df.orchestrator(function* (context) {
     let finishedJobState = {
         _id: job._id,
         state: "FINISHED",
-        message: ""
+        message: "Done"
     };
 
     // Query Resources
     let msGraphResource = yield context.df.callActivity("ACT2000MsGraphQuery", queryParameters);
-    context.log("ORC1001AzureDataCollectPerMsGraphResourceType: query ms Graph Resources");
+    if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType: query ms Graph Resources");
 
     if (msGraphResource && msGraphResource.result && msGraphResource.result.value) {
         let msGraphResponseValue = msGraphResource.result.value
         // console.log(msGraphResponseValue);
         // console.log("value ok")
 
+        // build parameter for activities or orchestrator calls
         let parameter = {
             graphValue: msGraphResponseValue,
             graphResourceUrl: queryParameters.graphResourceUrl,
             tenant: queryParameters.tenant,
             accessToken: queryParameters.accessToken
         }
+
+        // check if ms graph resource needs further data resolved by id
+        // some data returned contains empty fields (for example deviceManagementScript -> scriptContent)
+        // some fields can't be queried by $expand
+        // solution: take each item and query it directly again -> $resource/$itemId
+        // with the response we replace the existing but incomplete value from the previous query
+        if(queryParameters.objectDeepResolve){
+            let tasks = createSubORCTasksForEachGraphValue(context, parameter, "ORC1200MsGraphQueryResolveById", "1");
+            parameter.graphValue = yield context.df.Task.all(tasks);  
+            // context.log("ORC1001AzureDataCollectPerMsGraphResourceType", parameter.graphValue);
+        }   
 
         switch (queryParameters.graphResourceUrl) {
             case '/deviceManagement/managedDevices':
@@ -74,9 +99,11 @@ const orchestrator = df.orchestrator(function* (context) {
                 // call gpo handler
                 let tasks = handleGroupPolicyConfigurations(context, parameter);
                 let groupPolicyConfiguration = yield context.df.Task.all(tasks);
-                context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "query group policy configurations completed");
-                console.log(groupPolicyConfiguration);
+
+                if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "query group policy configurations completed");
+                // console.log(groupPolicyConfiguration);
                 parameter.graphValue = groupPolicyConfiguration;
+    
                 response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break;
             default:

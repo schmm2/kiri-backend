@@ -26,7 +26,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // get all presentationValues of the specific definitionValue
     let presentationValuesGraphApiUrl = graphResourceUrl + "/" + graphItemId + "/definitionValues/" + definitionValue.id + "/presentationValues?$expand=presentation";
-    //context.log(presentationValuesGraphApiUrl);
+    // if (!context.df.isReplaying) context.log(presentationValuesGraphApiUrl);
 
     let graphQueryPresentationValues = {
         graphResourceUrl: presentationValuesGraphApiUrl,
@@ -43,7 +43,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
             for (let p = 0; p < gpoPresentationValues.length; p++) {
                 let presentationValue = gpoPresentationValues[p];
-                // context.log(presentationValue);
+                // if (!context.df.isReplaying) context.log(presentationValue);
 
                 // Add presentation@odata.bind property that links the value to the presentation object
                 presentationValue["presentation@odata.bind"] = "https://graph.microsoft.com/beta/deviceManagement/groupPolicyDefinitions('" + definitionValue.definition.id + "')/presentations('" + presentationValue.presentation.id + "')";
