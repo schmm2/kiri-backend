@@ -9,10 +9,10 @@ let queryParameters: any;
 const orchestrator = df.orchestrator(function* (context) {
     let outputs: any = "";
     queryParameters = context.df.getInput();
-    
+
     let graphResourceUrl = queryParameters.graphResourceUrl;
     let graphItemId = queryParameters.graphValue.id;
-    
+
     let graphQueryResource = {
         graphResourceUrl: graphResourceUrl + "/" + graphItemId,
         accessToken: queryParameters.accessToken
@@ -20,7 +20,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
     let response = yield context.df.callActivity("ACT2000MsGraphQuery", graphQueryResource);
 
-    if(response && response.result){
+    if (response && response.ok && response.result) {
         context.log("ORC1200MsGraphQueryResolveById", "found data for resource id " + graphItemId)
         outputs = response.result
     }

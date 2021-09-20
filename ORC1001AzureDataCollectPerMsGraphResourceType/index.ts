@@ -89,7 +89,7 @@ const orchestrator = df.orchestrator(function* (context) {
             let tasks = createSubORCTasksForEachGraphValue(context, parameter, "ORC1200MsGraphQueryResolveById", "1");
             parameter.graphValue = yield context.df.Task.all(tasks);  
             // context.log("ORC1001AzureDataCollectPerMsGraphResourceType", parameter.graphValue);
-        }   
+        }
 
         switch (queryParameters.graphResourceUrl) {
             case '/deviceManagement/managedDevices':

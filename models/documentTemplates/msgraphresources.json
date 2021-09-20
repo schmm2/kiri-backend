@@ -117,6 +117,17 @@
         }]
     },
     {
+        "name": "deviceHealthScripts",
+        "objectDeepResolve": true,
+        "resource": "/deviceManagement/deviceHealthScripts",
+        "version": "beta",
+        "configurationTypes": [{
+            "name": "deviceHealthScript",
+            "category": "deviceHealthScript",
+            "platform": "windows"
+        }]
+    },
+    {
         "name": "deviceenrollmentconfigurations",
         "resource": "/deviceManagement/deviceEnrollmentConfigurations",
         "version": "beta",
