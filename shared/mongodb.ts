@@ -16,7 +16,6 @@ function createConnection() {
         // connect db
         mongoose.connect(mongodbConnectionString, {
             useNewUrlParser: true,
-            useCreateIndex: true,
             dbName: config.dbName
         }).then(() => {
             console.log('MongoDB connected!!');

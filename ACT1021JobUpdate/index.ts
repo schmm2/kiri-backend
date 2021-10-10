@@ -14,19 +14,18 @@ const createMongooseClient = require('../shared/mongodb');
 var mongoose = require('mongoose');
 createMongooseClient()
 
-const activityFunction: AzureFunction = async function (context: Context, jobData): Promise<string> {
-    console.log("ACT1021JobUpdate", jobData);
+const activityFunction: AzureFunction = async function (context: Context, job): Promise<string> {
+    //console.log("ACT1021JobUpdate", job);
 
     let Job = mongoose.model('Job');
 
     // update job
-    let updatedJob = Job.update(
-        { _id: jobData._id },
-        { $set: { state: jobData.state, message: jobData.message } },
-        (err, doc) => { if (err) { console.log("mongoose: error updating job " + jobData._id) } }
+    let updatedJob = Job.findOneAndUpdate(
+        { _id: job._id },
+        job,
+        (err, doc) => { if (err) { console.log("mongoose: error updating job " + job._id) } }
     );
-
-    return updatedJob;
+    return job;
 };
 
 export default activityFunction;

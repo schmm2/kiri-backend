@@ -54,14 +54,7 @@ const orchestrator = df.orchestrator(function* (context) {
         tenant: queryParameters.tenant._id
     };
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
-    // console.log("new job", job);
-
-    // Update Job
-    let finishedJobState = {
-        _id: job._id,
-        state: "FINISHED",
-        message: "Done"
-    };
+    // context.log("ORC1001AzureDataCollectPerMsGraphResourceType", job);
 
     // Query Resources
     let msGraphResource = yield context.df.callActivity("ACT2000MsGraphQuery", queryParameters);
@@ -114,16 +107,18 @@ const orchestrator = df.orchestrator(function* (context) {
         // analyze response, set job state accordingly
         if (response) {
             if (response.configurationTypeNotDefined && response.configurationTypeNotDefined.length > 0) {
-                finishedJobState.state = 'WARNING';
-                finishedJobState.message = 'ConfigurationType not yet implemented: ' + JSON.stringify(response.configurationTypeNotDefined);
+                job.state = 'WARNING';
+                job.message = 'ConfigurationType not yet implemented: ' + JSON.stringify(response.configurationTypeNotDefined);
+            }else{
+                job.state = 'FINISHED';
             }
         }
     } else {
-        finishedJobState.state = 'ERROR';
-        finishedJobState.message = 'Unable to query MS Graph API';
+        job.state = 'ERROR';
+        job.message = 'Unable to query MS Graph API';
     }
 
-    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
+    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", job);
     // console.log("finished job data", finishedJobData);
     // console.log("updated job", updatedJobResponse);
 

@@ -18,17 +18,10 @@ const activityFunction: AzureFunction = async function (context: Context, jobPar
     //console.log(jobParameters);
 
     let Job = mongoose.model('Job');
-    let Tenant = mongoose.model('Tenant');
 
     const newJob = await Job.create(jobParameters);
     //console.log("created job", newJob._id);
 
-    // establish relationship, update tenant
-    Tenant.update(
-        { _id: jobParameters.tenant },
-        { $push: { jobs: newJob._id } },
-        (err, doc) => { if (err) { console.log("mongoose: error updating tenant") } }
-    )
     return newJob;
 };
 

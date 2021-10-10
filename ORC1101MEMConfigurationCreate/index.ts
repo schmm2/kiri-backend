@@ -76,7 +76,13 @@ const orchestrator = df.orchestrator(function* (context) {
 
             if (!msGraphResponse.ok) {
                 if (msGraphResponse.message && msGraphResponse.message.code) {
-                    finishedJobState.message = msGraphResponse.message.code;
+                    context.log(msGraphResponse);
+                    finishedJobState.message = "Error: " + msGraphResponse.message.code;
+                    if(msGraphResponse.message.body){
+                        let responseMessage = JSON.parse(msGraphResponse.message.body)
+                        responseMessage = (JSON.parse(responseMessage.message)).Message
+                        finishedJobState.message += ", Message: "+ responseMessage
+                    }
                 }
                 finishedJobState.state = 'ERROR'
             } else {

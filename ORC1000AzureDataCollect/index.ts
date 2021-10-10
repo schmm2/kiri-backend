@@ -38,14 +38,7 @@ const orchestrator = df.orchestrator(function* (context) {
         tenant: tenantMongoDbId
     };
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
-    // if (!context.df.isReplaying) context.log("new job", job);
-
-    // Job, finished State
-    let finishedJobState = {
-        _id: job._id,
-        state: "FINISHED",
-        message: ""
-    };
+    //if (!context.df.isReplaying) context.log("new job", job);
 
     let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantMongoDbId);
     let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
@@ -76,6 +69,8 @@ const orchestrator = df.orchestrator(function* (context) {
             // durable funtion Task.all will fail if there are no tasks in array
             if (provisioningTasks.length > 0) {
                 yield context.df.Task.all(provisioningTasks);
+
+                job.state = 'FINISHED'
             }
         } else {
             let message = "unable to aquire access token"
@@ -83,16 +78,16 @@ const orchestrator = df.orchestrator(function* (context) {
                 message = accessTokenResponse.body.message
             }
             if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", message)
-            finishedJobState.state = 'ERROR';
-            finishedJobState.message = message;
+            job.state = 'ERROR';
+            job.message = message;
         }
     } else {
         if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "internal error")
-        finishedJobState.state = 'ERROR';
-        finishedJobState.message = "internal error";
+        job.state = 'ERROR';
+        job.message = "internal error";
     }
 
-    yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
+    yield context.df.callActivity("ACT1021JobUpdate", job);
     return outputs;
 });
 
