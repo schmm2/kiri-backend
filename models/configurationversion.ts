@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 import { createObjectTC } from "../graphql/createObjectTC";
 import { ConfigurationTC } from "./configuration";
+import { DeploymentTC } from "./deployment";
 
 const configurationversionSchema = new Schema({
     displayName: {
@@ -53,3 +54,17 @@ ConfigurationVersionTC.addRelation(
         projection: { configuration: true }, // point fields in source object, which should be fetched from DB
     }
 );
+
+/*
+ConfigurationTC.addRelation(
+    'deployment',
+    {
+        resolver: () => DeploymentTC.getResolver("findMany"),
+        prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
+            filter: (source) => ({
+                deployment: source.id
+            }),
+        },
+        projection: { deployment: true }, // point fields in source object, which should be fetched from DB
+    }
+);*/
