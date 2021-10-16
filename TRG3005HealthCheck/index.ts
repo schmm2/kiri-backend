@@ -6,19 +6,29 @@ import { Tenant } from "../models/tenant";
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
     
     const responseMessage = {
-        backendApi: true,
-        keyvault: false,
-        database: false
+        backendApi: {
+            status: true,
+            message: ""
+        },
+        keyvault: {
+            status: false,
+            message: ""
+        },
+        database: {
+            status: false,
+            message: ""
+        }
     }
 
     // ***** Check Database Connection *****
 
     try{
         Tenant.find();
-        responseMessage.database = true;
+        responseMessage.database.status = true;
         context.log("TRG3005HealthCheck", "access db")
     } catch(e){
         context.log("TRG3005HealthCheck", "unable to access db")
+        responseMessage.database.message = "unable to access db"
     }
 
     // ***** Check Key-Vault *****
@@ -38,14 +48,16 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             for await (let secretProperties of client.listPropertiesOfSecrets()) {
                 // loop through secrets if successfull
             }
-            responseMessage.keyvault = true;
+            responseMessage.keyvault.status = true;
         }
         catch {
             context.log("TRG3005HealthCheck", "KeyVault: unable to establish a connection");
+            responseMessage.keyvault.message = "unable to establish connection to keyvault " + keyVaultName
         }
     }
     else {
         context.log("TRG3005HealthCheck", "KeyVault: name not defined");
+        responseMessage.keyvault.message = "keyvault name not defined"
     }
 
     context.res = {
