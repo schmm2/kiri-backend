@@ -5,26 +5,30 @@ const config = {
     dbName: "kiri"
 };
 
-function createConnection() {
-    console.log("start mongodb connection");
+async function createConnection() {
+    console.log("mongodb: start connection");
 
     const mongodbConnectionString = process.env["mongodbConnectionString"];
+    let connectionEstablished = false;
 
     if (mongodbConnectionString) {
         console.log("mongodb: connectionstring defined");
-        
-        // connect db
-        mongoose.connect(mongodbConnectionString, {
-            useNewUrlParser: true,
-            dbName: config.dbName
-        }).then(() => {
-            console.log('MongoDB connected!!');
-        }).catch(err => {
-            console.log('Failed to connect to MongoDB', err);
-        });       
-    }else{
-        console.log("mongodb: connectionstring missing");
-        return;
+
+        try {
+            // connect db
+            await mongoose.connect(mongodbConnectionString, {
+                useNewUrlParser: true,
+                dbName: config.dbName
+            });
+            connectionEstablished = true;
+        } catch (error) {
+            console.log("mongodb: failed to connect to mongodb");
+        }
     }
+    else {
+        console.log("mongodb: connectionstring missing");
+    }
+    return connectionEstablished;
 }
+
 module.exports = createConnection;

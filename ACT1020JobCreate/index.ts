@@ -11,10 +11,8 @@
 
 import { AzureFunction, Context } from "@azure/functions"
 var mongoose = require('mongoose');
-const createMongooseClient = require('../shared/mongodb');
-createMongooseClient()
 
-const activityFunction: AzureFunction = async function (context: Context, jobParameters): Promise<string> {
+const activityFunction: AzureFunction = async function (context: Context, jobParameters): Promise<string> { 
     //console.log(jobParameters);
 
     let Job = mongoose.model('Job');

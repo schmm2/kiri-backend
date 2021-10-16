@@ -22,8 +22,11 @@ const BASIC_LOGGING = {
 };*/
 
 // Source: https://github.com/maximivanov/azure-function-graphql-typescript-starter/blob/main/graphql/index.ts
+
 // connect db
-createMongooseClient();
+createMongooseClient().then((dbConnectionEstablished) => {
+  console.log("graphql", "mongodb connection established " + dbConnectionEstablished.toString());
+});
 
 const server = new ApolloServer({
   schema: graphqlSchema,

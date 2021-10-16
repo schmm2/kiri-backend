@@ -10,9 +10,7 @@
  */
 
 import { AzureFunction, Context } from "@azure/functions"
-const createMongooseClient = require('../shared/mongodb');
 var mongoose = require('mongoose');
-createMongooseClient()
 
 const activityFunction: AzureFunction = async function (context: Context, job): Promise<string> {
     //console.log("ACT1021JobUpdate", job);

@@ -1,5 +1,4 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
-const createMongooseClient = require('../shared/mongodb');
 const { ConfigurationType } = require('../models/configurationtype');
 const { MsGraphResource } = require('../models/msgraphresource');
 import * as msgraphResourcesTemplate from '../models/documentTemplates/msgraphresources.json';
@@ -76,9 +75,6 @@ async function stageDatabase(context) {
 
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
     context.log('HTTP trigger function processed a request.');
-
-    // establish db connection
-    createMongooseClient();
 
     // prestage conent
     let reportCreatedObjects = await stageDatabase(context);

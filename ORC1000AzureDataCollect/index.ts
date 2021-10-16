@@ -10,10 +10,6 @@
  */
 
 import * as df from "durable-functions"
-const createMongooseClient = require('../shared/mongodb');
-
-// connect DB
-createMongooseClient();
 
 const orchestrator = df.orchestrator(function* (context) {
     if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "start");
