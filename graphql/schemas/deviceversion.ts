@@ -1,11 +1,11 @@
 const { DeviceVersionTC } = require("../../models/Deviceversion");
 
-export const deviceQuery = {
-    deviceById: DeviceVersionTC.getResolver("findById"),
-    deviceMany: DeviceVersionTC.getResolver('findMany'),
+export const deviceVersionQuery = {
+    deviceVersionById: DeviceVersionTC.getResolver("findById"),
+    deviceVersionMany: DeviceVersionTC.getResolver('findMany'),
 }
 
-export const deviceMutation = {
-    deviceCreateOne: DeviceVersionTC.getResolver("createOne"),
-    deviceRemoveMany: DeviceVersionTC.getResolver("removeMany")
+export const deviceVersionMutation = {
+    deviceVersionCreateOne: DeviceVersionTC.getResolver("createOne"),
+    deviceVersionRemoveMany: DeviceVersionTC.getResolver("removeMany")
 }

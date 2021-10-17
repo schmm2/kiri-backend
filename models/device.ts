@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 import { createObjectTC } from "../graphql/createObjectTC";
 import { TenantTC } from '../models/tenant';
+import { DeviceVersionTC } from '../models/deviceversion';
 
 const deviceSchema = new Schema({
     deviceId: {
@@ -30,3 +31,17 @@ DeviceTC.addRelation(
         projection: { tenant: true }, // point fields in source object, which should be fetched from DB
     }
 ); 
+
+DeviceTC.addRelation(
+    'newestDeviceVersions',
+    {
+        resolver: () => DeviceVersionTC.getResolver("findMany"),
+        prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
+            filter: (source) => ({
+                device: source.id,
+                successorVersion: null
+            }),
+        },
+        projection: { device: true, successorVersion: true }, // point fields in source object, which should be fetched from DB
+    }
+);

@@ -23,8 +23,9 @@ async function addDeviceVersion(deviceObjectFromGraph, deviceId, version) {
         version: version,
         device: deviceId,
         manufacturer: deviceObjectFromGraph.manufacturer ? deviceObjectFromGraph.manufacturer : '',
-        platform: deviceObjectFromGraph.operatingSystem ? deviceObjectFromGraph.operatingSystem : '',
+        operatingSystem: deviceObjectFromGraph.operatingSystem ? deviceObjectFromGraph.operatingSystem : '',
         osVersion: deviceObjectFromGraph.osVersion ? deviceObjectFromGraph.osVersion : '',
+        upn: deviceObjectFromGraph.userPrincipalName ? deviceObjectFromGraph.userPrincipalName : '',
     });
 }
 

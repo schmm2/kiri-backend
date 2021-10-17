@@ -12,7 +12,11 @@ const deviceversionSchema = new Schema({
         type: String,
         required: false,
     },
-    platform: {
+    operatingSystem: {
+        type: String,
+        required: false,
+    },
+    upn: {
         type: String,
         required: false,
     },
