@@ -159,7 +159,6 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     }
                 }
             }
-
         }
     };
     return {

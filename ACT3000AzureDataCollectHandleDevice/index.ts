@@ -77,13 +77,15 @@ const activityFunction: AzureFunction = async function (context: Context, parame
             context.log("ACT3000AzureDataCollectHandleDevice", "device " + device._id + " already exists in table");
 
             // get newest versions of this device
-            let storedDeviceVersions = await DeviceVersion.find({ device: device._id, successorVersion: null });
+            let newestStoredDeviceVersions = await DeviceVersion.find({ device: device._id, successorVersion: null });
+            let storedDeviceVersions = await DeviceVersion.find({ device: device._id });
+            
             // context.log(storedDeviceVersions);
 
             // check for object was found and the version property exists
-            if (storedDeviceVersions[0] && storedDeviceVersions[0].version) {
-                newestStoredDeviceVersion = storedDeviceVersions[0];
-                newestStoredDeviceVersionVersion = storedDeviceVersions[0].version;
+            if (newestStoredDeviceVersions[0] && newestStoredDeviceVersions[0].version) {
+                newestStoredDeviceVersion = newestStoredDeviceVersions[0];
+                newestStoredDeviceVersionVersion = newestStoredDeviceVersions[0].version;
                 // context.log("newest stored version: ", newestStoredDeviceVersion);
             } // else defaults to null
 
@@ -104,10 +106,14 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                         newestStoredDeviceVersion.save();
                     }
                 }
+
+                // remove older versions
+                if(storedDeviceVersions.length >= 5){
+                    // Todo: Cleanup
+                }   
             }
         }
     }
     return;
 }
-
 export default activityFunction;
