@@ -24,6 +24,10 @@ const deviceversionSchema = new Schema({
         type: String,
         required: false,
     },
+    osVersionName: {
+        type: String,
+        required: false,
+    },
     state: {
         type: String,
         enum : ['new','modified','deleted'],

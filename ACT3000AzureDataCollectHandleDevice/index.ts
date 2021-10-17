@@ -10,6 +10,8 @@
  */
 
 import { AzureFunction, Context } from "@azure/functions"
+import { osBuildToVersion }from "../utils/osBuildToVersion"
+
 var mongoose = require('mongoose');
 const crypto = require('crypto')
 
@@ -25,6 +27,7 @@ async function addDeviceVersion(deviceObjectFromGraph, deviceId, version) {
         manufacturer: deviceObjectFromGraph.manufacturer ? deviceObjectFromGraph.manufacturer : '',
         operatingSystem: deviceObjectFromGraph.operatingSystem ? deviceObjectFromGraph.operatingSystem : '',
         osVersion: deviceObjectFromGraph.osVersion ? deviceObjectFromGraph.osVersion : '',
+        osVersionName: osBuildToVersion(deviceObjectFromGraph.osVersion),
         upn: deviceObjectFromGraph.userPrincipalName ? deviceObjectFromGraph.userPrincipalName : '',
     });
 }
