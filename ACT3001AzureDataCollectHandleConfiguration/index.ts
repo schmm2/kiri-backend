@@ -113,7 +113,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
             else {
                 let configuration = configurations[0];
                 let newestStoredConfigurationVersion;
-                // store version separate -> avoid ts confligt
+                // store version separate -> avoid ts conflict
                 let newestStoredConfigurationVersionVersion = null;
 
                 context.log("ACT3001AzureDataCollectHandleConfiguration", "configuration does already exist:" + configuration._id);
@@ -157,10 +157,6 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                         newestStoredConfigurationVersion.isNewest = false;
                         newestStoredConfigurationVersion.save();
                     }
-                }
-                else {
-                    // else: no newer version, nothing needs to be done
-                    // context.log("same version")
                 }
             }
 

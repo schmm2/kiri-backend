@@ -8,18 +8,6 @@ const deviceSchema = new Schema({
         type: String,
         required: true
     },
-    value: {
-        type: String,
-        required: true
-    },
-    manufacturer: {
-        type: String,
-        required: false
-    },
-    version: {
-        type: String,
-        require: true
-    },
     tenant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tenant',

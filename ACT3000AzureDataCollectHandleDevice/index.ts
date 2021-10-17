@@ -13,45 +13,98 @@ import { AzureFunction, Context } from "@azure/functions"
 var mongoose = require('mongoose');
 const crypto = require('crypto')
 
+async function addDeviceVersion(deviceObjectFromGraph, deviceId, version) {
+    let DeviceVersion = mongoose.model('DeviceVersion');
+    const deviceObjectFromGraphJSON = JSON.stringify(deviceObjectFromGraph);
+
+    return DeviceVersion.create({
+        deviceName: deviceObjectFromGraph.deviceName,
+        value: deviceObjectFromGraphJSON,
+        version: version,
+        device: deviceId,
+        manufacturer: deviceObjectFromGraph.manufacturer ? deviceObjectFromGraph.manufacturer : '',
+        platform: deviceObjectFromGraph.operatingSystem ? deviceObjectFromGraph.operatingSystem : '',
+        osVersion: deviceObjectFromGraph.osVersion ? deviceObjectFromGraph.osVersion : '',
+    });
+}
+
 const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<string> {
     context.log("ACT3000AzureDataCollectHandleDevice", "Start Device handeling");
-    let Device = mongoose.model('Device');
-    let deviceListGraph = parameter.graphValue;
-    let tenant = parameter.tenant;
+    let Device = mongoose.model('Device')
+    let DeviceVersion = mongoose.model('DeviceVersion')
+
+    let deviceListGraph = parameter.graphValue
+    let tenant = parameter.tenant
 
     // check for new devices
     for (var i = 0; i < deviceListGraph.length; i++) {
-        const graphDeviceId = deviceListGraph[i].id;
-        //console.log(graphDeviceId);
+        const deviceObjectFromGraph = deviceListGraph[i];
+        const graphDeviceId = deviceObjectFromGraph.id;
+        const deviceObjectFromGraphJSON = JSON.stringify(deviceObjectFromGraph);
+        // we are unable to use the version property as it does not exist on all graph resources => use md5 hash instead
+        const deviceObjectFromGraphVersion = crypto.createHash('md5').update(deviceObjectFromGraphJSON).digest("hex");
 
+        // check if device is already in db
         let devices = await Device.find({ deviceId: graphDeviceId });
-        // console.log(devices);
 
+        // ****
+        // New Device
+        // if id does not exist in db, we found a new device
+        // ****
         if (devices.length == 0) {
-            context.log("found new device " + graphDeviceId);
-
-            // find manufacturer
-            let manufacturer = "";
-            if (deviceListGraph[i].manufacturer) {
-                manufacturer = deviceListGraph[i].manufacturer;
-            }
-
-            // version 
-            let deviceValueVersion = crypto.createHash('md5').update(JSON.stringify(deviceListGraph[i])).digest("hex");
+            context.log("ACT3000AzureDataCollectHandleDevice", "found new device " + graphDeviceId);
 
             // create new device element
-            Device.create({
+            let addDeviceResponse = await Device.create({
                 deviceId: graphDeviceId,
-                value: JSON.stringify(deviceListGraph[i]),
-                manufacturer: manufacturer,
-                version: deviceValueVersion,
                 tenant: tenant._id
-            }, function (err, newDevice) {
-                if (err) console.log(err);
-                else console.log(newDevice);
             });
-        } else {
-            context.log("device " + graphDeviceId + " already exists in table");
+
+            // device added succedfully, add deviceVersion
+            if (addDeviceResponse && addDeviceResponse._id) {
+                // create new device version element
+                let addDeviceVersionResponse = await addDeviceVersion(deviceObjectFromGraph, addDeviceResponse._id, deviceObjectFromGraphVersion);
+            }
+        }
+        // ****
+        // Existing Device
+        // Device does already exist
+        // ****
+        else {
+            let newestStoredDeviceVersion;
+            let newestStoredDeviceVersionVersion = null;
+            let device = devices[0];
+            context.log("ACT3000AzureDataCollectHandleDevice", "device " + device._id + " already exists in table");
+
+            // get newest versions of this device
+            let storedDeviceVersions = await DeviceVersion.find({ device: device._id, successorVersion: null });
+            // context.log(storedDeviceVersions);
+
+            // check for object was found and the version property exists
+            if (storedDeviceVersions[0] && storedDeviceVersions[0].version) {
+                newestStoredDeviceVersion = storedDeviceVersions[0];
+                newestStoredDeviceVersionVersion = storedDeviceVersions[0].version;
+                // context.log("newest stored version: ", newestStoredDeviceVersion);
+            } // else defaults to null
+
+            // ****
+            // New Device Version
+            // New version found, need to add the new version
+            // ****
+            if (deviceObjectFromGraphVersion != newestStoredDeviceVersionVersion) {
+                // context.log("configuration " + device.id + " new version found, add new device version");
+
+                let addDeviceVersionResponse = await addDeviceVersion(deviceObjectFromGraph, device._id, deviceObjectFromGraphVersion);
+                // context.log("new version: ", addDeviceVersionResponse);
+
+                if (addDeviceVersionResponse && addDeviceVersionResponse._id) {
+                    // set active configurationversion to old state if the objects exists
+                    if (newestStoredDeviceVersion) {
+                        newestStoredDeviceVersion.successorVersion = addDeviceVersionResponse._id;
+                        newestStoredDeviceVersion.save();
+                    }
+                }
+            }
         }
     }
     return;
