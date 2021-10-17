@@ -18,7 +18,11 @@ async function createConnection() {
             // connect db
             await mongoose.connect(mongodbConnectionString, {
                 useNewUrlParser: true,
-                dbName: config.dbName
+                dbName: config.dbName,
+                // https://stackoverflow.com/questions/52572852/deprecationwarning-collection-findandmodify-is-deprecated-use-findoneandupdate
+                useFindAndModify: false,
+                useUnifiedTopology: true,
+                useCreateIndex: true
             });
             connectionEstablished = true;
         } catch (error) {

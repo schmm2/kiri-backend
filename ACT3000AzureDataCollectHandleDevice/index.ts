@@ -10,14 +10,15 @@
  */
 
 import { AzureFunction, Context } from "@azure/functions"
-import { osBuildToVersion }from "../utils/osBuildToVersion"
+import { osBuildToVersion } from "../utils/osBuildToVersion"
 
 var mongoose = require('mongoose');
 const crypto = require('crypto')
 
 async function addDeviceVersion(deviceObjectFromGraph, deviceId, version) {
-    let DeviceVersion = mongoose.model('DeviceVersion');
+    const DeviceVersion = mongoose.model('DeviceVersion');
     const deviceObjectFromGraphJSON = JSON.stringify(deviceObjectFromGraph);
+    const osVersionName = osBuildToVersion(deviceObjectFromGraph.osVersion);
 
     return DeviceVersion.create({
         deviceName: deviceObjectFromGraph.deviceName,
@@ -27,7 +28,7 @@ async function addDeviceVersion(deviceObjectFromGraph, deviceId, version) {
         manufacturer: deviceObjectFromGraph.manufacturer ? deviceObjectFromGraph.manufacturer : '',
         operatingSystem: deviceObjectFromGraph.operatingSystem ? deviceObjectFromGraph.operatingSystem : '',
         osVersion: deviceObjectFromGraph.osVersion ? deviceObjectFromGraph.osVersion : '',
-        osVersionName: osBuildToVersion(deviceObjectFromGraph.osVersion),
+        osVersionName: osVersionName,
         upn: deviceObjectFromGraph.userPrincipalName ? deviceObjectFromGraph.userPrincipalName : '',
     });
 }
@@ -83,7 +84,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
             // get newest versions of this device
             let newestStoredDeviceVersions = await DeviceVersion.find({ device: device._id, successorVersion: null });
             let storedDeviceVersions = await DeviceVersion.find({ device: device._id });
-            
+
             // context.log(storedDeviceVersions);
 
             // check for object was found and the version property exists
@@ -112,12 +113,14 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 }
 
                 // remove older versions
-                if(storedDeviceVersions.length >= 5){
+                if (storedDeviceVersions.length >= 5) {
                     // Todo: Cleanup
-                }   
+                }
             }
         }
     }
-    return;
+    return JSON.stringify({
+        ok: true
+    });
 }
 export default activityFunction;

@@ -9,10 +9,10 @@
         },
         "fileLoggingMode": "always",
         "logLevel": {
-            "default": "Debug",
-            "Host.Results": "Debug",
-            "Function": "Debug",
-            "Host.Aggregator": "Trace"
+            "default": "Warning",
+            "Host.Results": "Warning",
+            "Function": "Warning",
+            "Host.Aggregator": "Warning"
         }
     },
     "extensionBundle": {
