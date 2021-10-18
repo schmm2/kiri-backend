@@ -25,7 +25,9 @@ const BASIC_LOGGING = {
 
 // connect db
 createMongooseClient().then((dbConnectionEstablished) => {
-  console.log("graphql", "mongodb connection established " + dbConnectionEstablished.toString());
+  console.log("graphql Function:", "mongodb connection established " + dbConnectionEstablished.toString());
+}).catch(error => {
+  console.error("graphql Function:", error);
 });
 
 const server = new ApolloServer({

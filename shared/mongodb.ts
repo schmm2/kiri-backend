@@ -17,20 +17,17 @@ async function createConnection() {
         try {
             // connect db
             await mongoose.connect(mongodbConnectionString, {
-                useNewUrlParser: true,
-                dbName: config.dbName,
-                // https://stackoverflow.com/questions/52572852/deprecationwarning-collection-findandmodify-is-deprecated-use-findoneandupdate
-                useFindAndModify: false,
-                useUnifiedTopology: true,
-                useCreateIndex: true
+                dbName: config.dbName
             });
             connectionEstablished = true;
         } catch (error) {
-            console.log("mongodb: failed to connect to mongodb");
+            console.error("mongodb: unable to connect");
+            throw new Error(error);
         }
     }
     else {
         console.log("mongodb: connectionstring missing");
+        throw new Error("mongodb: connectionstring missing");
     }
     return connectionEstablished;
 }
