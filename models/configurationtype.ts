@@ -33,7 +33,7 @@ export const ConfigurationTypeTC = createObjectTC({ model: ConfigurationType, cu
 ConfigurationTypeTC.addRelation(
     'configurations',
     {
-        resolver: () => ConfigurationTC.getResolver("findMany"),
+        resolver: () => ConfigurationTC.mongooseResolvers.dataLoaderMany(),
         prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
             filter: (source) => ({
                 configurationType: source.id
@@ -46,7 +46,7 @@ ConfigurationTypeTC.addRelation(
 ConfigurationTypeTC.addRelation(
     'msGraphResource',
     {
-        resolver: () => MsGraphResourceTC.getResolver("findById"),
+        resolver: () => MsGraphResourceTC.mongooseResolvers.findById(),
         prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
             _id: (source) => source.msGraphResource,
         },
@@ -54,7 +54,7 @@ ConfigurationTypeTC.addRelation(
     }
 );
 
-ConfigurationTypeTC.wrapResolverResolve('removeById', next => async rp => {
+ConfigurationTypeTC.mongooseResolvers.removeById().wrapResolve((next) => async rp => {
     // extend resolve params with hook
     rp.beforeRecordMutate = async (doc, resolveParams) => {
         console.log("ConfigurationTypeTC: check if doc can be delete safely");

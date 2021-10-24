@@ -1,4 +1,4 @@
-const { SchemaComposer } = require('graphql-compose');
+import { SchemaComposer } from 'graphql-compose';
 const schemaComposer = new SchemaComposer();
 
 const { tenantQuery, tenantMutation } = require('./tenant');

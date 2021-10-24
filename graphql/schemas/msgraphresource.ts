@@ -1,12 +1,12 @@
 const { MsGraphResourceTC } = require("../../models/msgraphresource");
 
 export const msGraphResourceQuery = {
-  msGraphResourceByIds: MsGraphResourceTC.getResolver("findByIds"),
-  msGraphResourceById: MsGraphResourceTC.getResolver("findById"),
-  msGraphResourceMany: MsGraphResourceTC.getResolver('findMany'),
+  msGraphResourceByIds: MsGraphResourceTC.mongooseResolvers.findByIds(),
+  msGraphResourceById: MsGraphResourceTC.mongooseResolvers.findById(),
+  msGraphResourceMany: MsGraphResourceTC.mongooseResolvers.findMany(),
 }
 
 export const msGraphResourceMutation = {
-  msGraphResourceCreateOne: MsGraphResourceTC.getResolver("createOne"),
-  msGraphResourceRemoveById: MsGraphResourceTC.getResolver("removeById")
+  msGraphResourceCreateOne: MsGraphResourceTC.mongooseResolvers.createOne(),
+  msGraphResourceRemoveById: MsGraphResourceTC.mongooseResolvers.removeById(),
 }

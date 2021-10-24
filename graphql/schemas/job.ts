@@ -1,12 +1,12 @@
 const { JobTC } = require("../../models/job");
 
 export const jobQuery = {
-  jobByIds: JobTC.getResolver("findByIds"),
-  jobById: JobTC.getResolver("findById"),
-  jobMany: JobTC.getResolver('findMany'),
+  jobByIds: JobTC.mongooseResolvers.findByIds(),
+  jobById: JobTC.mongooseResolvers.findById(),
+  jobMany: JobTC.mongooseResolvers.findMany(),
 }
 
 export const jobMutation = {
-  jobCreateOne: JobTC.getResolver("createOne"),
-  jobRemoveMany: JobTC.getResolver("removeMany"),
+  jobCreateOne: JobTC.mongooseResolvers.createOne(),
+  jobRemoveMany: JobTC.mongooseResolvers.removeMany(),
 }

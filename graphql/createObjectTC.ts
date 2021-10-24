@@ -1,4 +1,4 @@
-const { composeWithMongoose } = require("graphql-compose-mongoose");
+import { composeMongoose } from 'graphql-compose-mongoose';
 import { schemaComposer } from 'graphql-compose';
 
 export function createObjectTC({ model, customizationOptions = {} }) {
@@ -7,7 +7,7 @@ export function createObjectTC({ model, customizationOptions = {} }) {
     try {
         ModelTC = schemaComposer.getOTC(model.modelName);
     } catch {
-        ModelTC = composeWithMongoose(model, customizationOptions);
+        ModelTC = composeMongoose(model, customizationOptions);
     }
 
     return ModelTC;

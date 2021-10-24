@@ -24,7 +24,7 @@ export const DeviceTC = createObjectTC({ model: Device, customizationOptions: {}
 DeviceTC.addRelation(
     'tenant',
     {
-        resolver: () => TenantTC.getResolver("findById"),
+        resolver: () => TenantTC.mongooseResolvers.findById(),
         prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
             _id: (source) => source.tenant,
         },
@@ -35,7 +35,7 @@ DeviceTC.addRelation(
 DeviceTC.addRelation(
     'newestDeviceVersions',
     {
-        resolver: () => DeviceVersionTC.getResolver("findMany"),
+        resolver: () => DeviceVersionTC.mongooseResolvers.findMany(),
         prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
             filter: (source) => ({
                 device: source.id,

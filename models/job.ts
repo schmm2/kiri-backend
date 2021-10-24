@@ -38,7 +38,7 @@ export const JobTC = createObjectTC({ model: Job, customizationOptions: {} });
 JobTC.addRelation(
     'tenant',
     {
-        resolver: () => TenantTC.getResolver("findById"),
+        resolver: () => TenantTC.mongooseResolvers.findById(),
         prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
             _id: (source) => source.tenant,
         },

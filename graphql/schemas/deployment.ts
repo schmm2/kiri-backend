@@ -1,12 +1,12 @@
 import { DeploymentTC } from "../../models/deployment";
 
 export const deploymentQuery = {
-    deploymentById: DeploymentTC.getResolver("findById"),
-    deploymentMany: DeploymentTC.getResolver('findMany')
+    deploymentById: DeploymentTC.mongooseResolvers.findById(),
+    deploymentMany: DeploymentTC.mongooseResolvers.findMany()
 }
 
 export const deploymentMutation = {
-    deploymentCreateOne: DeploymentTC.getResolver("createOne"),
-    deploymentUpdateOne: DeploymentTC.getResolver("updateOne"),
-    deploymentRemoveById: DeploymentTC.getResolver("removeById")
+    deploymentCreateOne: DeploymentTC.mongooseResolvers.createOne(),
+    deploymentUpdateOne: DeploymentTC.mongooseResolvers.updateOne(),
+    deploymentRemoveById: DeploymentTC.mongooseResolvers.removeById()
 }

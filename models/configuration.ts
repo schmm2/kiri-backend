@@ -33,7 +33,7 @@ export const ConfigurationTC = createObjectTC({ model: Configuration, customizat
 ConfigurationTC.addRelation(
     'tenant',
     {
-        resolver: () => TenantTC.getResolver("findById"),
+        resolver: () => TenantTC.mongooseResolvers.findById(),
         prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
             _id: (source) => source.tenant,
         },
@@ -44,7 +44,7 @@ ConfigurationTC.addRelation(
 ConfigurationTC.addRelation(
     'configurationType',
     {
-        resolver: () => ConfigurationTypeTC.getResolver("findById"),
+        resolver: () => ConfigurationTypeTC.mongooseResolvers.findById(),
         prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
             _id: (source) => source.configurationType,
         },
@@ -55,7 +55,7 @@ ConfigurationTC.addRelation(
 ConfigurationTC.addRelation(
     'configurationVersions',
     {
-        resolver: () => ConfigurationVersionTC.getResolver("findMany"),
+        resolver: () => ConfigurationVersionTC.mongooseResolvers.findMany(),
         prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
             filter: (source) => ({
                 configuration: source.id
@@ -68,12 +68,12 @@ ConfigurationTC.addRelation(
 ConfigurationTC.addRelation(
     'newestActiveConfigurationVersions',
     {
-        resolver: () => ConfigurationVersionTC.getResolver("findMany"),
+        resolver: () => ConfigurationVersionTC.mongooseResolvers.findMany(),
         prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
             filter: (source) => ({
                 configuration: source.id,
                 isNewest: true,
-                state: { "$ne": 'deleted'}
+                state: { "$ne": 'deleted' }
             }),
         },
         projection: { configuration: true, isNewest: true }, // point fields in source object, which should be fetched from DB
@@ -83,7 +83,21 @@ ConfigurationTC.addRelation(
 ConfigurationTC.addRelation(
     'newestConfigurationVersions',
     {
-        resolver: () => ConfigurationVersionTC.getResolver("findMany"),
+        resolver: () => ConfigurationVersionTC.mongooseResolvers.findMany(),
+        prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
+            filter: (source) => ({
+                configuration: source.id,
+                isNewest: true
+            }),
+        },
+        projection: { configuration: true, isNewest: true }, // point fields in source object, which should be fetched from DB
+    }
+);
+
+ConfigurationTC.addRelation(
+    'newestConfigurationVersion',
+    {
+        resolver: () => ConfigurationVersionTC.mongooseResolvers.findOne(),
         prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
             filter: (source) => ({
                 configuration: source.id,

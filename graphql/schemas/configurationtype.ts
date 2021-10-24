@@ -1,12 +1,12 @@
 const { ConfigurationTypeTC } = require("../../models/configurationtype");
 
 export const configurationTypeQuery = {
-    configurationTypeByIds: ConfigurationTypeTC.getResolver("findByIds"),
-    configurationTypeById: ConfigurationTypeTC.getResolver("findById"),
-    configurationTypeMany: ConfigurationTypeTC.getResolver('findMany'),
+    configurationTypeByIds: ConfigurationTypeTC.mongooseResolvers.findByIds(),
+    configurationTypeById: ConfigurationTypeTC.mongooseResolvers.findById(),
+    configurationTypeMany: ConfigurationTypeTC.mongooseResolvers.findMany()
 }
 
 export const configurationTypeMutation = {
-    configurationTypeCreateOne: ConfigurationTypeTC.getResolver("createOne"),
-    configurationTypeRemoveById: ConfigurationTypeTC.getResolver("removeById")
+    configurationTypeCreateOne: ConfigurationTypeTC.mongooseResolvers.createOne(),
+    configurationTypeRemoveById: ConfigurationTypeTC.mongooseResolvers.removeById()
 }

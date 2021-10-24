@@ -1,13 +1,19 @@
 const mongoose = require('mongoose');
 import { createObjectTC } from '../graphql/createObjectTC';
-import { ConfigurationVersionTC } from "./configurationversion";
+import { ConfigurationTC } from "./configuration";
+import { TenantTC } from "./tenant";
 
 const deploymentSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true
     },
-    configurationVersions: {
+    configurations: {
+        type: [mongoose.Schema.Types.ObjectId],
+        require: false,
+        default: []
+    },
+    tenants: {
         type: [mongoose.Schema.Types.ObjectId],
         require: false,
         default: []
@@ -20,12 +26,23 @@ export const Deployment = mongoose.models.Deployment || mongoose.model('Deployme
 export const DeploymentTC = createObjectTC({ model: Deployment, customizationOptions: {} });
 
 DeploymentTC.addRelation(
-    'configurationVersions',
+    'configurations',
     {
-        resolver: () => ConfigurationVersionTC.getResolver("findMany"),
-        prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
-            _ids: (source) => source.configurationVerions,
+        resolver: () => ConfigurationTC.mongooseResolvers.findByIds(),
+        prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
+            _ids: (source) => source.configurations,
         },
-        projection: { configurationVersions: 1 }, // point fields in source object, which should be fetched from DB
+        projection: { configurations: 1 }, // point fields in source object, which should be fetched from DB
+    }
+);
+
+DeploymentTC.addRelation(
+    'tenants',
+    {
+        resolver: () => TenantTC.mongooseResolvers.findByIds(),
+        prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
+            _ids: (source) => source.tenants,
+        },
+        projection: { tenants: 1 }, // point fields in source object, which should be fetched from DB
     }
 );

@@ -63,7 +63,7 @@ export const DeviceVersionTC = createObjectTC({ model: DeviceVersion, customizat
 DeviceVersionTC.addRelation(
     'device',
     {
-        resolver: () => DeviceTC.getResolver("findById"),
+        resolver: () => DeviceTC.mongooseResolvers.findById(),
         prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
             _id: (source) => source.device,
         },
