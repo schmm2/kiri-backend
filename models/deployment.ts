@@ -13,6 +13,11 @@ const deploymentSchema = new mongoose.Schema({
         require: false,
         default: []
     },
+    executionDate: {
+        type: mongoose.Schema.Types.Date,
+        require: false,
+        default: null
+    },
     tenants: {
         type: [mongoose.Schema.Types.ObjectId],
         require: false,

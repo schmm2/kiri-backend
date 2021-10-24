@@ -74,16 +74,22 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
 
     if (tenantDetails.tenantId && tenantDetails.appId) {
         context.log("ACT2001MsGraphAccessTokenCreate", "all parameters ok");
+        context.log("ACT2001MsGraphAccessTokenCreate", "appId: " + tenantDetails.appId);
 
         // Get Secret from KeyVault
         let retrievedSecret = null;
+        let test = JSON.stringify(await client.getSecret(tenantDetails.appId));
+        context.log(test)
         try {
+            context.log("ACT2001MsGraphAccessTokenCreate", "get secret");
             retrievedSecret = await client.getSecret(tenantDetails.appId);
         }
         catch (error) {
             context.log("ACT2001MsGraphAccessTokenCreate", "Error, unable to get Secret from KeyVault")
             if(error.errorResponse && error.errorResponse.errorDescription ){
                 context.log("ACT2001MsGraphAccessTokenCreate", error.errorResponse.errorDescription)
+            }else{
+                context.log(JSON.stringify(error));
             }
             return createErrorResponse("unable to get Secret from KeyVault");
         }

@@ -16,7 +16,8 @@ const configurationSchema = new mongoose.Schema({
     tenant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tenant',
-        required: true
+        required: true,
+        index: true
     },
     configurationType: {
         type: mongoose.Schema.Types.ObjectId,
@@ -33,7 +34,7 @@ export const ConfigurationTC = createObjectTC({ model: Configuration, customizat
 ConfigurationTC.addRelation(
     'tenant',
     {
-        resolver: () => TenantTC.mongooseResolvers.findById(),
+        resolver: () => TenantTC.mongooseResolvers.findById({ lean: true }),
         prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
             _id: (source) => source.tenant,
         },
@@ -44,7 +45,7 @@ ConfigurationTC.addRelation(
 ConfigurationTC.addRelation(
     'configurationType',
     {
-        resolver: () => ConfigurationTypeTC.mongooseResolvers.findById(),
+        resolver: () => ConfigurationTypeTC.mongooseResolvers.findById({ lean: true }),
         prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
             _id: (source) => source.configurationType,
         },
@@ -55,7 +56,7 @@ ConfigurationTC.addRelation(
 ConfigurationTC.addRelation(
     'configurationVersions',
     {
-        resolver: () => ConfigurationVersionTC.mongooseResolvers.findMany(),
+        resolver: () => ConfigurationVersionTC.mongooseResolvers.findMany({ lean: true }),
         prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
             filter: (source) => ({
                 configuration: source.id
@@ -97,7 +98,7 @@ ConfigurationTC.addRelation(
 ConfigurationTC.addRelation(
     'newestConfigurationVersion',
     {
-        resolver: () => ConfigurationVersionTC.mongooseResolvers.findOne(),
+        resolver: () => ConfigurationVersionTC.mongooseResolvers.findOne({ lean: true }),
         prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
             filter: (source) => ({
                 configuration: source.id,

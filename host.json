@@ -11,7 +11,7 @@
         "logLevel": {
             "default": "Warning",
             "Host.Results": "Warning",
-            "Function": "Warning",
+            "Function": "Debug",
             "Host.Aggregator": "Warning"
         }
     },
