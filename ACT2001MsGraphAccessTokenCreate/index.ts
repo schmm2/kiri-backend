@@ -78,8 +78,6 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
 
         // Get Secret from KeyVault
         let retrievedSecret = null;
-        let test = JSON.stringify(await client.getSecret(tenantDetails.appId));
-        context.log(test)
         try {
             context.log("ACT2001MsGraphAccessTokenCreate", "get secret");
             retrievedSecret = await client.getSecret(tenantDetails.appId);

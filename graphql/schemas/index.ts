@@ -9,6 +9,7 @@ const { configurationQuery, configurationMutation } = require ('./configuration'
 const { configurationVersionQuery, configurationVersionMutation } = require('./configurationversion');
 const { jobQuery, jobMutation } = require('./job');
 const { deploymentQuery, deploymentMutation } = require('./deployment');
+const { deploymentReferenceQuery, deploymentReferenceMutation } = require('./deploymentreference');
 const { deviceVersionQuery, deviceVersionMutation } = require('./deviceversion')
 
 schemaComposer.Query.addFields({
@@ -20,7 +21,8 @@ schemaComposer.Query.addFields({
     ...configurationQuery,
     ...jobQuery,
     ...deploymentQuery,
-    ...deviceVersionQuery
+    ...deviceVersionQuery,
+    ...deploymentReferenceQuery
 })
 
 schemaComposer.Mutation.addFields({
@@ -32,7 +34,8 @@ schemaComposer.Mutation.addFields({
     ...configurationMutation,
     ...jobMutation,
     ...deploymentMutation,
-    ...deviceVersionMutation
+    ...deviceVersionMutation,
+    ...deploymentReferenceMutation
 })
 
 module.exports = schemaComposer.buildSchema(); 

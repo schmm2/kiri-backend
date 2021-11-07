@@ -34,7 +34,7 @@ export const ConfigurationTC = createObjectTC({ model: Configuration, customizat
 ConfigurationTC.addRelation(
     'tenant',
     {
-        resolver: () => TenantTC.mongooseResolvers.findById({ lean: true }),
+        resolver: () => TenantTC.mongooseResolvers.findById({lean: true}),
         prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
             _id: (source) => source.tenant,
         },

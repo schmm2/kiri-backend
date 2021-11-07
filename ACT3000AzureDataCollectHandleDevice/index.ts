@@ -11,9 +11,9 @@
 
 import { AzureFunction, Context } from "@azure/functions"
 import { osBuildToVersion } from "../utils/osBuildToVersion"
+import { createSettingsHash } from "../utils/createSettingsHash";
 
 var mongoose = require('mongoose');
-const crypto = require('crypto')
 
 async function addDeviceVersion(deviceObjectFromGraph, deviceId, version) {
     const DeviceVersion = mongoose.model('DeviceVersion');
@@ -47,7 +47,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
         const graphDeviceId = deviceObjectFromGraph.id;
         const deviceObjectFromGraphJSON = JSON.stringify(deviceObjectFromGraph);
         // we are unable to use the version property as it does not exist on all graph resources => use md5 hash instead
-        const deviceObjectFromGraphVersion = crypto.createHash('md5').update(deviceObjectFromGraphJSON).digest("hex");
+        const deviceObjectFromGraphVersion = createSettingsHash(deviceObjectFromGraph);
 
         // check if device is already in db
         let devices = await Device.find({ deviceId: graphDeviceId });

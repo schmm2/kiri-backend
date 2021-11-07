@@ -11,7 +11,7 @@
 
 import { AzureFunction, Context } from "@azure/functions"
 var mongoose = require('mongoose');
-const crypto = require('crypto')
+import { createSettingsHash } from '../utils/createSettingsHash';
 
 const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<any> {
     context.log("ACT3001AzureDataCollectHandleConfiguration", "Start Configuration Handeling");
@@ -35,6 +35,8 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
             let configurationObjectFromGraph = configurationListGraph[i];
             let configurations = await Configuration.find({ graphId: configurationObjectFromGraph.id });
+            // we are unable to use the version property as it does not exist on all graph resources => use md5 hash instead
+            let configurationObjectFromGraphVersion = createSettingsHash(configurationObjectFromGraph);
 
             // ****
             // New Configuration
@@ -82,20 +84,25 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                         // context.log("created new configuration element");
                         // context.log("created configuration response: " + JSON.stringify(addConfigurationResponse));
 
-                        // Create Configuration Version
+                        // complete object
                         let configurationObjectFromGraphJSON = JSON.stringify(configurationObjectFromGraph);
-                        let version = crypto.createHash('md5').update(configurationObjectFromGraphJSON).digest("hex");
 
                         // configuration added succedfully, add configVersion
                         if (addConfigurationResponse && addConfigurationResponse._id) {
-                            let addConfigurationVersionResponse = await ConfigurationVersion.create({
-                                displayName: configurationObjectFromGraph.displayName,
-                                graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime,
-                                value: configurationObjectFromGraphJSON,
-                                version: version,
-                                isNewest: true,
-                                configuration: addConfigurationResponse._id
-                            });
+                            try {
+                                let addConfigurationVersionResponse = await ConfigurationVersion.create({
+                                    displayName: configurationObjectFromGraph.displayName,
+                                    graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime,
+                                    value: configurationObjectFromGraphJSON,
+                                    version: configurationObjectFromGraphVersion,
+                                    isNewest: true,
+                                    configuration: addConfigurationResponse._id
+                                });
+                            } catch {
+                                context.log.error("unable to create configuration version")
+                                context.log.error(configurationObjectFromGraphJSON)
+                                throw new Error("unable to create configuration version")
+                            }
                         }
                     } else {
                         context.log("unable to find configuration type in database for name: " + configurationTypeName);
@@ -129,8 +136,6 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     // context.log("newest stored version: ", newestStoredConfigurationVersion);
                 } // else defaults to null
 
-                // we are unable to use the version property as it does not exist on all graph resources => use md5 hash instead
-                let configurationObjectFromGraphVersion = crypto.createHash('md5').update(JSON.stringify(configurationObjectFromGraph)).digest("hex");
                 // context.log("graph hash version", configurationObjectFromGraphVersion);
                 // context.log("stored hash version", newestStoredConfigurationVersion.version);
 
@@ -140,16 +145,24 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 // ****
                 if (configurationObjectFromGraphVersion != newestStoredConfigurationVersionVersion) {
                     // context.log("configuration " + configuration.id + " new version found, add new configuration version");
+                    let configurationObjectFromGraphJSON = JSON.stringify(configurationObjectFromGraph)
 
-                    let addConfigurationVersionResponse = await ConfigurationVersion.create({
-                        value: JSON.stringify(configurationObjectFromGraph),
-                        version: configurationObjectFromGraphVersion,
-                        configuration: configuration._id,
-                        isNewest: true,
-                        state: "modified",
-                        displayName: configurationObjectFromGraph.displayName,
-                        graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime
-                    });
+                    try {
+                        let addConfigurationVersionResponse = await ConfigurationVersion.create({
+                            value: configurationObjectFromGraphJSON,
+                            version: configurationObjectFromGraphVersion,
+                            configuration: configuration._id,
+                            isNewest: true,
+                            state: "modified",
+                            displayName: configurationObjectFromGraph.displayName,
+                            graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime
+                        });
+                    }
+                    catch {
+                        context.log.error("unable to create configuration version")
+                        context.log.error(configurationObjectFromGraphJSON)
+                        throw new Error("unable to create configuration version: " + configurationObjectFromGraphJSON);
+                    }
                     // context.log("new version: ", addConfigurationVersionResponse);
 
                     // set active configurationversion to old state if the objects exists

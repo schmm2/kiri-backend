@@ -52,8 +52,14 @@ const activityFunction: AzureFunction = async function (context: Context, msGrap
         let client = await getClient(msGraphResource.accessToken);
 
         if (msGraphResource.graphResourceUrl) {
+            // build filter
+            let filter = "";
+            if(msGraphResource.filter){
+                filter = msGraphResource.filter;
+            }
+            
             //console.log("query resources " + msGraphResource.graphResourceUrl )
-            response = await queryGraphAPI(client, msGraphResource.graphResourceUrl);
+            response = await queryGraphAPI(client, msGraphResource.graphResourceUrl, filter);
         } else {
             console.log("No API Url defined")
         }

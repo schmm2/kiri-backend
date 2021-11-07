@@ -15,7 +15,8 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     console.log("ACT2011MsGraphCreateDataValidation", "start");
 
     let msGraphResourceUrl = parameter.msGraphResourceUrl;
-    console.log(msGraphResourceUrl);
+    //console.log(msGraphResourceUrl);
+    
     let dataObject = parameter.dataObject;
 
     // modify data, otherwise it will be rejected by graph api

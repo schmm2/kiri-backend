@@ -16,10 +16,12 @@ const orchestrator = df.orchestrator(function* (context) {
     // get deployment
     let deploymentId = queryParameters.deploymentId;
     let deployment = yield context.df.callActivity("ACT1050DeploymentGetById", deploymentId);
-
+    
     if (deployment) {
         context.log(functionName, "found deployment " + deploymentId);
+        
         let tenants = deployment.tenants
+        let configurationIds = deployment.configurations
 
         for (let t = 0; t < tenants.length; t++) {
             let tenantId = tenants[t];
@@ -44,7 +46,29 @@ const orchestrator = df.orchestrator(function* (context) {
                 if (accessTokenResponse.body.ok) {
                     if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "got an accessToken");
 
-                    //let msGraphResourcesconfiguration = yield context.df.callActivity("ACT2000MsGraphQuery");
+                    for (let c = 0; c < configurationIds.length; c++) {
+                        let configurationId = configurationIds[c];
+
+                        // get configuration
+                        let configuration = yield context.df.callActivity("ACT1061ConfigurationGetById", configurationId);
+                        context.log(configuration);
+
+                        // get msgraphresource url
+                        let msGraphResource = yield context.df.callActivity("ACT1060ConfigurationGetMsGraphResource", configurationId);
+                        //context.log(msGraphResource);
+
+                        let filter = "displayName eq " + configuration.displayName
+
+                        // query graph api
+                        let graphQueryParameters = {
+                            graphResourceUrl: msGraphResource.resource,
+                            accessToken: accessTokenResponse.body.accessToken,
+                            filter: filter
+                        }
+                        
+                        let msGraphConfiguration = yield context.df.callActivity("ACT2000MsGraphQuery", graphQueryParameters);
+                        context.log(msGraphConfiguration)
+                    }
                 }
             }
         }
