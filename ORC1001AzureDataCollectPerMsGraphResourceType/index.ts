@@ -26,6 +26,19 @@ function handleGroupPolicyConfigurations(context, paramter) {
     return provisioningTasks;
 }
 
+function handleConfigurations(context, paramter) {
+    const provisioningTasks = [];
+    // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
+
+    for (let i = 0; i < paramter.graphValue.length; i++) {
+        //const child_id = context.df.instanceId + `:${i}`;
+        let payload = { ...paramter }
+        payload.graphValue = paramter.graphValue[i];    
+        provisioningTasks.push(context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", payload));
+    }
+    if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "started " + provisioningTasks.length + " tasks")
+    return provisioningTasks;
+}
 
 function createSubORCTasksForEachGraphValue(context, paramter, subOrchestrator, idOffset) {
     const provisioningTasks = [];
@@ -67,10 +80,11 @@ const orchestrator = df.orchestrator(function* (context) {
 
         // build parameter for activities or orchestrator calls
         let parameter = {
-            graphValue: msGraphResponseValue,
+            graphItemId: msGraphResponseValue.id,
             graphResourceUrl: queryParameters.graphResourceUrl,
             tenant: queryParameters.tenant,
-            accessToken: queryParameters.accessToken
+            accessToken: queryParameters.accessToken,
+            graphValue: null
         }
 
         // check if ms graph resource needs further data resolved by id
@@ -100,7 +114,9 @@ const orchestrator = df.orchestrator(function* (context) {
                 response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break;
             default:
-                response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
+                let tasksConfigurations = handleConfigurations(context, parameter);
+                response = yield context.df.Task.all(tasksConfigurations);
+                //response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break
         }
 

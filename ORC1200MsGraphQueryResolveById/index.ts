@@ -11,7 +11,7 @@ const orchestrator = df.orchestrator(function* (context) {
     queryParameters = context.df.getInput();
 
     let graphResourceUrl = queryParameters.graphResourceUrl;
-    let graphItemId = queryParameters.graphValue.id;
+    let graphItemId = queryParameters.graphItemId;
 
     let graphQueryResource = {
         graphResourceUrl: graphResourceUrl + "/" + graphItemId,

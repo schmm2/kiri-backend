@@ -10,10 +10,13 @@
  */
 
 import { AzureFunction, Context } from "@azure/functions"
-import { Job } from '../models/job'
+import { ConfigurationVersion } from "../models/configurationversion"
 
-const activityFunction: AzureFunction = async function (context: Context, jobParameters): Promise<string> {
-    return await Job.create(jobParameters);
+const activityFunction: AzureFunction = async function (context: Context, configurationId): Promise<string> {
+    let configurationVersions = await ConfigurationVersion.find({ configuration: configurationId, isNewest: true });
+    if (configurationVersions.length == 1) {
+        return configurationVersions[0]
+    }
+    return;
 };
-
 export default activityFunction;

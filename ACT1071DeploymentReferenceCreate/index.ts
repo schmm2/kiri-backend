@@ -10,10 +10,12 @@
  */
 
 import { AzureFunction, Context } from "@azure/functions"
-import { Job } from '../models/job'
+import { DeploymentReference } from '../models/deploymentreference'
 
-const activityFunction: AzureFunction = async function (context: Context, jobParameters): Promise<string> {
-    return await Job.create(jobParameters);
+const activityFunction: AzureFunction = async function (context: Context, deploymentReferenceParameter): Promise<string> {
+    context.log("-----------------zzzzzzzzzz-----------");
+    context.log(deploymentReferenceParameter);
+    return await DeploymentReference.create(deploymentReferenceParameter);
 };
 
 export default activityFunction;

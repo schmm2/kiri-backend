@@ -6,5 +6,5 @@
       "direction": "in"
     }
   ],
-  "scriptFile": "../dist/ACT1070DeploymentReferenceByTenantId/index.js"
+  "scriptFile": "../dist/ACT1071DeploymentReferenceCreate/index.js"
 }

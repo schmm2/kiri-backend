@@ -12,8 +12,8 @@
 import { AzureFunction, Context } from "@azure/functions"
 import { DeploymentReference } from '../models/deploymentreference'
 
-const activityFunction: AzureFunction = async function (context: Context, tenantId): Promise<string> {
-    return DeploymentReference.find({ tenant: tenantId })
+const activityFunction: AzureFunction = async function (context: Context, deploymentId): Promise<string> {
+    return DeploymentReference.find({ deployment: deploymentId })
 };
 
 export default activityFunction;

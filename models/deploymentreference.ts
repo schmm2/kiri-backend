@@ -25,10 +25,10 @@ const deploymentReferenceSchema = new mongoose.Schema({
     timestamps: true
 });
 
-export const DeploymentReference = mongoose.models.Deployment || mongoose.model('DeploymentReference', deploymentReferenceSchema);
+export const DeploymentReference = mongoose.models.DeploymentReference || mongoose.model('DeploymentReference', deploymentReferenceSchema);
 export const DeploymentReferenceTC = createObjectTC({ model: DeploymentReference, customizationOptions: {} });
 
-DeploymentTC.addRelation(
+DeploymentReferenceTC.addRelation(
     'deployment',
     {
         resolver: () => DeploymentTC.mongooseResolvers.findById({ lean: true }),
@@ -39,7 +39,7 @@ DeploymentTC.addRelation(
     }
 );
 
-ConfigurationTC.addRelation(
+DeploymentReferenceTC.addRelation(
     'sourceConfiguration',
     {
         resolver: () => ConfigurationTC.mongooseResolvers.findById({ lean: true }),
@@ -50,7 +50,7 @@ ConfigurationTC.addRelation(
     }
 );
 
-ConfigurationTC.addRelation(
+DeploymentReferenceTC.addRelation(
     'destinationConfiguration',
     {
         resolver: () => ConfigurationTC.mongooseResolvers.findById({ lean: true }),
@@ -61,7 +61,7 @@ ConfigurationTC.addRelation(
     }
 );
 
-ConfigurationTC.addRelation(
+DeploymentReferenceTC.addRelation(
     'tenant',
     {
         resolver: () => TenantTC.mongooseResolvers.findById({ lean: true }),

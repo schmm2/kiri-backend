@@ -19,9 +19,11 @@ const orchestrator = df.orchestrator(function* (context) {
 
     let tenantDbId = queryParameters.tenantDbId;
     let configurationVersionDbId = queryParameters.configurationVersionDbId;
-    let msGraphResource = queryParameters.msGraphResource;
-    let msGraphResourceUrl = msGraphResource.resource;
+    let msGraphResourceUrl = queryParameters.msGraphResourceUrl;
     let configurationDisplayName = queryParameters.configurationName
+
+    let newConfigurationId;
+    let newConfiguration;
 
     // Create Job
     let jobData = {
@@ -78,16 +80,19 @@ const orchestrator = df.orchestrator(function* (context) {
                 if (msGraphResponse.message && msGraphResponse.message.code) {
                     context.log(msGraphResponse);
                     finishedJobState.message = "Error: " + msGraphResponse.message.code;
-                    if(msGraphResponse.message.body){
+                    if (msGraphResponse.message.body) {
                         let responseMessage = JSON.parse(msGraphResponse.message.body)
                         responseMessage = (JSON.parse(responseMessage.message)).Message
-                        finishedJobState.message += ", Message: "+ responseMessage
+                        finishedJobState.message += ", Message: " + responseMessage
                     }
                 }
                 finishedJobState.state = 'ERROR'
             } else {
                 // get id of just created new config
-                let newConfigurationId = msGraphResponse.message.id;
+                newConfigurationId = msGraphResponse.message.id;
+
+                // get full object
+                newConfiguration = msGraphResponse.message;
 
                 // ***
                 // Group Policy
@@ -108,12 +113,14 @@ const orchestrator = df.orchestrator(function* (context) {
                             dataObject: gpoSetting
                         }
                         let createDefinitionValuesResponse = yield context.df.callActivity("ACT2003MsGraphPost", newGpoDefinitionValue);
-                        
-                        if(!createDefinitionValuesResponse.ok){
+
+                        if (!createDefinitionValuesResponse.ok) {
                             // Todo
                         }
                     }
                 }
+                // return newly created config
+                return newConfiguration;
             }
         } else {
             finishedJobState.message = 'Invalid Parameters, unable to find configurationVersion';
@@ -126,6 +133,8 @@ const orchestrator = df.orchestrator(function* (context) {
 
     let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
     // console.log(updatedJobResponse);
+
+    return finishedJobState;
 });
 
 export default orchestrator;

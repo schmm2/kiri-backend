@@ -12,15 +12,16 @@
 import * as df from "durable-functions"
 
 const orchestrator = df.orchestrator(function* (context) {
-    console.log("ORC1100MsGraphConfigurationUpdate", "start");
+    if (!context.df.isReplaying) context.log("ORC1100MsGraphConfigurationUpdate", "start");
 
+    let response = null;
     const queryParameters: any = context.df.getInput();
     // console.log(queryParameters);
 
     let tenantDbId = queryParameters.tenantDbId;
     let configurationVersionDbId = queryParameters.configurationVersionDbId;
-    let msGraphResource = queryParameters.msGraphResource;
-    let msGraphResourceUrl = msGraphResource.resource;
+    let msGraphResourceUrl = queryParameters.msGraphResourceUrl;
+    let accessToken = queryParameters.accessToken;
 
     // Create Job
     let jobData = {
@@ -47,7 +48,7 @@ const orchestrator = df.orchestrator(function* (context) {
     // console.log("ORC1100MsGraphConfigurationUpdate, new Configuration Version", newConfigurationVersion);
 
     if (accessTokenResponse.body.accessToken && newConfigurationVersion) {
-        console.log("ORC1100MsGraphConfigurationUpdate", "parameters ok");
+        if (!context.df.isReplaying) context.log("ORC1100MsGraphConfigurationUpdate", "parameters ok");
 
         let accessToken = accessTokenResponse.body.accessToken;
         let newConfigurationVersionValue = JSON.parse(newConfigurationVersion.value);
@@ -68,6 +69,8 @@ const orchestrator = df.orchestrator(function* (context) {
 
         // console.log("ORC1100MsGraphConfigurationUpdate, patch parameter", patchParameter);
         let msGraphPatchResponse = yield context.df.callActivity("ACT2002MsGraphPatch", patchParameter);
+        response = msGraphPatchResponse;
+
         // console.log(msGraphPatchResponse);
 
         if (!msGraphPatchResponse.ok) {
@@ -113,9 +116,9 @@ const orchestrator = df.orchestrator(function* (context) {
                         dataObject: deleteDefinitionValuesPayload
                     }
                     // delete existing ids
-                    console.log(graphPostDefinitionValues);
+                    if (!context.df.isReplaying) context.log(graphPostDefinitionValues);
                     let deleteDefinitionValuesResponse = yield context.df.callActivity("ACT2003MsGraphPost", graphPostDefinitionValues);
-                    console.log(deleteDefinitionValuesResponse);
+                    if (!context.df.isReplaying) context.log(deleteDefinitionValuesResponse);
 
                     // add new definitionValues
                     for(let i = 0; i < newConfigurationVersionValue.gpoSettings.length; i++){
@@ -138,6 +141,8 @@ const orchestrator = df.orchestrator(function* (context) {
 
     let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
     // console.log(updatedJobResponse);
+
+    return response;
 });
 
 export default orchestrator;
