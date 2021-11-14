@@ -34,8 +34,8 @@ const orchestrator = df.orchestrator(function* (context) {
     let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
     let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
 
-    if (accessTokenResponse && accessTokenResponse.body) {
-        if (accessTokenResponse.body.ok) {
+    if (accessTokenResponse.accessToken) {
+        if (accessTokenResponse.ok) {
             if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "got an accessToken");
 
             let msGraphResources = yield context.df.callActivity("ACT1000MsGraphResourceGetAll");
@@ -46,7 +46,7 @@ const orchestrator = df.orchestrator(function* (context) {
             for (let i = 0; i < msGraphResources.length; i++) {
                 const child_id = context.df.instanceId + `:${i}`;
                 let payload = {
-                    accessToken: accessTokenResponse.body.accessToken,
+                    accessToken: accessTokenResponse.accessToken,
                     graphResourceUrl: msGraphResources[i].resource,
                     msGraphResourceName: msGraphResources[i].name,
                     objectDeepResolve: msGraphResources[i].objectDeepResolve,
@@ -56,16 +56,18 @@ const orchestrator = df.orchestrator(function* (context) {
                 provisioningTasks.push(context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id));
             }
             if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "started " + provisioningTasks.length + " tasks")
+            job.log += "started " +  provisioningTasks.length + " tasks"
 
             // durable funtion Task.all will fail if there are no tasks in array
             if (provisioningTasks.length > 0) {
                 yield context.df.Task.all(provisioningTasks);
-                job.state = 'FINISHED'
             }
+            // set job state
+            job.state = 'FINISHED'
         } else {
             let message = "unable to aquire access token"
-            if (accessTokenResponse.body.message) {
-                message = accessTokenResponse.body.message
+            if (accessTokenResponse.message) {
+                message = accessTokenResponse.message
             }
             job.state = 'ERROR';
             job.message = message;

@@ -10,7 +10,9 @@
  */
 
 import { AzureFunction, Context } from "@azure/functions"
+import { createErrorResponse } from "../utils/createErrorResponse"
 var MicrosoftGraph = require("@microsoft/microsoft-graph-client");
+const functionName = "ACT2000MsGraphQuery"
 
 // Utils
 require("isomorphic-fetch");
@@ -23,7 +25,7 @@ function getClient(accessToken, version = "beta") {
             done(null, accessToken);
         },
     });
-} 
+}
 
 // Query Graph API
 function queryGraphAPI(client, apiUrl, filter = "") {
@@ -46,25 +48,31 @@ function queryGraphAPI(client, apiUrl, filter = "") {
 }
 
 const activityFunction: AzureFunction = async function (context: Context, msGraphResource): Promise<string> {
-    let response = null;
+    let response = null
 
-    if(msGraphResource.accessToken){
+    if (msGraphResource.accessToken) {
         let client = await getClient(msGraphResource.accessToken);
 
         if (msGraphResource.graphResourceUrl) {
             // build filter
             let filter = "";
-            if(msGraphResource.filter){
+            if (msGraphResource.filter) {
                 filter = msGraphResource.filter;
             }
-            
+
             //console.log("query resources " + msGraphResource.graphResourceUrl )
             response = await queryGraphAPI(client, msGraphResource.graphResourceUrl, filter);
+
+            if (response.ok === false) {
+                createErrorResponse(response.error, context, functionName)
+            }
         } else {
-            console.log("No API Url defined")
+            context.log("No API Url defined")
+            createErrorResponse("No API Url defined", context, functionName)
         }
     } else {
-        console.log("No AccessToken defined")
+        context.log("No AccessToken defined")
+        createErrorResponse("No AccessToken defined", context, functionName)
     }
     // return result
     // console.log(response);

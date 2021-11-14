@@ -10,6 +10,7 @@ const httpStart: AzureFunction = async function (context: Context, req: HttpRequ
     const client = df.getClient(context);
     const instances = await client.getStatusAll();
     let terminatedTasks = [];
+    let purgedTasks = [];
 
     await Promise.all(instances.map(async (instance) => {
         if (instance.runtimeStatus === df.OrchestrationRuntimeStatus.Running) {
@@ -18,17 +19,31 @@ const httpStart: AzureFunction = async function (context: Context, req: HttpRequ
 
             terminatedTasks.push({
                 name: instance.name,
+                action: "terminated",
                 instanceId: instance.instanceId,
                 createdTime: instance.createdTime,
                 lastUpdatedTime: instance.lastUpdatedTime
             })
             await client.terminate(instance.instanceId, terminateReason);
         }
+
+        if (instance.runtimeStatus === df.OrchestrationRuntimeStatus.Terminated) {
+            context.log(functionName, "purge instance: " + instance.name)
+
+            purgedTasks.push({
+                name: instance.name,
+                action: "purged",
+                instanceId: instance.instanceId,
+                createdTime: instance.createdTime,
+                lastUpdatedTime: instance.lastUpdatedTime
+            })
+            await client.purgeInstanceHistory(instance.instanceId);
+        }
     }));
 
     context.res = {
         // status: 200, /* Defaults to 200 */
-        body: JSON.stringify(terminatedTasks)
+        body: JSON.stringify({ terminated: terminatedTasks, purged: purgedTasks })
     };
 };
 

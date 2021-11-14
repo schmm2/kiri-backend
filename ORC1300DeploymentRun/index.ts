@@ -47,8 +47,8 @@ const orchestrator = df.orchestrator(function* (context) {
 
             let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
 
-            if (accessTokenResponse && accessTokenResponse.body) {
-                if (accessTokenResponse.body.ok) {
+            if (accessTokenResponse && accessTokenResponse.accessToken) {
+                if (accessTokenResponse.ok) {
                     if (!context.df.isReplaying) context.log(functionName, "got an accessToken");
 
                     for (let c = 0; c < configurationIds.length; c++) {
@@ -143,7 +143,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
                                     let payload = {
                                         graphResourceUrl: configurationGraphUrl,
-                                        accessToken: accessTokenResponse.body.accessToken
+                                        accessToken: accessTokenResponse.accessToken
                                     }
 
                                     if (!context.df.isReplaying) context.log(payload);
@@ -161,7 +161,7 @@ const orchestrator = df.orchestrator(function* (context) {
                                             tenantDbId: tenant._id,
                                             msGraphResourceUrl: msGraphResource.resource,
                                             configurationVersionDbId: newestConfigurationVersion._id,
-                                            accessToken: accessTokenResponse.body.accessToken
+                                            accessToken: accessTokenResponse.accessToken
                                         }
                                         if (!context.df.isReplaying) context.log("--------- Update Config in Tenant ----------");
                                         if (!context.df.isReplaying) context.log(payload);

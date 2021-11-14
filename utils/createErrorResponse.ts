@@ -6,12 +6,8 @@ const createErrorResponse = (message, context, functionName, payload = ""): any 
     }
 
     return {
-        status: 400,
-        body: {
-            "ok": false,
-            "message": message,
-            "payload": payload
-        }
+        "ok": false,
+        "message": message
     }
 }
 

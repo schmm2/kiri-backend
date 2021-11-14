@@ -44,7 +44,7 @@ function getAccessToken(url, resource, tenantId, appId, secret, functionContext)
     });
 }
 
-const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: Context, tenantDetails): Promise<void> {
+const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: Context, tenantDetails): Promise<any> {
     let response = null;
     // if (!context.df.isReplaying) context.log("ACT2001MsGraphAccessTokenCreate", "TenantDetails");
     // if (!context.df.isReplaying) context.log(tenantDetails);
@@ -101,12 +101,9 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
                 // console.log(tokenResponse);
 
                 if (tokenResponse.result) {
-                    response = {
-                        status: 200,
-                        body: {
-                            "ok": true,
-                            "accessToken": tokenResponse.result.accessToken
-                        }
+                    return {
+                        "ok": true,
+                        "accessToken" : tokenResponse.result.accessToken
                     }
                 }
             } else {

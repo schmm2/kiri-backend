@@ -13,17 +13,18 @@ import * as df from "durable-functions"
 let queryParameters: any;
 
 function handleGroupPolicyConfigurations(context, paramter) {
-    //context.log(paramter)
+    if (!context.df.isReplaying) context.log("ccccccccccccc")
+    if (!context.df.isReplaying) context.log(paramter)
     const provisioningTasks = [];
     // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
 
     for (let i = 0; i < paramter.graphValue.length; i++) {
+        // if (!context.df.isReplaying) context.log("aaaaaaaaaaaaaa create subtask for config" + paramter.graphValue[i].displayName)
         const child_id = context.df.instanceId + `:${i}`;
         let payload = { ...paramter }
         payload.graphValue = paramter.graphValue[i];
         provisioningTasks.push(context.df.callSubOrchestrator("ORC1002AzureDataCollectHandleGroupPolicy", payload, child_id));
     }
-    if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "started " + provisioningTasks.length + " tasks")
     return provisioningTasks;
 }
 
@@ -80,7 +81,6 @@ const orchestrator = df.orchestrator(function* (context) {
 
         // build parameter for activities or orchestrator calls
         let parameter = {
-            //graphItemId: msGraphResponseValue.id,
             graphResourceUrl: queryParameters.graphResourceUrl,
             tenant: queryParameters.tenant,
             accessToken: queryParameters.accessToken,
@@ -95,7 +95,6 @@ const orchestrator = df.orchestrator(function* (context) {
         if (queryParameters.objectDeepResolve) {
             let tasks = createSubORCTasksForEachGraphValue(context, parameter, "ORC1200MsGraphQueryResolveById", "1");
             parameter.graphValue = yield context.df.Task.all(tasks);
-            // context.log("ORC1001AzureDataCollectPerMsGraphResourceType", parameter.graphValue);
         }
 
         switch (queryParameters.graphResourceUrl) {
@@ -104,18 +103,18 @@ const orchestrator = df.orchestrator(function* (context) {
                 break
             case '/deviceManagement/groupPolicyConfigurations':
                 // call gpo handler
+                // only return objects which need updating/creating in db
                 let tasks = handleGroupPolicyConfigurations(context, parameter)
                 let groupPolicyConfiguration = yield context.df.Task.all(tasks)
                 // filter empty objects
                 groupPolicyConfiguration = groupPolicyConfiguration.filter(n => n);
 
-                if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "query group policy configurations completed")
-                // console.log(groupPolicyConfiguration)
-                parameter.graphValue = groupPolicyConfiguration
-
-                let gpoTasks = handleConfigurations(context, parameter)
-                response = yield context.df.Task.all(gpoTasks)
-                //response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter)
+                // handle the gpo objects as normal configurations from this point on
+                if (groupPolicyConfiguration.length > 0) {
+                    parameter.graphValue = groupPolicyConfiguration
+                    let gpoTasks = handleConfigurations(context, parameter)
+                    response = yield context.df.Task.all(gpoTasks)
+                }
                 break
             default:
                 let tasksConfigurations = handleConfigurations(context, parameter)
@@ -125,15 +124,15 @@ const orchestrator = df.orchestrator(function* (context) {
         }
 
         // analyze response, set job state accordingly
-        if (response) {
-            context.log(response)
-            if (response.body && response.body.message && response.body.message === "configurationTypeNotDefinedInDb") {
-                job.state = 'WARNING';
-                job.message += 'ConfigurationType not yet implemented: ' + response.body.payload;
-            } else {
-                job.state = 'FINISHED';
+        if (response && response.length > 0) {
+            // add response to job log
+            for (let m = 0; m < response.length; m++) {
+                job.log += response[m].message
             }
         }
+        // finish job state
+        job.message = 'Done'
+        job.state = 'FINISHED'
     } else {
         job.state = 'ERROR';
         job.message = 'Unable to query MS Graph API';

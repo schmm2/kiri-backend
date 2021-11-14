@@ -20,6 +20,11 @@ const jobSchema = new mongoose.Schema({
         required: false,
         default: '' 
     },
+    log: {
+        type: String,
+        required: false,
+        default: '' 
+    },
     tenant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tenant',

@@ -18,7 +18,7 @@ const orchestrator = df.orchestrator(function* (context) {
     // to query administrative templates is alot of work for the system as there are many definitionValues & presentationvalues to query
     // this pre-check should speed things up
     // check DB to see if this object already exists, if modiefied dates are the same we skip this config
-    let newestConfigurationVersionInDB = yield context.df.callActivity("ACT1041ConfigurationVersionNewestByGraphId", configurationListGraphItem.id);   
+    let newestConfigurationVersionInDB = yield context.df.callActivity("ACT1041ConfigurationVersionNewestByGraphId", configurationListGraphItem.id);
 
     if (newestConfigurationVersionInDB && newestConfigurationVersionInDB.graphModifiedAt) {
         // context.log(newestConfigurationVersionInDB)
@@ -26,9 +26,6 @@ const orchestrator = df.orchestrator(function* (context) {
         if (newestConfigurationVersionInDB.graphModifiedAt === configurationListGraphItem.lastModifiedDateTime) {
             // seems to be the same config version, stop here
             return null
-        }else{
-            // seems we found a newwer version, proceed
-            context.log(configurationListGraphItem)
         }
     }
 

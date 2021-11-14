@@ -15,11 +15,9 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     let functionName = "ACT3001AzureDataCollectHandleConfiguration"
     context.log(functionName, "Start Configuration Handeling");
 
-    let configurationListGraph = parameter.graphValue;
+    let configurationGraphValue = parameter.graphValue;
     let graphResourceUrl = parameter.graphResourceUrl;
     let tenant = parameter.tenant;
-
-    let configurationTypeNotDefinedInDb = [];
 
     let Configuration = mongoose.model('Configuration');
     let ConfigurationType = mongoose.model('ConfigurationType');
@@ -31,10 +29,10 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     };
 
     // validated object
-    if (configurationListGraph && configurationListGraph.id) {
-        //context.log("handle configuration: " + configurationObjectFromGraph.id);
+    if (configurationGraphValue && configurationGraphValue.id) {
+        context.log("handle configuration: " + configurationGraphValue.id);
 
-        let configurationObjectFromGraph = configurationListGraph;
+        let configurationObjectFromGraph = configurationGraphValue;
         let configurations = await Configuration.find({ graphId: configurationObjectFromGraph.id });
         // we are unable to use the version property as it does not exist on all graph resources => use md5 hash instead
         let configurationObjectFromGraphVersion = createSettingsHash(configurationObjectFromGraph);
@@ -44,7 +42,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
         // if id does not exist in db, we found a new config
         // ****
         if (configurations.length == 0) {
-            context.log("found new configuration " + configurationObjectFromGraph.id);
+            context.log(functionName, "found new configuration " + configurationObjectFromGraph.id);
 
             // define configurationType from configuration we received via graph
             // this information is important to link the configuration to a configurationType
@@ -91,27 +89,33 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
                     // configuration added succedfully, add configVersion
                     if (addConfigurationResponse && addConfigurationResponse._id) {
-                        try {
-                            let addConfigurationVersionResponse = await ConfigurationVersion.create({
-                                displayName: configurationObjectFromGraph.displayName,
-                                graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime,
-                                value: configurationObjectFromGraphJSON,
-                                version: configurationObjectFromGraphVersion,
-                                isNewest: true,
-                                configuration: addConfigurationResponse._id
-                            });
-                        } catch {
-                            context.log.error("unable to create configuration version")
-                            context.log.error(configurationObjectFromGraphJSON)
-                            return createErrorResponse("unable to create configuration version", context, functionName)
+
+                        let addConfigurationVersionResponse = await ConfigurationVersion.create({
+                            displayName: configurationObjectFromGraph.displayName,
+                            graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime,
+                            value: configurationObjectFromGraphJSON,
+                            version: configurationObjectFromGraphVersion,
+                            isNewest: true,
+                            configuration: addConfigurationResponse._id
+                        });
+
+                        if (addConfigurationVersionResponse._id) {
+                            response.message = configurationObjectFromGraph.displayName + ": saved, new configuration" 
+                            return response; // all done
                         }
+                        else {
+                            context.log.error(configurationObjectFromGraphJSON)
+                            return createErrorResponse("error: unable to save configuration version," + configurationObjectFromGraph.displayName, context, functionName)
+                        }
+                    } else {
+                        return createErrorResponse("error: unable to save configuration, " + configurationObjectFromGraph.id, context, functionName)
                     }
                 } else {
-                    return createErrorResponse("configurationTypeNotDefinedInDb", context, functionName, configurationTypeName)
+                    return createErrorResponse("error: configurationType not defined in Db, " + configurationTypeName, context, functionName)
                 }
             } else {
                 context.log(configurationObjectFromGraph);
-                return createErrorResponse('configurationTypeName not defined', context, functionName)
+                return createErrorResponse('error: configurationType name not defined', context, functionName)
             }
         }
         // ****
@@ -124,18 +128,18 @@ const activityFunction: AzureFunction = async function (context: Context, parame
             // store version separate -> avoid ts conflict
             let newestStoredConfigurationVersionVersion = null;
 
-            context.log(functionName, "configuration does already exist:" + configuration._id);
+            context.log(functionName, "configuration does already exist: " + configuration._id);
 
             // get newest configuration versions of this configuration
             let storedConfigurationVersions = await ConfigurationVersion.find({ configuration: configuration._id, isNewest: true });
             // context.log("stored version", storedConfigurationVersions[0]);
 
-            // check for object was found and the version property exists
+            // check if object was found and the version property exists
             if (storedConfigurationVersions[0] && storedConfigurationVersions[0].version) {
                 newestStoredConfigurationVersion = storedConfigurationVersions[0];
                 newestStoredConfigurationVersionVersion = storedConfigurationVersions[0].version;
                 // context.log("newest stored version: ", newestStoredConfigurationVersion);
-            } // else defaults to null
+            }
 
             // context.log("graph hash version", configurationObjectFromGraphVersion);
             // context.log("stored hash version", newestStoredConfigurationVersion.version);
@@ -148,20 +152,22 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 // context.log("configuration " + configuration.id + " new version found, add new configuration version");
                 let configurationObjectFromGraphJSON = JSON.stringify(configurationObjectFromGraph)
 
-                try {
-                    let addConfigurationVersionResponse = await ConfigurationVersion.create({
-                        value: configurationObjectFromGraphJSON,
-                        version: configurationObjectFromGraphVersion,
-                        configuration: configuration._id,
-                        isNewest: true,
-                        state: "modified",
-                        displayName: configurationObjectFromGraph.displayName,
-                        graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime
-                    });
+                let addConfigurationVersionResponse = await ConfigurationVersion.create({
+                    value: configurationObjectFromGraphJSON,
+                    version: configurationObjectFromGraphVersion,
+                    configuration: configuration._id,
+                    isNewest: true,
+                    state: "modified",
+                    displayName: configurationObjectFromGraph.displayName,
+                    graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime
+                });
+
+                if (addConfigurationVersionResponse._id) {
+                    response.message = configurationObjectFromGraph.displayName + ": saved, new configuration version" 
                 }
-                catch {
+                else {
                     context.log.error(configurationObjectFromGraphJSON)
-                    return createErrorResponse("unable to create configuration version", context, functionName);
+                    return createErrorResponse("error: unable to create configuration version, " + configurationObjectFromGraph.displayName, context, functionName);
                 }
                 // context.log("new version: ", addConfigurationVersionResponse);
 
@@ -170,6 +176,8 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     newestStoredConfigurationVersion.isNewest = false;
                     newestStoredConfigurationVersion.save();
                 }
+            } else {
+                response.message = configurationObjectFromGraph.displayName + ": no change, newest configuration version already stored" 
             }
         }
     }

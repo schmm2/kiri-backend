@@ -48,8 +48,8 @@ const orchestrator = df.orchestrator(function* (context) {
             let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
             // if (!context.df.isReplaying) context.log("ORC1100MsGraphConfigurationUpdate, accessTokenResponse", accessTokenResponse);
 
-            if (accessTokenResponse.body.accessToken) {
-                accessToken = accessTokenResponse.body.accessToken;
+            if (accessTokenResponse.accessToken) {
+                accessToken = accessTokenResponse.accessToken;
             }
         }
 

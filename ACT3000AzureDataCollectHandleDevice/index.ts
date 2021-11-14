@@ -33,7 +33,7 @@ async function addDeviceVersion(deviceObjectFromGraph, deviceId, version) {
     });
 }
 
-const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<string> {
+const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<any> {
     context.log("ACT3000AzureDataCollectHandleDevice", "Start Device handeling");
     let Device = mongoose.model('Device')
     let DeviceVersion = mongoose.model('DeviceVersion')
@@ -41,8 +41,15 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     let deviceListGraph = parameter.graphValue
     let tenant = parameter.tenant
 
+    let responses = [];
+
     // check for new devices
     for (var i = 0; i < deviceListGraph.length; i++) {
+        let response = {
+            ok: true,
+            message: ""
+        };
+
         const deviceObjectFromGraph = deviceListGraph[i];
         const graphDeviceId = deviceObjectFromGraph.id;
         const deviceObjectFromGraphJSON = JSON.stringify(deviceObjectFromGraph);
@@ -69,6 +76,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
             if (addDeviceResponse && addDeviceResponse._id) {
                 // create new device version element
                 let addDeviceVersionResponse = await addDeviceVersion(deviceObjectFromGraph, addDeviceResponse._id, deviceObjectFromGraphVersion);
+                response.message = deviceObjectFromGraph.deviceName + ": saved, new device"
             }
         }
         // ****
@@ -104,6 +112,8 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 let addDeviceVersionResponse = await addDeviceVersion(deviceObjectFromGraph, device._id, deviceObjectFromGraphVersion);
                 // context.log("new version: ", addDeviceVersionResponse);
 
+                response.message = deviceObjectFromGraph.deviceName + ": saved, new device version"
+
                 if (addDeviceVersionResponse && addDeviceVersionResponse._id) {
                     // set active configurationversion to old state if the objects exists
                     if (newestStoredDeviceVersion) {
@@ -116,11 +126,12 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 if (storedDeviceVersions.length >= 5) {
                     // Todo: Cleanup
                 }
+            } else {
+                response.message = deviceObjectFromGraph.deviceName + ": no change, device up to date"
             }
         }
+        responses.push(response);
     }
-    return JSON.stringify({
-        ok: true
-    });
+    return responses;
 }
 export default activityFunction;
