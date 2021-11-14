@@ -13,8 +13,6 @@ import { AzureFunction, Context } from "@azure/functions"
 import { DeploymentReference } from '../models/deploymentreference'
 
 const activityFunction: AzureFunction = async function (context: Context, deploymentReferenceParameter): Promise<string> {
-    context.log("-----------------zzzzzzzzzz-----------");
-    context.log(deploymentReferenceParameter);
     return await DeploymentReference.create(deploymentReferenceParameter);
 };
 

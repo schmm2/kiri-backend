@@ -5,6 +5,7 @@
  */
 
 import * as df from "durable-functions"
+import { Job } from "../models/job";
 import { createSettingsHash } from '../utils/createSettingsHash'
 
 const orchestrator = df.orchestrator(function* (context) {
@@ -39,7 +40,8 @@ const orchestrator = df.orchestrator(function* (context) {
             let jobData = {
                 type: "DEPLOYMENT",
                 state: "STARTED",
-                tenant: tenantId
+                tenant: tenantId,
+                logs: ""
             };
 
             let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
@@ -56,16 +58,11 @@ const orchestrator = df.orchestrator(function* (context) {
 
                         // find deploymentReference per tenant and sourceConfiguration
                         let deploymentRefencesFiltered = deploymentReferences.filter(item => (item.sourceConfiguration === configurationId && item.tenant === tenant._id));
-                        if (!context.df.isReplaying) context.log(deploymentRefencesFiltered)
-
-                        // get full configuration
-                        let configuration = yield context.df.callActivity("ACT1061ConfigurationGetById", configurationId);
-                        //if (!context.df.isReplaying) context.log(configuration);
+                        // if (!context.df.isReplaying) context.log(deploymentRefencesFiltered)
 
                         // get full configurationVersion
                         let newestConfigurationVersion = yield context.df.callActivity("ACT1062ConfigurationGetNewestConfigurationVersion", configurationId);
-                        if (!context.df.isReplaying) context.log("yyyyyyyyyyyyyy");
-                        if (!context.df.isReplaying) context.log(newestConfigurationVersion);
+                        // if (!context.df.isReplaying) context.log(newestConfigurationVersion);
 
                         // get msgraphresource
                         let msGraphResource = yield context.df.callActivity("ACT1060ConfigurationGetMsGraphResource", configurationId);
@@ -81,12 +78,8 @@ const orchestrator = df.orchestrator(function* (context) {
                                 configurationName: newestConfigurationVersion.displayName
                             }
 
-                            if (!context.df.isReplaying) context.log("--------- Create Config in Tenant ----------");
-                            if (!context.df.isReplaying) context.log(payload);
-                            const child_id = context.df.instanceId + '1';
-                            let createdConfiguration = yield context.df.callSubOrchestrator("ORC1101MEMConfigurationCreate", payload, child_id);
-                            if (!context.df.isReplaying) context.log("aaaaaaaaaaaaaaaaaaaaaaaa");
-                            if (!context.df.isReplaying) context.log(createdConfiguration);
+                            let createdConfiguration = yield context.df.callSubOrchestrator("ORC1101MEMConfigurationCreate", payload, context.df.instanceId + '1');
+                            // if (!context.df.isReplaying) context.log(createdConfiguration);
 
                             if (createdConfiguration.id) {
                                 // store in database
@@ -96,86 +89,99 @@ const orchestrator = df.orchestrator(function* (context) {
                                     tenant: tenant
                                 }
                                 let newConfigResponseResponse = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", newConfigParameter);
-                                if (!context.df.isReplaying) context.log("eeeeeeeeeeeeeeeeeeeeee")
-                                if (!context.df.isReplaying) context.log(newConfigResponseResponse)
+                                // if (!context.df.isReplaying) context.log(newConfigResponseResponse)
 
-                                if (newConfigResponseResponse) {
-
+                                if (newConfigResponseResponse.createdConfigurationId) {
                                     // add deploymentReference
                                     let deploymentReference = {
                                         tenant: tenant._id,
                                         sourceConfiguration: configurationId,
-                                        destinationConfiguration: newConfigResponseResponse._id,
+                                        destinationConfiguration: newConfigResponseResponse.createdConfigurationId,
                                         deployment: deploymentId
                                     }
-                                    if (!context.df.isReplaying) context.log("ccccccccccccccccc");
-                                    if (!context.df.isReplaying) context.log(deploymentReference);
 
                                     let deploymentReferenceResponse = yield context.df.callActivity("ACT1071DeploymentReferenceCreate", deploymentReference);
-                                    if (!context.df.isReplaying) context.log("bbbbbbbbbbbbbbbbbbb");
-                                    if (!context.df.isReplaying) context.log(deploymentReferenceResponse);
+                                    if(deploymentReferenceResponse._id){
+                                        // if (!context.df.isReplaying) context.log(deploymentReferenceResponse);
+                                        job.state = "FINISHED"
+                                        job.log += "deploymentReference stored"
+                                    }else{
+                                        job.state = "ERROR"
+                                        job.log += newestConfigurationVersion.displayName + " ,unable to store deploymentReference" 
+                                    }  
+                                }else{
+                                    job.state = "ERROR"
+                                    job.log += newestConfigurationVersion.displayName + ", unable to store configuration"
                                 }
                             }
-                        } else {
-                            if (!context.df.isReplaying) context.log("iiiiiiiiiii");
-                            if (!context.df.isReplaying) context.log("already stored");
+                            else{
+                                job.state = "ERROR"
+                                job.log += newestConfigurationVersion.displayName + ", unable to create configuration in tenant " + tenant.name
+                            }
+                        } else { // Deployment Reference already stored
 
                             let deploymentReference = deploymentRefencesFiltered[0];
-                            if (!context.df.isReplaying) context.log("mmmmmmmmmmmmmmmmmmm")
-                            if (!context.df.isReplaying) context.log(deploymentReference)
+                            // if (!context.df.isReplaying) context.log(deploymentReference)
+
                             // ### Compare Settings Values
                             // # Get Settings from Destination Configuration
-
                             if (deploymentReference.destinationConfiguration) {
-                                // get full configuration
+                                // get full configuration from DB
                                 let destinationConfigurationInDB = yield context.df.callActivity("ACT1061ConfigurationGetById", deploymentReference.destinationConfiguration);
-                                if (!context.df.isReplaying) context.log("sssssssssssss");
-                                if (!context.df.isReplaying) context.log(destinationConfigurationInDB);
+                                // if (!context.df.isReplaying) context.log(destinationConfigurationInDB);
 
-                                // get full configurationVersion
-                                let newestConfigurationVersion = yield context.df.callActivity("ACT1062ConfigurationGetNewestConfigurationVersion", destinationConfigurationInDB._id);
-                                if (!context.df.isReplaying) context.log("ttttttttttttt");
-                                if (!context.df.isReplaying) context.log(newestConfigurationVersion);
+                                // get full configurationVersion from DB
+                                let newestConfigurationVersionInDB = yield context.df.callActivity("ACT1062ConfigurationGetNewestConfigurationVersion", destinationConfigurationInDB._id);
+                                // if (!context.df.isReplaying) context.log(newestConfigurationVersion);
 
                                 if (destinationConfigurationInDB) {
-                                    //let destinationConfigurationValue = JSON.parse(deploymentReference.destinationConfiguration.value)
+                                    // Get Destination Configuratio via Graph
                                     let configurationGraphUrl = msGraphResource.resource + "/" + destinationConfigurationInDB.graphId
-
                                     let payload = {
                                         graphResourceUrl: configurationGraphUrl,
                                         accessToken: accessTokenResponse.accessToken
                                     }
-
-                                    if (!context.df.isReplaying) context.log(payload);
                                     let destinationConfigurationFromGraph = yield context.df.callActivity("ACT2000MsGraphQuery", payload);
-                                    if (!context.df.isReplaying) context.log("dddddddddddddd");
-                                    if (!context.df.isReplaying) context.log(destinationConfigurationFromGraph);
+                                    //if (!context.df.isReplaying) context.log(destinationConfigurationFromGraph);
 
+                                    // Calculate Hash of Settings to compare it to stored version
                                     let configurationFromGraphSettingsHash = createSettingsHash(destinationConfigurationFromGraph.result)
-                                    if (!context.df.isReplaying) context.log(configurationFromGraphSettingsHash);
+                                    // if (!context.df.isReplaying) context.log(configurationFromGraphSettingsHash);
 
-                                    if (configurationFromGraphSettingsHash === newestConfigurationVersion.version) {
-                                        if (!context.df.isReplaying) context.log("Tenant Config up to date");
+                                    // Compare Hash
+                                    if (configurationFromGraphSettingsHash === newestConfigurationVersionInDB.version) {
+                                        if (!context.df.isReplaying) context.log(functionName, "Tenant Config up to date");
+                                        job.state = "FINISHED"
+                                        job.log += newestConfigurationVersionInDB.displayName + ", config in tenant " + tenant.name + "is up to date"     
                                     } else {
+                                        // Update Config in Tenant
                                         let payload = {
                                             tenantDbId: tenant._id,
                                             msGraphResourceUrl: msGraphResource.resource,
-                                            configurationVersionDbId: newestConfigurationVersion._id,
+                                            configurationVersionDbId: newestConfigurationVersionInDB._id,
                                             accessToken: accessTokenResponse.accessToken
                                         }
-                                        if (!context.df.isReplaying) context.log("--------- Update Config in Tenant ----------");
-                                        if (!context.df.isReplaying) context.log(payload);
-                                        const child_id = context.df.instanceId + 'aaaaa';
-                                        let updatedConfiguration = yield context.df.callSubOrchestrator("ORC1100MEMConfigurationUpdate", payload, child_id);
-                                        if (!context.df.isReplaying) context.log("rrrrrrrrrrrrrrrrr");
-                                        if (!context.df.isReplaying) context.log(updatedConfiguration);
+                                        
+                                        let updatedConfigurationResponse = yield context.df.callSubOrchestrator("ORC1100MEMConfigurationUpdate", payload, context.df.instanceId + '2');
+                                        if (updatedConfigurationResponse.state === "FNISHED") {
+                                            if (!context.df.isReplaying) context.log(updatedConfigurationResponse);
+                                            job.state = "FINISHED"
+                                            job.log += newestConfigurationVersionInDB.displayName + ", update config in tenant " + tenant.name
+                                        } else {
+                                            job.state = "ERROR"
+                                            job.log += newestConfigurationVersionInDB.displayName + ", unable to update config in tenant " + tenant.name
+                                        }    
                                     }
+                                }else{
+                                    job.state = "ERROR"
+                                    job.log += newestConfigurationVersionInDB.displayName + ", internal error"
                                 }
                             }
                         }
                     }
                 }
             }
+            let jobResponse = yield context.df.callActivity("ACT1020JobUpdate", job);
         }
     }
 

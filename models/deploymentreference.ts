@@ -7,19 +7,19 @@ import { DeploymentTC } from "./deployment";
 const deploymentReferenceSchema = new mongoose.Schema({
     deployment: {
         type: mongoose.Schema.Types.ObjectId,
-        require: true
+        required: true
     },
     sourceConfiguration: {
         type: mongoose.Schema.Types.ObjectId,
-        require: true
+        required: true
     },
     destinationConfiguration: {
         type: mongoose.Schema.Types.ObjectId,
-        require: true
+        required: true
     },
     tenant: {
         type: mongoose.Schema.Types.ObjectId,
-        require: true
+        required: true
     }
 }, {
     timestamps: true

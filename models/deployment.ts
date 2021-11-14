@@ -10,17 +10,17 @@ const deploymentSchema = new mongoose.Schema({
     },
     configurations: {
         type: [mongoose.Schema.Types.ObjectId],
-        require: false,
+        required: false,
         default: []
     },
     executionDate: {
         type: mongoose.Schema.Types.Date,
-        require: false,
+        required: false,
         default: null
     },
     tenants: {
         type: [mongoose.Schema.Types.ObjectId],
-        require: false,
+        required: false,
         default: []
     }
 }, {

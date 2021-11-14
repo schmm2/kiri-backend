@@ -25,7 +25,9 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
     let response = {
         ok: true,
-        message: ""
+        message: "",
+        createdConfigurationId: null,
+        createdConfigurationVersionId: null
     };
 
     // validated object
@@ -89,6 +91,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
                     // configuration added succedfully, add configVersion
                     if (addConfigurationResponse && addConfigurationResponse._id) {
+                        response.createdConfigurationId = addConfigurationResponse._id;
 
                         let addConfigurationVersionResponse = await ConfigurationVersion.create({
                             displayName: configurationObjectFromGraph.displayName,
@@ -100,6 +103,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                         });
 
                         if (addConfigurationVersionResponse._id) {
+                            response.createdConfigurationVersionId = addConfigurationVersionResponse._id;
                             response.message = configurationObjectFromGraph.displayName + ": saved, new configuration" 
                             return response; // all done
                         }
@@ -163,6 +167,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 });
 
                 if (addConfigurationVersionResponse._id) {
+                    response.createdConfigurationVersionId = addConfigurationVersionResponse._id
                     response.message = configurationObjectFromGraph.displayName + ": saved, new configuration version" 
                 }
                 else {
