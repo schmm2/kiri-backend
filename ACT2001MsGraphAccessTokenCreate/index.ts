@@ -1,4 +1,5 @@
 ﻿import { AzureFunction, Context } from "@azure/functions"
+import { createErrorResponse } from "../utils/createErrorResponse"
 
 require("isomorphic-fetch");
 var AuthenticationContext = require("adal-node").AuthenticationContext;
@@ -6,21 +7,12 @@ var AuthenticationContext = require("adal-node").AuthenticationContext;
 const { DefaultAzureCredential } = require("@azure/identity");
 const { SecretClient } = require("@azure/keyvault-secrets");
 
+const functionName = "ACT2001MsGraphAccessTokenCreate"
 var AUTHORITYHOSTURL = "https://login.microsoftonline.com";
 var RESOURCEURL = "https://graph.microsoft.com/";
 
 if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config();
-}
-
-function createErrorResponse(message): any {
-    return {
-        status: 400,
-        body: {
-            "ok": false,
-            "message": message
-        }
-    }
 }
 
 // Get Access Token for App
@@ -54,15 +46,14 @@ function getAccessToken(url, resource, tenantId, appId, secret, functionContext)
 
 const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: Context, tenantDetails): Promise<void> {
     let response = null;
-    // context.log("ACT2001MsGraphAccessTokenCreate", "TenantDetails");
-    // context.log(tenantDetails);
+    // if (!context.df.isReplaying) context.log("ACT2001MsGraphAccessTokenCreate", "TenantDetails");
+    // if (!context.df.isReplaying) context.log(tenantDetails);
 
     // get Keyvault name
     const keyVaultName = process.env["KEYVAULT_NAME"];
 
     if (!keyVaultName) {
-        context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault Name not defined");
-        return createErrorResponse("keyvault undefined");
+        return createErrorResponse("keyvault name undefined", context, functionName);
     } else {
         context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault: " + keyVaultName);
     }
@@ -84,12 +75,12 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
         }
         catch (error) {
             context.log("ACT2001MsGraphAccessTokenCreate", "Error, unable to get Secret from KeyVault")
-            if(error.errorResponse && error.errorResponse.errorDescription ){
+            if (error.errorResponse && error.errorResponse.errorDescription) {
                 context.log("ACT2001MsGraphAccessTokenCreate", error.errorResponse.errorDescription)
-            }else{
+            } else {
                 context.log(JSON.stringify(error));
             }
-            return createErrorResponse("unable to get Secret from KeyVault");
+            return createErrorResponse("unable to get Secret from KeyVault", context, functionName);
         }
 
         if (retrievedSecret && retrievedSecret.value) {
@@ -119,22 +110,21 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
                     }
                 }
             } else {
-                context.log("ACT2001MsGraphAccessTokenCreate", "unable to request access token");
                 context.log(tokenResponse);
                 let message = "unable to request access token"
 
                 if (tokenResponse.message) {
                     message += " error: " + tokenResponse.message
                 }
-                return createErrorResponse(message);
+                return createErrorResponse(message, context, functionName);
             }
         } else {
             context.log("ACT2001MsGraphAccessTokenCreate", "unable to get secret")
-            return createErrorResponse("unable to get secret");
+            return createErrorResponse("unable to get secret", context, functionName);
         }
     } else {
         context.log("ACT2001MsGraphAccessTokenCreate", "No tenant id defined")
-        return createErrorResponse("parameters missing");
+        return createErrorResponse("parameters missing", context, functionName);
     }
     return response
 };

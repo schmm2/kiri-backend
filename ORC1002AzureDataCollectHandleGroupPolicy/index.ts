@@ -14,6 +14,24 @@ const orchestrator = df.orchestrator(function* (context) {
     let configurationListGraphItem = queryParameters.graphValue;
     let graphResourceUrl = queryParameters.graphResourceUrl;
 
+    // PRECHECK
+    // to query administrative templates is alot of work for the system as there are many definitionValues & presentationvalues to query
+    // this pre-check should speed things up
+    // check DB to see if this object already exists, if modiefied dates are the same we skip this config
+    let newestConfigurationVersionInDB = yield context.df.callActivity("ACT1041ConfigurationVersionNewestByGraphId", configurationListGraphItem.id);   
+
+    if (newestConfigurationVersionInDB && newestConfigurationVersionInDB.graphModifiedAt) {
+        // context.log(newestConfigurationVersionInDB)
+        // compare config update date
+        if (newestConfigurationVersionInDB.graphModifiedAt === configurationListGraphItem.lastModifiedDateTime) {
+            // seems to be the same config version, stop here
+            return null
+        }else{
+            // seems we found a newwer version, proceed
+            context.log(configurationListGraphItem)
+        }
+    }
+
     if (!context.df.isReplaying) context.log("ORC1002AzureDataCollectHandleGroupPolicy", "Gpo Name: " + configurationListGraphItem.displayName)
 
     // build definitionValues URL of the specific gpo object
@@ -41,9 +59,9 @@ const orchestrator = df.orchestrator(function* (context) {
             }
             tasks.push(context.df.callSubOrchestrator("ORC1003AzureDataCollectHandleGroupPolicySettings", payload, child_id));
         }
-        if(tasks.length > 0){
+        if (tasks.length > 0) {
             gpoSettings = yield context.df.Task.all(tasks);
-        }   
+        }
 
         // sort gpo settings by definition@odata.bind to get the same result after every data check
         gpoSettings.sort(function (a, b) {
@@ -55,7 +73,7 @@ const orchestrator = df.orchestrator(function* (context) {
             return 0;
         });
     }
-    
+
     // append gpo settings into main gpo graph object
     configurationListGraphItem["gpoSettings"] = gpoSettings;
     return configurationListGraphItem;

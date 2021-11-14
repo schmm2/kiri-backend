@@ -12,7 +12,7 @@ const dateNow = new Date()
 
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
     context.log("TRG2000ConfigurationBackupCreate", "start");
-    let tenantMongoDbId = (req.body && req.body.tenantMongoDbId)
+    let tenantMongoDbId = (req.body && req.body.tenantDbId)
 
     if (tenantMongoDbId) {
         let tenantData = null;

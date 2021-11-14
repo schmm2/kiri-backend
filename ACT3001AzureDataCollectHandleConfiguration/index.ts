@@ -1,21 +1,18 @@
 ﻿/*
- * This function is not intended to be invoked directly. Instead it will be
- * triggered by an orchestrator function.
- * 
- * Before running this sample, please:
- * - create a Durable orchestration function
- * - create a Durable HTTP starter function
- * - run 'npm install durable-functions' from the wwwroot folder of your
- *   function app in Kudu
+ * Parameters:
+ *  graphValue: ,
+ *  graphResourceUrl: ,
+ *  tenant: ,
  */
 
 import { AzureFunction, Context } from "@azure/functions"
 import { createSettingsHash } from '../utils/createSettingsHash';
+import { createErrorResponse } from '../utils/createErrorResponse';
+
 var mongoose = require('mongoose');
 
 const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<any> {
     let functionName = "ACT3001AzureDataCollectHandleConfiguration"
-
     context.log(functionName, "Start Configuration Handeling");
 
     let configurationListGraph = parameter.graphValue;
@@ -28,10 +25,10 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     let ConfigurationType = mongoose.model('ConfigurationType');
     let ConfigurationVersion = mongoose.model('ConfigurationVersion');
 
-    let response = null;
-
-    // check for new configurations
-    //for (var i = 0; i < configurationListGraph.length; i++) {
+    let response = {
+        ok: true,
+        message: ""
+    };
 
     // validated object
     if (configurationListGraph && configurationListGraph.id) {
@@ -83,9 +80,8 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                         graphId: configurationObjectFromGraph.id,
                         graphCreatedAt: configurationObjectFromGraph.createdDateTime,
                         configurationType: configurationTypes[0].id,
-                        tenant: tenant._id
+                        tenant: tenant
                     });
-                    response = addConfigurationResponse;
 
                     // context.log("created new configuration element");
                     // context.log("created configuration response: " + JSON.stringify(addConfigurationResponse));
@@ -107,16 +103,15 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                         } catch {
                             context.log.error("unable to create configuration version")
                             context.log.error(configurationObjectFromGraphJSON)
-                            throw new Error("unable to create configuration version")
+                            return createErrorResponse("unable to create configuration version", context, functionName)
                         }
                     }
                 } else {
-                    context.log("unable to find configuration type in database for name: " + configurationTypeName);
-                    configurationTypeNotDefinedInDb.push(configurationTypeName);
+                    return createErrorResponse("configurationTypeNotDefinedInDb", context, functionName, configurationTypeName)
                 }
             } else {
-                context.log('configurationTypeName not defined');
                 context.log(configurationObjectFromGraph);
+                return createErrorResponse('configurationTypeName not defined', context, functionName)
             }
         }
         // ****
@@ -165,9 +160,8 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                     });
                 }
                 catch {
-                    context.log.error("unable to create configuration version")
                     context.log.error(configurationObjectFromGraphJSON)
-                    throw new Error("unable to create configuration version: " + configurationObjectFromGraphJSON);
+                    return createErrorResponse("unable to create configuration version", context, functionName);
                 }
                 // context.log("new version: ", addConfigurationVersionResponse);
 
@@ -179,7 +173,6 @@ const activityFunction: AzureFunction = async function (context: Context, parame
             }
         }
     }
-    //};
     return response;
 };
 export default activityFunction;

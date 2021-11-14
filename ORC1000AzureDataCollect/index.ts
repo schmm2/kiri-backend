@@ -1,42 +1,37 @@
 ﻿/*
- * This function is not intended to be invoked directly. Instead it will be
- * triggered by an HTTP starter function.
- * 
- * Before running this sample, please:
- * - create a Durable activity function (default name is "Hello")
- * - create a Durable HTTP starter function
- * - run 'npm install durable-functions' from the wwwroot folder of your 
- *    function app in Kudu
+ * Functionality:
+ *  
  */
 
 import * as df from "durable-functions"
+import { createErrorResponse } from "../utils/createErrorResponse";
+const functionName = "ORC1000AzureDataCollect"
 
 const orchestrator = df.orchestrator(function* (context) {
-    if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "start");
+    if (!context.df.isReplaying) context.log(functionName, "start");
 
-    const outputs = [];
-
-    // precheck parameter
     const queryParameters: any = context.df.getInput();
-    let tenantMongoDbId = queryParameters.tenantMongoDbId;
-
-    if (!tenantMongoDbId) {
-        if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "Tenant Mongo DB ID not defined");
-        return outputs;
-    } else {
-        if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "Tenant Mongo DB Id: " + tenantMongoDbId);
-    }
+    let tenantDbId = queryParameters.tenantDbId;
 
     // Create Job
     let jobData = {
         type: "TENENAT_REFRESH",
         state: "STARTED",
-        tenant: tenantMongoDbId
+        tenant: tenantDbId
     };
+
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
     //if (!context.df.isReplaying) context.log("new job", job);
 
-    let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantMongoDbId);
+    // precheck parameter
+    if (tenantDbId) {
+        if (!context.df.isReplaying) context.log(functionName, "Tenant Mongo DB Id: " + tenantDbId);
+    } else {
+        job.message = "invalid parameter, tenant Db id not definied";
+        job.state = "ERROR"
+    }
+
+    let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
     let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
 
     if (accessTokenResponse && accessTokenResponse.body) {
@@ -55,7 +50,7 @@ const orchestrator = df.orchestrator(function* (context) {
                     graphResourceUrl: msGraphResources[i].resource,
                     msGraphResourceName: msGraphResources[i].name,
                     objectDeepResolve: msGraphResources[i].objectDeepResolve,
-                    version: msGraphResources[i].version,
+                    apiVersion: msGraphResources[i].version,
                     tenant: tenant,
                 }
                 provisioningTasks.push(context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id));
@@ -65,7 +60,6 @@ const orchestrator = df.orchestrator(function* (context) {
             // durable funtion Task.all will fail if there are no tasks in array
             if (provisioningTasks.length > 0) {
                 yield context.df.Task.all(provisioningTasks);
-
                 job.state = 'FINISHED'
             }
         } else {
@@ -73,18 +67,21 @@ const orchestrator = df.orchestrator(function* (context) {
             if (accessTokenResponse.body.message) {
                 message = accessTokenResponse.body.message
             }
-            if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", message)
             job.state = 'ERROR';
             job.message = message;
         }
     } else {
-        if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "internal error")
         job.state = 'ERROR';
         job.message = "internal error";
     }
 
     yield context.df.callActivity("ACT1021JobUpdate", job);
-    return outputs;
+
+    if(job.state == "ERROR"){
+        return createErrorResponse(job.message, context, functionName);
+    }else{
+        return job
+    }
 });
 
 export default orchestrator;

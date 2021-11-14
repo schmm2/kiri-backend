@@ -161,6 +161,7 @@ const orchestrator = df.orchestrator(function* (context) {
                                             tenantDbId: tenant._id,
                                             msGraphResourceUrl: msGraphResource.resource,
                                             configurationVersionDbId: newestConfigurationVersion._id,
+                                            accessToken: accessTokenResponse.body.accessToken
                                         }
                                         if (!context.df.isReplaying) context.log("--------- Update Config in Tenant ----------");
                                         if (!context.df.isReplaying) context.log(payload);
