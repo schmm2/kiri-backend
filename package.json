@@ -29,6 +29,7 @@
     "devDependencies": {
         "@azure/functions": "^1.2.3",
         "@azure/identity-vscode": "^1.0.0",
+        "npm-build-zip": "^1.0.3",
         "yarn-upgrade-all": "^0.5.4"
     }
 }
