@@ -21,7 +21,12 @@ const activityFunction: AzureFunction = async function (context: Context, job): 
     let updatedJob = Job.findOneAndUpdate(
         { _id: job._id },
         job,
-        (err, doc) => { if (err) { console.log("mongoose: error updating job " + job._id) } }
+        (err, doc) => {
+            if (err) {
+                context.log.error("mongoose: error updating job " + job._id)
+                context.log.error(err)
+            }
+        }
     );
     return job;
 };

@@ -127,7 +127,8 @@ const orchestrator = df.orchestrator(function* (context) {
         if (response && response.length > 0) {
             // add response to job log
             for (let m = 0; m < response.length; m++) {
-                job.log += response[m].message
+                job.log.push({ message: response[m].message, status: ''})
+                // context.log(job);
             }
         }
         // finish job state

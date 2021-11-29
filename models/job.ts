@@ -4,6 +4,11 @@ import { createObjectTC } from '../graphql/createObjectTC';
 
 const expireAfterSeconds = 3600;
 
+let logSchema = new mongoose.Schema({
+    message: { type: String },
+    status: { type: String }
+})
+
 const jobSchema = new mongoose.Schema({
     type: {
         type: String,
@@ -18,13 +23,9 @@ const jobSchema = new mongoose.Schema({
     message: {
         type: String,
         required: false,
-        default: '' 
+        default: ''
     },
-    log: {
-        type: String,
-        required: false,
-        default: '' 
-    },
+    log: [logSchema],
     tenant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tenant',
@@ -35,7 +36,7 @@ const jobSchema = new mongoose.Schema({
 });
 
 // set expire index
-jobSchema.index({"_ts":1}, {expireAfterSeconds: expireAfterSeconds});
+jobSchema.index({ "_ts": 1 }, { expireAfterSeconds: expireAfterSeconds });
 
 export const Job = mongoose.models.Job || mongoose.model('Job', jobSchema);
 export const JobTC = createObjectTC({ model: Job, customizationOptions: {} });
@@ -49,4 +50,4 @@ JobTC.addRelation(
         },
         projection: { tenant: true }, // point fields in source object, which should be fetched from DB
     }
-); 
+);
