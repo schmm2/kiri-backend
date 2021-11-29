@@ -39,7 +39,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // check parameters
     if (!configurationVersionDbId || !configurationDisplayName || !tenantDbId || !msGraphResourceUrl) {
-        job.message = 'Invalid Parameters';
+        job.log.push({ message: "invalid parameters", state: "Error" });
         job.state = 'ERROR'
     }
     else { // all parameters ok
@@ -64,12 +64,12 @@ const orchestrator = df.orchestrator(function* (context) {
             // if (!context.df.isReplaying) context.log(functionName + ", new Configuration Version", newConfigurationVersion);
 
             if (newConfigurationVersion) {
-                if (!context.df.isReplaying) context.log(functionName, "parameters ok");
-
+                // if (!context.df.isReplaying) context.log(functionName, "parameters ok");
                 let newConfigurationVersionValue = JSON.parse(newConfigurationVersion.value);
 
                 // replace displayName
                 newConfigurationVersionValue.displayName = configurationDisplayName;
+                job.log.push({ message: 'trying to create config ' + configurationDisplayName, state: "DEFAULT" });
 
                 let dataValidationParameter = {
                     msGraphResourceUrl: msGraphResourceUrl,
@@ -90,16 +90,17 @@ const orchestrator = df.orchestrator(function* (context) {
 
                 if (!msGraphResponse.ok) {
                     if (msGraphResponse.message && msGraphResponse.message.code) {
-                        if (!context.df.isReplaying) context.log(msGraphResponse);
-                        job.message = "Error: " + msGraphResponse.message.code;
+                        // if (!context.df.isReplaying) context.log(msGraphResponse);
+                        job.log.push({ message: "Error: " + msGraphResponse.message.code, state: "ERROR" });
+
                         if (msGraphResponse.message.body) {
                             let responseMessage = JSON.parse(msGraphResponse.message.body)
                             responseMessage = (JSON.parse(responseMessage.message)).Message
-                            job.message += ", Message: " + responseMessage
+                            job.log.push({ message: responseMessage, state: "ERROR" });
                         }
                     }
+                    job.log.push({ message: 'error msGraph Post', state: "ERROR" });
                     job.state = 'ERROR'
-                    job.message = 'error msGraph Post'
                 } else {
                     // get id of just created new config
                     newConfigurationId = msGraphResponse.message.id;
@@ -132,15 +133,15 @@ const orchestrator = df.orchestrator(function* (context) {
                             }
                         }
                     }
-                    // return newly created config
-                    return newConfiguration;
+                    job.log.push({ message: 'config created', state: "SUCCESS" });
+                    job.state = "FINISHED"
                 }
             } else {
-                job.message = 'Invalid Parameters, unable to find configurationVersion';
+                job.log.push({ message: 'Invalid Parameters, unable to find configurationVersion', state: "ERROR" });
                 job.state = 'ERROR'
             }
         } else {
-            job.message = 'Invalid Parameters, unable to create access token';
+            job.log.push({ message: 'Invalid Parameters, unable to create access token', state: "ERROR" });
             job.state = 'ERROR'
         }
     }
@@ -148,9 +149,10 @@ const orchestrator = df.orchestrator(function* (context) {
     let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", job);
 
     if (job.state == "ERROR") {
-        return createErrorResponse(job.message, context, functionName);
+        return createErrorResponse('error', context, functionName);
     } else {
-        return job;
+        // return newly created config
+        return newConfiguration;
     }
 });
 

@@ -35,7 +35,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // check parameters
     if (!configurationVersionDbId || !tenantDbId || !msGraphResourceUrl) {
-        job.message = 'Invalid Parameters';
+        job.log.push({ message: 'invalid parameters', state: "ERROR" });
         job.state = 'ERROR'
     }
     else {
@@ -61,8 +61,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
             if (newConfigurationVersion) {
                 // if (!context.df.isReplaying) context.log("ORC1100MsGraphConfigurationUpdate, new Configuration Version", newConfigurationVersion);
-                if (!context.df.isReplaying) context.log(functionName, "configurationVersion ok");
-
+                // if (!context.df.isReplaying) context.log(functionName, "configurationVersion ok");
 
                 let newConfigurationVersionValue = JSON.parse(newConfigurationVersion.value);
 
@@ -88,9 +87,17 @@ const orchestrator = df.orchestrator(function* (context) {
 
                 if (!msGraphPatchResponse.ok) {
                     if (msGraphPatchResponse.message && msGraphPatchResponse.message.code) {
-                        job.message = msGraphPatchResponse.message.code;
+                        job.log.push({ message: 'error code ' + msGraphPatchResponse.message.code, state: "ERROR" });
+
+                        if (msGraphPatchResponse.message.body) {
+                            let responseMessage = JSON.parse(msGraphPatchResponse.message.body)
+                            responseMessage = (JSON.parse(responseMessage.message)).Message
+                            job.log.push({ message: responseMessage, state: "ERROR" });
+                        }
                     }
+                    job.log.push({ message: 'error msGraph Post', state: "ERROR" });
                     job.state = 'ERROR'
+
                 } else {
                     //if (!context.df.isReplaying) context.log(msGraphPatchResponse)
                     //job.message = msGraphPatchResponse
@@ -146,14 +153,16 @@ const orchestrator = df.orchestrator(function* (context) {
                             }
                         }
                     }
+                    job.log.push({ message: 'msGraph Patch ok', state: "SUCCESS" });
+                    job.state = 'FINISHED'
                 }
             }
             else {
-                job.message = 'Invalid Parameters, unable to find configurationVersion';
+                job.log.push({ message: 'Invalid Parameters, unable to find configurationVersion', state: "ERROR" });
                 job.state = 'ERROR'
             }
         } else {
-            job.message = 'unable to aquire accessToken';
+            job.log.push({ message: 'unable to aquire accessToken', state: "ERROR" });
             job.state = 'ERROR'
         }
     }
@@ -166,7 +175,6 @@ const orchestrator = df.orchestrator(function* (context) {
     } else {
         return job;
     }
-    return response;
 });
 
 export default orchestrator;
