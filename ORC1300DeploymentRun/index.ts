@@ -6,25 +6,25 @@
 
 import * as df from "durable-functions"
 import { Job } from "../models/job";
+import { Deployment } from "../models/deployment"
 import { createSettingsHash } from '../utils/createSettingsHash'
 
-const orchestrator = df.orchestrator(function* (context) {
-    let functionName = "ORC1300DeploymentRun";
-    if (!context.df.isReplaying) context.log(functionName, "start");
+const functionName = "ORC1300DeploymentRun";
 
+const orchestrator = df.orchestrator(function* (context) {
+    //if (!context.df.isReplaying) context.log(functionName, "start");
     const queryParameters: any = context.df.getInput();
-    // console.log(queryParameters);
 
     // get deployment
     let deploymentId = queryParameters.deploymentId;
     let deployment = yield context.df.callActivity("ACT1050DeploymentGetById", deploymentId);
 
     if (deployment) {
-        if (!context.df.isReplaying) context.log(functionName, "found deployment " + deploymentId);
+        // if (!context.df.isReplaying) context.log(functionName, "found deployment " + deploymentId);
 
         // get deploymentreference for this deployment
         let deploymentReferences = yield context.df.callActivity("ACT1070DeploymentReferenceByDeploymentId", deploymentId);
-        if (!context.df.isReplaying) context.log(deploymentReferences)
+        // if (!context.df.isReplaying) context.log(deploymentReferences)
 
         let tenants = deployment.tenants
         let configurationIds = deployment.configurations
@@ -181,7 +181,11 @@ const orchestrator = df.orchestrator(function* (context) {
             job.log.push({ message: "deployment ran", state: "DEFAULT" });
             let jobResponse = yield context.df.callActivity("ACT1021JobUpdate", job);
         }
+        // update deployment last execution date
+        deployment.executionDate = Date.now();
+        yield context.df.callActivity("ACT1075DeploymentUpdate", deployment);
     }
+    // if (!context.df.isReplaying) context.log(functionName, "deployment not found");
     return null;
 });
 
