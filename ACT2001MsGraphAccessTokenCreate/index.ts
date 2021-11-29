@@ -46,7 +46,7 @@ function getAccessToken(url, resource, tenantId, appId, secret, functionContext)
 
 const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: Context, tenantDetails): Promise<any> {
     let response = null;
-    // if (!context.df.isReplaying) context.log("ACT2001MsGraphAccessTokenCreate", "TenantDetails");
+    // if (!context.df.isReplaying) context.log(functionName, "TenantDetails");
     // if (!context.df.isReplaying) context.log(tenantDetails);
 
     // get Keyvault name
@@ -55,28 +55,28 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
     if (!keyVaultName) {
         return createErrorResponse("keyvault name undefined", context, functionName);
     } else {
-        context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault: " + keyVaultName);
+        context.log(functionName, "KeyVault: " + keyVaultName);
     }
 
     const KVUri = "https://" + keyVaultName + ".vault.azure.net";
     const credential = new DefaultAzureCredential();
     const client = new SecretClient(KVUri, credential);
-    context.log("ACT2001MsGraphAccessTokenCreate", "KeyVault " + KVUri);
+    context.log(functionName, "KeyVault " + KVUri);
 
     if (tenantDetails.tenantId && tenantDetails.appId) {
-        context.log("ACT2001MsGraphAccessTokenCreate", "all parameters ok");
-        context.log("ACT2001MsGraphAccessTokenCreate", "appId: " + tenantDetails.appId);
+        context.log(functionName, "all parameters ok");
+        context.log(functionName, "appId: " + tenantDetails.appId);
 
         // Get Secret from KeyVault
         let retrievedSecret = null;
         try {
-            context.log("ACT2001MsGraphAccessTokenCreate", "get secret");
+            context.log(functionName, "get secret");
             retrievedSecret = await client.getSecret(tenantDetails.appId);
         }
         catch (error) {
-            context.log("ACT2001MsGraphAccessTokenCreate", "Error, unable to get Secret from KeyVault")
+            context.log(functionName, "Error, unable to get Secret from KeyVault")
             if (error.errorResponse && error.errorResponse.errorDescription) {
-                context.log("ACT2001MsGraphAccessTokenCreate", error.errorResponse.errorDescription)
+                context.log(functionName, error.errorResponse.errorDescription)
             } else {
                 context.log(JSON.stringify(error));
             }
@@ -84,7 +84,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
         }
 
         if (retrievedSecret && retrievedSecret.value) {
-            context.log("ACT2001MsGraphAccessTokenCreate", "Secret retrieved");
+            context.log(functionName, "Secret retrieved");
 
             let tokenResponse = await getAccessToken(
                 AUTHORITYHOSTURL,
@@ -97,7 +97,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
 
             // build response object
             if (tokenResponse.ok) {
-                context.log("ACT2001MsGraphAccessTokenCreate", "requested access token successfully");
+                context.log(functionName, "requested access token successfully");
                 // console.log(tokenResponse);
 
                 if (tokenResponse.result) {
@@ -116,11 +116,11 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
                 return createErrorResponse(message, context, functionName);
             }
         } else {
-            context.log("ACT2001MsGraphAccessTokenCreate", "unable to get secret")
+            context.log(functionName, "unable to get secret")
             return createErrorResponse("unable to get secret", context, functionName);
         }
     } else {
-        context.log("ACT2001MsGraphAccessTokenCreate", "No tenant id defined")
+        context.log(functionName, "No tenant id defined")
         return createErrorResponse("parameters missing", context, functionName);
     }
     return response

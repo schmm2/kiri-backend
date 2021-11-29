@@ -1,4 +1,4 @@
-const createSuccessResponse = (message, context, functionName, payload = ""): any => {
+const createSuccessResponse = (message = "", context, functionName): any => {
     if (context.df) {
         if (!context.df.isReplaying) context.log(functionName, message);
     } else {
@@ -6,8 +6,9 @@ const createSuccessResponse = (message, context, functionName, payload = ""): an
     }
 
     return {
-        "ok": false,
-        "payload": message
+        "ok": true,
+        "state": 'SUCCESS',
+        "message": message
     }
 }
 

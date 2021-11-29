@@ -1,13 +1,9 @@
 const mongoose = require('mongoose');
 import { TenantTC } from '../models/tenant';
 import { createObjectTC } from '../graphql/createObjectTC';
+import { logSchema } from './log'
 
 const expireAfterSeconds = 3600;
-
-let logSchema = new mongoose.Schema({
-    message: { type: String },
-    status: { type: String }
-})
 
 const jobSchema = new mongoose.Schema({
     type: {
@@ -19,11 +15,6 @@ const jobSchema = new mongoose.Schema({
         enum: ['STARTED', 'RUNNING', 'FINISHED', 'WARNING', 'ERROR'],
         default: 'STARTED',
         required: true
-    },
-    message: {
-        type: String,
-        required: false,
-        default: ''
     },
     log: [logSchema],
     tenant: {

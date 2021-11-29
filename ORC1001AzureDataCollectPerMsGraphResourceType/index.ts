@@ -13,13 +13,12 @@ import * as df from "durable-functions"
 let queryParameters: any;
 
 function handleGroupPolicyConfigurations(context, paramter) {
-    if (!context.df.isReplaying) context.log("ccccccccccccc")
-    if (!context.df.isReplaying) context.log(paramter)
-    const provisioningTasks = [];
+    // if (!context.df.isReplaying) context.log(paramter)
     // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
-
+    const provisioningTasks = [];
+    
     for (let i = 0; i < paramter.graphValue.length; i++) {
-        // if (!context.df.isReplaying) context.log("aaaaaaaaaaaaaa create subtask for config" + paramter.graphValue[i].displayName)
+        // if (!context.df.isReplaying) context.log("create subtask for config" + paramter.graphValue[i].displayName)
         const child_id = context.df.instanceId + `:${i}`;
         let payload = { ...paramter }
         payload.graphValue = paramter.graphValue[i];
@@ -29,9 +28,9 @@ function handleGroupPolicyConfigurations(context, paramter) {
 }
 
 function handleConfigurations(context, paramter) {
-    //context.log(paramter)
-    const provisioningTasks = [];
+    // if (!context.df.isReplaying) context.log(paramter)
     // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
+    const provisioningTasks = [];
 
     for (let i = 0; i < paramter.graphValue.length; i++) {
         let payload = { ...paramter }
@@ -122,23 +121,19 @@ const orchestrator = df.orchestrator(function* (context) {
                 //response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break
         }
-
-        // analyze response, set job state accordingly
+        // analyze response, add to job log
         if (response && response.length > 0) {
             // add response to job log
             for (let m = 0; m < response.length; m++) {
-                job.log.push({ message: response[m].message, status: ''})
+                job.log.push({ message: response[m].message, state: response[m].state})
                 // context.log(job);
             }
-        }
-        // finish job state
-        job.message = 'Done'
-        job.state = 'FINISHED'
+        } 
+        job.state = 'FINISHED'  
     } else {
-        job.state = 'ERROR';
-        job.message = 'Unable to query MS Graph API';
+        job.log.push({ message: 'Unable to query MS Graph API', state: 'ERROR'})
+        job.state = 'ERROR'
     }
-
     let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", job);
     // console.log("finished job data", finishedJobData);
     // console.log("updated job", updatedJobResponse);

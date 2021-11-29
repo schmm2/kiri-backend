@@ -27,7 +27,7 @@ const orchestrator = df.orchestrator(function* (context) {
     if (tenantDbId) {
         if (!context.df.isReplaying) context.log(functionName, "Tenant Mongo DB Id: " + tenantDbId);
     } else {
-        job.message = "invalid parameter, tenant Db id not definied";
+        job.log.push({ message: "invalid parameter, tenant Db id not definied", state: "ERROR" });
         job.state = "ERROR"
     }
 
@@ -56,13 +56,16 @@ const orchestrator = df.orchestrator(function* (context) {
                 provisioningTasks.push(context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id));
             }
             if (!context.df.isReplaying) context.log("ORC1000AzureDataCollect", "started " + provisioningTasks.length + " tasks")
-            job.log += "started " +  provisioningTasks.length + " tasks"
+
+            // set job state
+            job.log.push({ message: "started " + provisioningTasks.length + " tasks", state: "SUCCESS" });
 
             // durable funtion Task.all will fail if there are no tasks in array
             if (provisioningTasks.length > 0) {
                 yield context.df.Task.all(provisioningTasks);
             }
             // set job state
+            job.log.push({ message: provisioningTasks.length + " tasks done", state: "SUCCESS" });
             job.state = 'FINISHED'
         } else {
             let message = "unable to aquire access token"
@@ -70,18 +73,18 @@ const orchestrator = df.orchestrator(function* (context) {
                 message = accessTokenResponse.message
             }
             job.state = 'ERROR';
-            job.message = message;
+            job.log.push({ message: message, state: "ERROR" });
         }
     } else {
         job.state = 'ERROR';
-        job.message = "internal error";
+        job.log.push({ message: "internal error", state: "ERROR" });
     }
 
     yield context.df.callActivity("ACT1021JobUpdate", job);
 
-    if(job.state == "ERROR"){
+    if (job.state == "ERROR") {
         return createErrorResponse(job.message, context, functionName);
-    }else{
+    } else {
         return job
     }
 });

@@ -25,6 +25,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
     let response = {
         ok: true,
+        state: 'SUCCESS',
         message: "",
         createdConfigurationId: null,
         createdConfigurationVersionId: null
@@ -109,17 +110,17 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                         }
                         else {
                             context.log.error(configurationObjectFromGraphJSON)
-                            return createErrorResponse("error: unable to save configuration version," + configurationObjectFromGraph.displayName, context, functionName)
+                            return createErrorResponse("unable to save configuration version," + configurationObjectFromGraph.displayName, context, functionName)
                         }
                     } else {
-                        return createErrorResponse("error: unable to save configuration, " + configurationObjectFromGraph.id, context, functionName)
+                        return createErrorResponse("unable to save configuration, " + configurationObjectFromGraph.id, context, functionName)
                     }
                 } else {
-                    return createErrorResponse("error: configurationType not defined in Db, " + configurationTypeName, context, functionName)
+                    return createErrorResponse("configurationType not defined in Db, " + configurationTypeName, context, functionName)
                 }
             } else {
                 context.log(configurationObjectFromGraph);
-                return createErrorResponse('error: configurationType name not defined', context, functionName)
+                return createErrorResponse('configurationType name not defined', context, functionName)
             }
         }
         // ****

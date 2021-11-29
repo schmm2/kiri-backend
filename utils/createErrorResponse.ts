@@ -1,4 +1,4 @@
-const createErrorResponse = (message, context, functionName, payload = ""): any => {
+const createErrorResponse = (message = "", context, functionName): any => {
     if (context.df) {
         if (!context.df.isReplaying) context.log.error(functionName, message);
     } else {
@@ -7,6 +7,7 @@ const createErrorResponse = (message, context, functionName, payload = ""): any 
 
     return {
         "ok": false,
+        "state": 'ERROR',
         "message": message
     }
 }
