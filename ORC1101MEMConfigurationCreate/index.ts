@@ -49,7 +49,7 @@ const orchestrator = df.orchestrator(function* (context) {
             let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
 
             // get accessToken
-            let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
+            let accessTokenResponse = yield context.df.callActivity("ACT2000MsGraphAccessTokenCreate", tenant);
             // if (!context.df.isReplaying) context.log(functionName + ", accessToken", accessTokenResponse);
 
             if (accessTokenResponse.accessToken) {
@@ -87,26 +87,16 @@ const orchestrator = df.orchestrator(function* (context) {
 
                 // if (!context.df.isReplaying) context.log(functionName + ", patch parameter", createParameter);
                 let msGraphResponse = yield context.df.callActivity("ACT2003MsGraphPost", createParameter);
+                context.log(functionName, msGraphResponse)
 
                 if (!msGraphResponse.ok) {
-                    if (msGraphResponse.message && msGraphResponse.message.code) {
-                        // if (!context.df.isReplaying) context.log(msGraphResponse);
-                        job.log.push({ message: "Error: " + msGraphResponse.message.code, state: "ERROR" });
-
-                        if (msGraphResponse.message.body) {
-                            let responseMessage = JSON.parse(msGraphResponse.message.body)
-                            responseMessage = (JSON.parse(responseMessage.message)).Message
-                            job.log.push({ message: responseMessage, state: "ERROR" });
-                        }
-                    }
                     job.log.push({ message: 'error msGraph Post', state: "ERROR" });
+                    job.log.push({ message: msGraphResponse.message, state: "ERROR" });
                     job.state = 'ERROR'
                 } else {
-                    // get id of just created new config
-                    newConfigurationId = msGraphResponse.message.id;
-
-                    // get full object
-                    newConfiguration = msGraphResponse.message;
+                    // get full object & id of just created new config
+                    newConfiguration = msGraphResponse.data;
+                    newConfigurationId = msGraphResponse.data.id;
 
                     // ***
                     // Group Policy
@@ -150,10 +140,11 @@ const orchestrator = df.orchestrator(function* (context) {
 
     if (job.state == "ERROR") {
         return createErrorResponse('error', context, functionName);
-    } else {
-        // return newly created config
-        return newConfiguration;
     }
+    
+    // return newly created config
+    context.log(newConfiguration)
+    return newConfiguration;
 });
 
 export default orchestrator;

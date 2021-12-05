@@ -40,7 +40,7 @@ const orchestrator = df.orchestrator(function* (context) {
         accessToken: queryParameters.accessToken
     }
 
-    let gpoDefinitionValuesResponse = yield context.df.callActivity("ACT2000MsGraphQuery", graphQueryDefinitionValues);
+    let gpoDefinitionValuesResponse = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryDefinitionValues);
 
     if (gpoDefinitionValuesResponse && gpoDefinitionValuesResponse.result && gpoDefinitionValuesResponse.result.value) {
         let gpoDefinitionValues = gpoDefinitionValuesResponse.result.value

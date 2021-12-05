@@ -71,11 +71,12 @@ const orchestrator = df.orchestrator(function* (context) {
     // context.log("ORC1001AzureDataCollectPerMsGraphResourceType", job);
 
     // Query MsGraph Resources in Tenant
-    let msGraphResource = yield context.df.callActivity("ACT2000MsGraphQuery", queryParameters);
+    let msGraphResource = yield context.df.callActivity("ACT2001MsGraphGet", queryParameters);
     if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType: query ms Graph Resources");
+    // if (!context.df.isReplaying) context.log(msGraphResource);
 
-    if (msGraphResource && msGraphResource.result && msGraphResource.result.value) {
-        let msGraphResponseValue = msGraphResource.result.value
+    if (msGraphResource && msGraphResource.data && msGraphResource.data.value) {
+        let msGraphResponseValue = msGraphResource.data.value
         //context.log(msGraphResponseValue);
 
         // build parameter for activities or orchestrator calls

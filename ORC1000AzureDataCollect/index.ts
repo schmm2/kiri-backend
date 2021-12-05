@@ -32,7 +32,7 @@ const orchestrator = df.orchestrator(function* (context) {
     }
 
     let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
-    let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
+    let accessTokenResponse = yield context.df.callActivity("ACT2000MsGraphAccessTokenCreate", tenant);
 
     if (accessTokenResponse.accessToken) {
         if (accessTokenResponse.ok) {

@@ -1,0 +1,8 @@
+{
+    "bindings": [{
+        "name": "msGraphResource",
+        "type": "activityTrigger",
+        "direction": "in"
+    }],
+    "scriptFile": "../dist/ACT2001MsGraphGet/index.js"
+}

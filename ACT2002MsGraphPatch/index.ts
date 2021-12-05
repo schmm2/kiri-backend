@@ -10,44 +10,45 @@
  */
 
 import { AzureFunction, Context } from "@azure/functions"
-var MicrosoftGraph = require("@microsoft/microsoft-graph-client");
+import { createErrorResponse } from "../utils/createErrorResponse"
 
-// Utils
-require("isomorphic-fetch");
+const functionName = "ACT2002MsGraphPatch"
+const graphBaseUrl = "https://graph.microsoft.com/beta"
 
-// Create Graph Client to AD
-function getClient(accessToken) {
-    return MicrosoftGraph.Client.init({
-        defaultVersion: "beta",
-        authProvider: (done) => {
-            done(null, accessToken);
-        },
-    });
-}
+async function patchGraphAPI(token, apiUrl, body) {
+    const headers = new Headers()
+    headers.append('Content-Type', 'application/json')
+    headers.append('Authorization', `Bearer ${token}`)
 
-// Patch Graph API
-async function patchGraphAPI(client, apiUrl, dataObject) {
     try {
-        let result = await client.api(apiUrl).patch(dataObject);
-        return { ok: true, message: result };
+        let response = await fetch(apiUrl, {
+            method: 'PATCH',
+            headers: headers,
+            body: JSON.stringify(body)
+        })
+        if (response.status >= 400 && response.status < 600) {
+            return { ok: false, message: "Bad response from server, statusText: " + response.statusText };
+        };
+        return { ok: true, message: response.statusText }
     } catch (error) {
-        return { ok: false, message: error };
+        return { ok: false, message: JSON.stringify(error) }
     }
 }
 
-const activityFunction: AzureFunction = async function (context: Context, queryParameters): Promise<string> {
-    console.log("ACT2002MsGraphhPatch", "start script");
-
+const activityFunction: AzureFunction = async function (context: Context, queryParameters): Promise<ActivityMessage> {
     let accessToken = queryParameters.accessToken;
     let msGraphApiUrl = queryParameters.msGraphApiUrl;
     let dataObject = queryParameters.dataObject
-
-    let client = await getClient(accessToken);
+    let url = graphBaseUrl + msGraphApiUrl
 
     // patch resource via graph api
-    let response: any = await patchGraphAPI(client, msGraphApiUrl, dataObject);
-    console.log("ACT2002MsGraphhPatch", response);
+    let response: ActivityMessage = await patchGraphAPI(accessToken, url, dataObject);
+    // context.log(url);
+    // context.log(dataObject);
 
+    if (!response.ok) {
+        return createErrorResponse(response.message, context, functionName);
+    }
     return response;
 };
 

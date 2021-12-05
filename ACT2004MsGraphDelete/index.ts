@@ -11,44 +11,40 @@
 
 import { AzureFunction, Context } from "@azure/functions"
 import { createErrorResponse } from "../utils/createErrorResponse"
-
-const functionName = "ACT2003MsGraphPost"
+const functionName = "ACT2004MsGraphDelete"
 const graphBaseUrl = "https://graph.microsoft.com/beta"
 
-async function postGraphAPI(token, apiUrl, body): Promise<ActivityMessage> {
+async function deleteGraphAPI(token, apiUrl) {
     const headers = new Headers()
     headers.append('Content-Type', 'application/json')
     headers.append('Authorization', `Bearer ${token}`)
 
     try {
         let response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(body)
+            method: 'DELETE',
+            headers: headers
         })
         if (response.status >= 400 && response.status < 600) {
             return { ok: false, message: "Bad response from server, statusText: " + response.statusText };
         };
-        let data = await response.json();
-        return { ok: true, message: response.statusText, data: data }
+        return { ok: true, message: 'Deleted' }
     } catch (error) {
         return { ok: false, message: error }
     }
 }
 
-
-const activityFunction: AzureFunction = async function (context: Context, queryParameters): Promise<ActivityMessage> {
+const activityFunction: AzureFunction = async function (context: Context, queryParameters): Promise<string> {
     let accessToken = queryParameters.accessToken;
     let msGraphApiUrl = queryParameters.msGraphApiUrl;
-    let dataObject = queryParameters.dataObject
+    //context.log(functionName, "msgraph url " + msGraphApiUrl);
+
+    // build final API Url
     let url = graphBaseUrl + msGraphApiUrl
 
-    // post resource via graph api
-    let response: ActivityMessage = await postGraphAPI(accessToken, url, dataObject);
-    //context.log(url);
-    //context.log(dataObject);
-
-    if (!response.ok) {
+    // patch resource via graph api
+    let response: any = await deleteGraphAPI(accessToken, url);
+    
+    if(!response.ok){
         return createErrorResponse(response.message, context, functionName);
     }
     return response;

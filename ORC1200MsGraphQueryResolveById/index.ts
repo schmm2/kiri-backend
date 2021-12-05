@@ -18,11 +18,11 @@ const orchestrator = df.orchestrator(function* (context) {
         accessToken: queryParameters.accessToken
     }
 
-    let response = yield context.df.callActivity("ACT2000MsGraphQuery", graphQueryResource);
+    let response = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryResource);
 
-    if (response && response.ok && response.result) {
+    if (response.ok && response.data) {
         context.log("ORC1200MsGraphQueryResolveById", "found data for " + graphValue.id)
-        outputs = response.result
+        outputs = response.data
     }
     return outputs;
 });

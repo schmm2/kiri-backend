@@ -45,7 +45,7 @@ const orchestrator = df.orchestrator(function* (context) {
             let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
 
             // get accessToken
-            let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
+            let accessTokenResponse = yield context.df.callActivity("ACT2000MsGraphAccessTokenCreate", tenant);
             // if (!context.df.isReplaying) context.log("ORC1100MsGraphConfigurationUpdate, accessTokenResponse", accessTokenResponse);
 
             if (accessTokenResponse.accessToken) {
@@ -86,18 +86,9 @@ const orchestrator = df.orchestrator(function* (context) {
                 // if (!context.df.isReplaying) context.log(msGraphPatchResponse);
 
                 if (!msGraphPatchResponse.ok) {
-                    if (msGraphPatchResponse.message && msGraphPatchResponse.message.code) {
-                        job.log.push({ message: 'error code ' + msGraphPatchResponse.message.code, state: "ERROR" });
-
-                        if (msGraphPatchResponse.message.body) {
-                            let responseMessage = JSON.parse(msGraphPatchResponse.message.body)
-                            responseMessage = (JSON.parse(responseMessage.message)).Message
-                            job.log.push({ message: responseMessage, state: "ERROR" });
-                        }
-                    }
                     job.log.push({ message: 'error msGraph Post', state: "ERROR" });
+                    job.log.push({ message: msGraphPatchResponse.message, state: "ERROR" });
                     job.state = 'ERROR'
-
                 } else {
                     //if (!context.df.isReplaying) context.log(msGraphPatchResponse)
                     //job.message = msGraphPatchResponse
@@ -115,10 +106,10 @@ const orchestrator = df.orchestrator(function* (context) {
                         }
 
                         // query existing ids
-                        let definitionValuesResponse = yield context.df.callActivity("ACT2000MsGraphQuery", graphQueryDefinitionValues);
+                        let definitionValuesResponse = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryDefinitionValues);
 
                         if (definitionValuesResponse.ok) {
-                            let definitonValues = definitionValuesResponse.result.value;
+                            let definitonValues = definitionValuesResponse.data.value;
                             // extract all ids
                             let definitonValuesIds = definitonValues.map(definitonValue => definitonValue.id);
                             let updateDefinitionValuesUrl = "/deviceManagement/groupPolicyConfigurations/" + newConfigurationVersionValue.id + "/updateDefinitionValues"
@@ -171,7 +162,7 @@ const orchestrator = df.orchestrator(function* (context) {
     // if (!context.df.isReplaying) context.log(updatedJobResponse);
 
     if (job.state == "ERROR") {
-        return createErrorResponse(job.message, context, functionName);
+        return createErrorResponse(JSON.stringify(job.log), context, functionName);
     } else {
         return job;
     }

@@ -1,10 +1,10 @@
 {
   "bindings": [
     {
-      "name": "msGraphResource",
+      "name": "name",
       "type": "activityTrigger",
       "direction": "in"
     }
   ],
-  "scriptFile": "../dist/ACT2000MsGraphQuery/index.js"
+  "scriptFile": "../dist/ACT1064ConfigurationGetByTenant/index.js"
 }

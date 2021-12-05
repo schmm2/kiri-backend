@@ -36,7 +36,7 @@ const orchestrator = df.orchestrator(function* (context) {
             let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantId);
 
             // get accessToken
-            let accessTokenResponse = yield context.df.callActivity("ACT2001MsGraphAccessTokenCreate", tenant);
+            let accessTokenResponse = yield context.df.callActivity("ACT2000MsGraphAccessTokenCreate", tenant);
 
             // Create Job
             let jobData = {
@@ -80,7 +80,7 @@ const orchestrator = df.orchestrator(function* (context) {
                         }
 
                         let createdConfiguration = yield context.df.callSubOrchestrator("ORC1101MEMConfigurationCreate", payload, context.df.instanceId + '1');
-                        // if (!context.df.isReplaying) context.log(createdConfiguration);
+                        if (!context.df.isReplaying) context.log(createdConfiguration);
 
                         if (createdConfiguration.id) {
                             // store in database
@@ -90,7 +90,7 @@ const orchestrator = df.orchestrator(function* (context) {
                                 tenant: tenant
                             }
                             let newConfigResponseResponse = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", newConfigParameter);
-                            // if (!context.df.isReplaying) context.log(newConfigResponseResponse)
+                            if (!context.df.isReplaying) context.log(newConfigResponseResponse)
 
                             if (newConfigResponseResponse.createdConfigurationId) {
                                 // add deploymentReference
@@ -104,7 +104,6 @@ const orchestrator = df.orchestrator(function* (context) {
                                 let deploymentReferenceResponse = yield context.df.callActivity("ACT1071DeploymentReferenceCreate", deploymentReference);
                                 if (deploymentReferenceResponse._id) {
                                     // if (!context.df.isReplaying) context.log(deploymentReferenceResponse);
-
                                     job.log.push({ message: "deploymentReference stored", state: "SUCCESS" });
                                 } else {
                                     job.log.push({ message: newestConfigurationVersion.displayName + " ,unable to store deploymentReference", state: "ERROR" });
@@ -138,34 +137,41 @@ const orchestrator = df.orchestrator(function* (context) {
                                     graphResourceUrl: configurationGraphUrl,
                                     accessToken: accessTokenResponse.accessToken
                                 }
-                                let destinationConfigurationFromGraph = yield context.df.callActivity("ACT2000MsGraphQuery", payload);
+
+                                // get config from tenant, check if destination still exists
+                                let destinationConfigurationFromGraph = yield context.df.callActivity("ACT2001MsGraphGet", payload);
                                 //if (!context.df.isReplaying) context.log(destinationConfigurationFromGraph);
+  
+                                if (destinationConfigurationFromGraph.ok && destinationConfigurationFromGraph.data) {
+                                    // Calculate Hash of Settings to compare it to stored version
+                                    let configurationFromGraphSettingsHash = createSettingsHash(destinationConfigurationFromGraph.data)
+                                    // if (!context.df.isReplaying) context.log(configurationFromGraphSettingsHash);
 
-                                // Calculate Hash of Settings to compare it to stored version
-                                let configurationFromGraphSettingsHash = createSettingsHash(destinationConfigurationFromGraph.result)
-                                // if (!context.df.isReplaying) context.log(configurationFromGraphSettingsHash);
-
-                                // Compare Hash
-                                if (configurationFromGraphSettingsHash === newestConfigurationVersionInDB.version) {
-                                    // if (!context.df.isReplaying) context.log(functionName, "Tenant Config up to date");
-                                    job.log.push({ message: newestConfigurationVersionInDB.displayName + ", config in tenant " + tenant.name + "is up to date", state: "SUCCESS" });
-                                } else {
-                                    // Update Config in Tenant
-                                    let payload = {
-                                        tenantDbId: tenant._id,
-                                        msGraphResourceUrl: msGraphResource.resource,
-                                        configurationVersionDbId: newestConfigurationVersionInDB._id,
-                                        accessToken: accessTokenResponse.accessToken
-                                    }
-
-                                    let updatedConfigurationResponse = yield context.df.callSubOrchestrator("ORC1100MEMConfigurationUpdate", payload, context.df.instanceId + '2');
-
-                                    if (updatedConfigurationResponse.state === "FNISHED") {
-                                        // if (!context.df.isReplaying) context.log(updatedConfigurationResponse); 
-                                        job.log.push({ message: newestConfigurationVersionInDB.displayName + ", update config in tenant " + tenant.name, state: "SUCCESS" });
+                                    // Compare Hash
+                                    if (configurationFromGraphSettingsHash === newestConfigurationVersionInDB.version) {
+                                        // if (!context.df.isReplaying) context.log(functionName, "Tenant Config up to date");
+                                        job.log.push({ message: newestConfigurationVersionInDB.displayName + ", config in tenant " + tenant.name + "is up to date", state: "SUCCESS" });
                                     } else {
-                                        job.log.push({ message: newestConfigurationVersionInDB.displayName + ", unable to update config in tenant " + tenant.name, state: "ERROR" });
+                                        // Update Config in Tenant
+                                        let payload = {
+                                            tenantDbId: tenant._id,
+                                            msGraphResourceUrl: msGraphResource.resource,
+                                            configurationVersionDbId: newestConfigurationVersionInDB._id,
+                                            accessToken: accessTokenResponse.accessToken
+                                        }
+
+                                        let updatedConfigurationResponse = yield context.df.callSubOrchestrator("ORC1100MEMConfigurationUpdate", payload, context.df.instanceId + '2');
+
+                                        if (updatedConfigurationResponse.state === "FNISHED") {
+                                            // if (!context.df.isReplaying) context.log(updatedConfigurationResponse); 
+                                            job.log.push({ message: newestConfigurationVersionInDB.displayName + ", update config in tenant " + tenant.name, state: "SUCCESS" });
+                                        } else {
+                                            job.log.push({ message: newestConfigurationVersionInDB.displayName + ", unable to update config in tenant " + tenant.name, state: "ERROR" });
+                                        }
                                     }
+                                }
+                                else {
+                                    job.log.push({ message: destinationConfigurationFromGraph.message, state: "ERROR" });
                                 }
                             } else {
                                 job.log.push({ message: newestConfigurationVersionInDB.displayName + ", internal error", state: "ERROR" });
@@ -174,7 +180,7 @@ const orchestrator = df.orchestrator(function* (context) {
                     }
                 }
             }
-            else{
+            else {
                 job.log.push({ message: "unable to retain access token", state: "ERROR" });
             }
             job.state = "FINISHED"
