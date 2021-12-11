@@ -25,7 +25,7 @@ const orchestrator = df.orchestrator(function* (context) {
         let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantId);
         let accessToken = (yield context.df.callActivity("ACT2000MsGraphAccessTokenCreate", tenant)).accessToken;
         // if (!context.df.isReplaying) context.log(functionName + ", accessToken", accessTokenResponse);
-        if (!context.df.isReplaying) context.log(functionName, tenantObject);
+        // if (!context.df.isReplaying) context.log(functionName, tenantObject);
 
         for (const configuration of tenantObject.configurations) {
             const child_id = context.df.instanceId + `:${id}`;
@@ -38,7 +38,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
             const provisionTask = context.df.callSubOrchestrator("ORC1103MEMConfigurationDelete", parameter, child_id);
             // if (!context.df.isReplaying) context.log.error(configuration);
-            if (!context.df.isReplaying) context.log(functionName, parameter);
+            // if (!context.df.isReplaying) context.log(functionName, parameter);
 
             provisioningTasks.push(provisionTask);
             id++;
