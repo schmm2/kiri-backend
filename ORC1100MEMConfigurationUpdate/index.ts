@@ -1,28 +1,24 @@
 ﻿/*
- * This function is not intended to be invoked directly. Instead it will be
- * triggered by an HTTP starter function.
- * 
- * Before running this sample, please:
- * - create a Durable activity function (default name is "Hello")
- * - create a Durable HTTP starter function
- * - run 'npm install durable-functions' from the wwwroot folder of your 
- *    function app in Kudu
+    Update Configuration in MEM
+
+    tenantDbId: Update a configuration in the destination Tenant
+    configurationVersionDbId: Source configurationVersion db id can be submitted as parameter
+    accessToken: Graph API AccessToken
  */
 
 import * as df from "durable-functions"
 import { createErrorResponse } from "../utils/createErrorResponse"
+import { createSettingsHash } from '../utils/createSettingsHash'
 const functionName = "ORC1100MsGraphConfigurationUpdate"
 
 const orchestrator = df.orchestrator(function* (context) {
-    if (!context.df.isReplaying) context.log(functionName, "start");
-    let response = "";
+    // if (!context.df.isReplaying) context.log(functionName, "start");
 
     const queryParameters: any = context.df.getInput();
     // if (!context.df.isReplaying) context.log(queryParameters);
 
     let tenantDbId = queryParameters.tenantDbId;
     let configurationVersionDbId = queryParameters.configurationVersionDbId;
-    let msGraphResourceUrl = queryParameters.msGraphResourceUrl;
     let accessToken = queryParameters.accessToken ? queryParameters.accessToken : null;
 
     // Create Job
@@ -34,19 +30,19 @@ const orchestrator = df.orchestrator(function* (context) {
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
 
     // check parameters
-    if (!configurationVersionDbId || !tenantDbId || !msGraphResourceUrl) {
+    if (!tenantDbId || !configurationVersionDbId) {
         job.log.push({ message: 'invalid parameters', state: "ERROR" });
         job.state = 'ERROR'
     }
     else {
-        // get accessToken if needed, not executed if received an accessToken via Parameter
-        if (!accessToken) {
-            // get Tenant
-            let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
+        job.log.push({ message: 'parameters in order', state: "DEFAULT" });
 
-            // get accessToken
+        // create accesToken if needed
+        if (!accessToken) {
+            // get Tenant & ccessToken
+            let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
             let accessTokenResponse = yield context.df.callActivity("ACT2000MsGraphAccessTokenCreate", tenant);
-            // if (!context.df.isReplaying) context.log("ORC1100MsGraphConfigurationUpdate, accessTokenResponse", accessTokenResponse);
+            // if (!context.df.isReplaying) context.log(functionName + ", accessToken", accessTokenResponse);
 
             if (accessTokenResponse.accessToken) {
                 accessToken = accessTokenResponse.accessToken;
@@ -54,112 +50,127 @@ const orchestrator = df.orchestrator(function* (context) {
         }
 
         if (accessToken) {
-            if (!context.df.isReplaying) context.log(functionName, "acccesToken available");
+            // get full config version object
+            let selectedConfigurationVersion = yield context.df.callActivity("ACT1040ConfigurationVersionGetById", configurationVersionDbId);
+            let configurationDbId = selectedConfigurationVersion.configuration;
+            // if (!context.df.isReplaying) context.log(selectedConfigurationVersion);
 
-            // get ConfigurationVersion
-            let newConfigurationVersion = yield context.df.callActivity("ACT1040ConfigurationVersionGetById", configurationVersionDbId);
+            if (selectedConfigurationVersion) {
+                // get msgraphresource
+                let msGraphResource = yield context.df.callActivity("ACT1060ConfigurationGetMsGraphResource", configurationDbId);
+                // if (!context.df.isReplaying) context.log("msGraphResource");
+                // if (!context.df.isReplaying) context.log(msGraphResource);
 
-            if (newConfigurationVersion) {
-                // if (!context.df.isReplaying) context.log("ORC1100MsGraphConfigurationUpdate, new Configuration Version", newConfigurationVersion);
-                // if (!context.df.isReplaying) context.log(functionName, "configurationVersion ok");
-
-                let newConfigurationVersionValue = JSON.parse(newConfigurationVersion.value);
-
-                let dataValidationParameter = {
-                    msGraphResourceUrl: msGraphResourceUrl,
-                    dataObject: newConfigurationVersionValue
+                // Search Destination Configuration via Graph
+                let msGetParameter = {
+                    graphResourceUrl: msGraphResource.resource,
+                    accessToken: accessToken
                 }
 
-                // if (!context.df.isReplaying) context.log("ORC1100MsGraphConfigurationUpdate, data validation parameter", dataValidationParameter);
-                let newConfigurationVersionValueValidated = yield context.df.callActivity("ACT2010MsGraphPatchDataValidation", dataValidationParameter);
+                // get config from tenant
+                let destinationConfigurationSearchFromGraph = yield context.df.callActivity("ACT2001MsGraphGet", msGetParameter);
+                // if (!context.df.isReplaying) context.log("config via graph");
+                // if (!context.df.isReplaying) context.log(msGraphResource.resource);
+                // if (!context.df.isReplaying) context.log(destinationConfigurationSearchFromGraph)
 
-                let patchParameter = {
-                    accessToken: accessToken,
-                    dataObject: newConfigurationVersionValueValidated,
-                    msGraphApiUrl: msGraphResourceUrl + "/" + newConfigurationVersionValueValidated.id
-                }
+                // healthy graph response
+                if (destinationConfigurationSearchFromGraph && destinationConfigurationSearchFromGraph.data) {
+                    // filter result by attribut 'displayName' or 'name'
+                    let destinationConfigurationFromGraphElement = (destinationConfigurationSearchFromGraph.data.value.filter(config => config.displayName === selectedConfigurationVersion.displayName))[0]
+                    if (selectedConfigurationVersion.name) {
+                        destinationConfigurationFromGraphElement = (destinationConfigurationSearchFromGraph.data.value.filter(config => config.name === selectedConfigurationVersion.name))[0]
+                    }
+                    // if (!context.df.isReplaying) context.log(destinationConfigurationFromGraphElement)
 
-                // if (!context.df.isReplaying) context.log("ORC1100MsGraphConfigurationUpdate, patch parameter", patchParameter);
-                let msGraphPatchResponse = yield context.df.callActivity("ACT2002MsGraphPatch", patchParameter);
-                response = msGraphPatchResponse;
+                    // destination config already exists, so we need to update -> Patch
+                    if (destinationConfigurationFromGraphElement && destinationConfigurationFromGraphElement.id) {
+                        job.log.push({ message: 'config found in tenant', state: "DEFAULT" });
 
-                // if (!context.df.isReplaying) context.log(msGraphPatchResponse);
+                        // preparevalidation data
+                        let newConfigurationVersionValue = JSON.parse(selectedConfigurationVersion.value);
+                        let dataValidationParameter = {
+                            msGraphResourceUrl: msGraphResource.resource,
+                            dataObject: newConfigurationVersionValue
+                        }
+                        let newConfigurationVersionValueValidated = yield context.df.callActivity("ACT2010MsGraphPatchDataValidation", dataValidationParameter);
+                        // if (!context.df.isReplaying) context.log("ORC1100MsGraphConfigurationUpdate, data validation parameter", dataValidationParameter);
 
-                if (!msGraphPatchResponse.ok) {
-                    job.log.push({ message: 'error msGraph Post', state: "ERROR" });
-                    job.log.push({ message: msGraphPatchResponse.message, state: "ERROR" });
-                    job.state = 'ERROR'
-                } else {
-                    //if (!context.df.isReplaying) context.log(msGraphPatchResponse)
-                    //job.message = msGraphPatchResponse
+                        // Get full Object from Tenant
+                        // Search Destination Configuration via Graph
+                        let configurationGraphUrl = msGraphResource.resource + "/" + destinationConfigurationFromGraphElement.id;
 
-                    // group policy objects need to be handled differently, need to change definitionValues too
-                    if (msGraphResourceUrl == "/deviceManagement/groupPolicyConfigurations" &&
-                        (newConfigurationVersionValue.gpoSettings && newConfigurationVersionValue.gpoSettings.length > 0)) {
-
-                        let groupPolicyUrl = "/deviceManagement/groupPolicyConfigurations/" + newConfigurationVersionValue.id + "/definitionValues";
-
-                        // first query all defined active definitonValues
-                        let graphQueryDefinitionValues = {
-                            graphResourceUrl: groupPolicyUrl,
+                        let parameter = {
+                            graphResourceUrl: configurationGraphUrl,
                             accessToken: accessToken
                         }
 
-                        // query existing ids
-                        let definitionValuesResponse = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryDefinitionValues);
+                        // get config from tenant
+                        let destinationConfigurationFromGraphResponse = yield context.df.callActivity("ACT2001MsGraphGet", parameter);
 
-                        if (definitionValuesResponse.ok) {
-                            let definitonValues = definitionValuesResponse.data.value;
-                            // extract all ids
-                            let definitonValuesIds = definitonValues.map(definitonValue => definitonValue.id);
-                            let updateDefinitionValuesUrl = "/deviceManagement/groupPolicyConfigurations/" + newConfigurationVersionValue.id + "/updateDefinitionValues"
+                        if (destinationConfigurationFromGraphResponse.data) {
+                            // define destination url of config
+                            let destinationUrl = msGraphResource.resource + "/" + destinationConfigurationFromGraphResponse.data.id;
+                            //if (!context.df.isReplaying) context.log(destinationConfigurationFromGraphResponse);
 
-                            // delete all existing definitionValues
-                            let deleteDefinitionValuesPayload = {
-                                "added": [],
-                                "updated": [],
-                                "deletedIds": definitonValuesIds
-                            }
+                            // Calculate Hash of Settings to compare it to stored version
+                            let configurationFromGraphSettingsHash = createSettingsHash(destinationConfigurationFromGraphResponse.data)
+                            // if (!context.df.isReplaying) context.log(configurationFromGraphSettingsHash);
 
-                            let graphPostDefinitionValues = {
-                                msGraphApiUrl: updateDefinitionValuesUrl,
-                                accessToken: accessToken,
-                                dataObject: deleteDefinitionValuesPayload
-                            }
-                            // delete existing ids
-                            if (!context.df.isReplaying) context.log(graphPostDefinitionValues);
-                            let deleteDefinitionValuesResponse = yield context.df.callActivity("ACT2003MsGraphPost", graphPostDefinitionValues);
-                            if (!context.df.isReplaying) context.log(deleteDefinitionValuesResponse);
-
-                            // add new definitionValues
-                            for (let i = 0; i < newConfigurationVersionValue.gpoSettings.length; i++) {
-                                let gpoSetting = newConfigurationVersionValue.gpoSettings[i];
-
-                                let newGpoDefinitionValue = {
-                                    msGraphApiUrl: groupPolicyUrl,
+                            // Compare Hash
+                            if (configurationFromGraphSettingsHash === selectedConfigurationVersion.version) {
+                                // if (!context.df.isReplaying) context.log(functionName, "Tenant Config up to date");
+                                job.log.push({ message: selectedConfigurationVersion.displayName + ", config in tenant is up to date", state: "SUCCESS" });
+                            } else {
+                                job.log.push({ message: 'config needs to be updated', state: "DEFAULT" });
+                                let parameter = {
                                     accessToken: accessToken,
-                                    dataObject: gpoSetting
+                                    dataObject: newConfigurationVersionValueValidated,
+                                    msGraphApiUrl: destinationUrl
                                 }
-                                let createDefinitionValuesResponse = yield context.df.callActivity("ACT2003MsGraphPost", newGpoDefinitionValue);
+
+                                let msGraphPatchResponse = yield context.df.callActivity("ACT2002MsGraphPatch", parameter);
+                                // if (!context.df.isReplaying) context.log("ORC1100MsGraphConfigurationUpdate, patch parameter", patchParameter);
+                                // if (!context.df.isReplaying) context.log(parameter)
+                                // if (!context.df.isReplaying) context.log(msGraphPatchResponse)
+
+                                if (msGraphPatchResponse.ok) {
+                                    job.log.push({ message: 'config updated', state: "SUCCESS" });
+                                }
                             }
                         }
+                    } else {
+                        job.log.push({ message: 'unable to find config tenant, create new config', state: "DEFAULT" });
+
+                        let parameter = {
+                            tenantDbId: tenantDbId,
+                            configurationVersionDbId: configurationVersionDbId,
+                            accessToken: accessToken,
+                        }
+
+                        const child_id = context.df.instanceId + `:1101`;
+                        let createConfigResponse = yield context.df.callSubOrchestrator("ORC1100MEMConfigurationUpdate", parameter, child_id);
+                        // if (!context.df.isReplaying) context.log(createConfigResponse)
+
+                        if (createConfigResponse.id) {
+                            job.log.push({ message: 'config created', state: "SUCCESS" });
+                        }
                     }
-                    job.log.push({ message: 'msGraph Patch ok', state: "SUCCESS" });
-                    job.state = 'FINISHED'
+                    job.state = "FINISHED"
                 }
+                else {
+                    job.log.push({ message: 'graph error' + destinationConfigurationSearchFromGraph.message, state: "ERROR" });
+                    job.state = "ERROR"
+                    if (!context.df.isReplaying) context.log(msGetParameter)
+                    if (!context.df.isReplaying) context.log(destinationConfigurationSearchFromGraph)
+                }
+            } else {
+                job.log.push({ message: 'unable to find config in db', state: "ERROR" });
+                job.state = "ERROR"
             }
-            else {
-                job.log.push({ message: 'Invalid Parameters, unable to find configurationVersion', state: "ERROR" });
-                job.state = 'ERROR'
-            }
-        } else {
-            job.log.push({ message: 'unable to aquire accessToken', state: "ERROR" });
-            job.state = 'ERROR'
         }
     }
 
-    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", job);
-    // if (!context.df.isReplaying) context.log(updatedJobResponse);
+    yield context.df.callActivity("ACT1021JobUpdate", job);
 
     if (job.state == "ERROR") {
         return createErrorResponse(JSON.stringify(job.log), context, functionName);

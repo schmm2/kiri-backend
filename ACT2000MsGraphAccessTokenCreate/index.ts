@@ -44,10 +44,10 @@ function getAccessToken(url, resource, tenantId, appId, secret, functionContext)
     });
 }
 
-const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: Context, tenantDetails): Promise<any> {
+const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: Context, tenantObject): Promise<any> {
     let response = null;
-    // if (!context.df.isReplaying) context.log(functionName, "TenantDetails");
-    // if (!context.df.isReplaying) context.log(tenantDetails);
+    // if (!context.df.isReplaying) context.log(functionName, "tenantObject");
+    // if (!context.df.isReplaying) context.log(tenantObject);
 
     // get Keyvault name
     const keyVaultName = process.env["KEYVAULT_NAME"];
@@ -63,15 +63,15 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
     const client = new SecretClient(KVUri, credential);
     context.log(functionName, "KeyVault " + KVUri);
 
-    if (tenantDetails.tenantId && tenantDetails.appId) {
+    if (tenantObject.tenantId && tenantObject.appId) {
         context.log(functionName, "all parameters ok");
-        context.log(functionName, "appId: " + tenantDetails.appId);
+        context.log(functionName, "appId: " + tenantObject.appId);
 
         // Get Secret from KeyVault
         let retrievedSecret = null;
         try {
             context.log(functionName, "get secret");
-            retrievedSecret = await client.getSecret(tenantDetails.appId);
+            retrievedSecret = await client.getSecret(tenantObject.appId);
         }
         catch (error) {
             context.log(functionName, "Error, unable to get Secret from KeyVault")
@@ -89,8 +89,8 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
             let tokenResponse = await getAccessToken(
                 AUTHORITYHOSTURL,
                 RESOURCEURL,
-                tenantDetails.tenantId,
-                tenantDetails.appId,
+                tenantObject.tenantId,
+                tenantObject.appId,
                 retrievedSecret.value,
                 context
             );

@@ -1,12 +1,8 @@
 ﻿/*
- * This function is not intended to be invoked directly. Instead it will be
- * triggered by an HTTP starter function.
- * 
- * Before running this sample, please:
- * - create a Durable activity function (default name is "Hello")
- * - create a Durable HTTP starter function
- * - run 'npm install durable-functions' from the wwwroot folder of your 
- *    function app in Kudu
+    Create Configuration in MEM
+    tenantDbI: create a configuration in the destination Tenant
+    configurationDisplayName: overwrite config displayName
+    accessToken: accessToken
  */
 
 import * as df from "durable-functions"
@@ -15,18 +11,16 @@ import { createErrorResponse } from "../utils/createErrorResponse"
 const functionName = "ORC1101MsGraphConfigurationCreate"
 
 const orchestrator = df.orchestrator(function* (context) {
-    if (!context.df.isReplaying) context.log(functionName, "start");
+    // if (!context.df.isReplaying) context.log(functionName, "start");
 
     const queryParameters: any = context.df.getInput();
     // if (!context.df.isReplaying) context.log(queryParameters);
 
     let tenantDbId = queryParameters.tenantDbId;
     let configurationVersionDbId = queryParameters.configurationVersionDbId;
-    let msGraphResourceUrl = queryParameters.msGraphResourceUrl;
     let configurationDisplayName = queryParameters.configurationName
     let accessToken = queryParameters.accessToken ? queryParameters.accessToken : null;
 
-    let newConfigurationId;
     let newConfiguration;
 
     // Create Job
@@ -38,17 +32,15 @@ const orchestrator = df.orchestrator(function* (context) {
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
 
     // check parameters
-    if (!configurationVersionDbId || !configurationDisplayName || !tenantDbId || !msGraphResourceUrl) {
+    if (!configurationVersionDbId || !configurationDisplayName || !tenantDbId) {
         job.log.push({ message: "invalid parameters", state: "Error" });
         job.state = 'ERROR'
     }
     else { // all parameters ok
         // get accessToken if needed, not executed if received an accessToken via Parameter
         if (!accessToken) {
-            // get Tenant
+            // get Tenant & accessToken
             let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantDbId);
-
-            // get accessToken
             let accessTokenResponse = yield context.df.callActivity("ACT2000MsGraphAccessTokenCreate", tenant);
             // if (!context.df.isReplaying) context.log(functionName + ", accessToken", accessTokenResponse);
 
@@ -61,33 +53,42 @@ const orchestrator = df.orchestrator(function* (context) {
         if (accessToken) {
             // get ConfigurationVersion
             let newConfigurationVersion = yield context.df.callActivity("ACT1040ConfigurationVersionGetById", configurationVersionDbId);
+            let configurationDbId = newConfigurationVersion.configuration;
             // if (!context.df.isReplaying) context.log(functionName + ", new Configuration Version", newConfigurationVersion);
 
             if (newConfigurationVersion) {
                 // if (!context.df.isReplaying) context.log(functionName, "parameters ok");
                 let newConfigurationVersionValue = JSON.parse(newConfigurationVersion.value);
 
-                // replace displayName
-                newConfigurationVersionValue.displayName = configurationDisplayName;
-                job.log.push({ message: 'trying to create config ' + configurationDisplayName, state: "DEFAULT" });
+                // get msgraphresource
+                let msGraphResource = yield context.df.callActivity("ACT1060ConfigurationGetMsGraphResource", configurationDbId);
+                let msGraphResourceUrl = msGraphResource.resource
+                // if (!context.df.isReplaying) context.log("msGraphResource");
+                // if (!context.df.isReplaying) context.log(msGraphResource);
 
+                // replace displayName if needed
+                if (configurationDisplayName) {
+                    newConfigurationVersionValue.displayName = configurationDisplayName;
+                }
+                
                 let dataValidationParameter = {
                     msGraphResourceUrl: msGraphResourceUrl,
                     dataObject: newConfigurationVersionValue
                 }
 
-                // if (!context.df.isReplaying) context.log(functionName + ", data validation parameter", dataValidationParameter);
                 let newConfigurationValidated = yield context.df.callActivity("ACT2011MsGraphCreateDataValidation", dataValidationParameter);
-
+                // if (!context.df.isReplaying) context.log(functionName + ", data validation parameter", dataValidationParameter);
+                
                 let createParameter = {
                     accessToken: accessToken,
                     dataObject: newConfigurationValidated,
                     msGraphApiUrl: msGraphResourceUrl
                 }
-
+                job.log.push({ message: 'trying to create config ' + newConfigurationVersionValue.displayName, state: "DEFAULT" });
+                
                 // if (!context.df.isReplaying) context.log(functionName + ", patch parameter", createParameter);
                 let msGraphResponse = yield context.df.callActivity("ACT2003MsGraphPost", createParameter);
-                context.log(functionName, msGraphResponse)
+                // if (!context.df.isReplaying) context.log(functionName, msGraphResponse)
 
                 if (!msGraphResponse.ok) {
                     job.log.push({ message: 'error msGraph Post', state: "ERROR" });
@@ -96,7 +97,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 } else {
                     // get full object & id of just created new config
                     newConfiguration = msGraphResponse.data;
-                    newConfigurationId = msGraphResponse.data.id;
+                    let newConfigurationId = msGraphResponse.data.id;
 
                     // ***
                     // Group Policy
@@ -141,7 +142,7 @@ const orchestrator = df.orchestrator(function* (context) {
     if (job.state == "ERROR") {
         return createErrorResponse('error', context, functionName);
     }
-    
+
     // return newly created config
     context.log(newConfiguration)
     return newConfiguration;

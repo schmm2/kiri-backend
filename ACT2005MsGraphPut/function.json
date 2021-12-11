@@ -6,5 +6,5 @@
       "direction": "in"
     }
   ],
-  "scriptFile": "../dist/ACT1071DeploymentReferenceCreate/index.js"
+  "scriptFile": "../dist/ACT2005MsGraphPut/index.js"
 }

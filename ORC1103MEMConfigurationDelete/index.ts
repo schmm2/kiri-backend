@@ -13,8 +13,7 @@ import * as df from "durable-functions"
 const functionName = "ORC1103MEMConfigurationDelete"
 
 const orchestrator = df.orchestrator(function* (context) {
-    context.log(functionName, "start");
-
+    // context.log(functionName, "start");
     const queryParameters: any = context.df.getInput();
 
     let configurationId = queryParameters.configurationId;
@@ -37,7 +36,7 @@ const orchestrator = df.orchestrator(function* (context) {
     }
     else { // all parameters ok
         job.log.push({ message: "delete configuration " + configurationId, state: "DEFAULT" });
-        context.log(functionName, "config delete" + configurationId)
+        // context.log(functionName, "config delete" + configurationId)
 
         let configuration = yield context.df.callActivity("ACT1061ConfigurationGetById", configurationId);
         let msGraphResource = yield context.df.callActivity("ACT1060ConfigurationGetMsGraphResource", configurationId);

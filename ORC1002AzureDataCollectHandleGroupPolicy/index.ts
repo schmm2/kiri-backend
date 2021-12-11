@@ -42,8 +42,8 @@ const orchestrator = df.orchestrator(function* (context) {
 
     let gpoDefinitionValuesResponse = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryDefinitionValues);
 
-    if (gpoDefinitionValuesResponse && gpoDefinitionValuesResponse.result && gpoDefinitionValuesResponse.result.value) {
-        let gpoDefinitionValues = gpoDefinitionValuesResponse.result.value
+    if (gpoDefinitionValuesResponse && gpoDefinitionValuesResponse.data && gpoDefinitionValuesResponse.data.value) {
+        let gpoDefinitionValues = gpoDefinitionValuesResponse.data.value
 
         let tasks = []
         for (let d = 0; d < gpoDefinitionValues.length; d++) {

@@ -35,8 +35,8 @@ const orchestrator = df.orchestrator(function* (context) {
 
     let gpoPresentationValuesResponse = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryPresentationValues);
 
-    if (gpoPresentationValuesResponse && gpoPresentationValuesResponse.result && gpoPresentationValuesResponse.result.value) {
-        let gpoPresentationValues = gpoPresentationValuesResponse.result.value;
+    if (gpoPresentationValuesResponse && gpoPresentationValuesResponse.data && gpoPresentationValuesResponse.data.value) {
+        let gpoPresentationValues = gpoPresentationValuesResponse.data.value;
 
         if (gpoPresentationValues.length > 0) {
             settingsObj["presentationValues"] = []

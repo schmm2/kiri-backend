@@ -13,36 +13,39 @@ import * as df from "durable-functions"
 const functionName = "ORC1102MEMConfigurationsDelete"
 
 const orchestrator = df.orchestrator(function* (context) {
-    context.log(functionName, "start");
+    // context.log(functionName, "start");
 
     const queryParameters: any = context.df.getInput();
-    
+    let provisioningTasks = [];
+    let id = 0;
 
-    var id = 0;
-    for (const tenantObject of queryParameters) { 
-        let provisioningTasks = [];
-
-        // get Tenant
-        let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantObject.tenantId);
-
-        // get accessToken
-        let accessTokenResponse = yield context.df.callActivity("ACT2000MsGraphAccessTokenCreate", tenant);
+    for (const tenantObject of queryParameters) {
+        // get Tenant & accessToken
+        let tenantId = tenantObject.tenantId
+        let tenant = yield context.df.callActivity("ACT1030TenantGetById", tenantId);
+        let accessToken = (yield context.df.callActivity("ACT2000MsGraphAccessTokenCreate", tenant)).accessToken;
         // if (!context.df.isReplaying) context.log(functionName + ", accessToken", accessTokenResponse);
+        if (!context.df.isReplaying) context.log(functionName, tenantObject);
 
         for (const configuration of tenantObject.configurations) {
             const child_id = context.df.instanceId + `:${id}`;
-            
-            //context.log.error(configuration);
-            let parameter = {
-                accessToken: accessTokenResponse.accessToken,
-                tenantId: tenantObject.tenantId,
+
+            const parameter = {
+                accessToken: accessToken,
+                tenantId: tenantId,
                 configurationId: configuration
             }
 
             const provisionTask = context.df.callSubOrchestrator("ORC1103MEMConfigurationDelete", parameter, child_id);
+            // if (!context.df.isReplaying) context.log.error(configuration);
+            if (!context.df.isReplaying) context.log(functionName, parameter);
+
             provisioningTasks.push(provisionTask);
             id++;
         }
+    }
+
+    if (provisioningTasks.length >= 1) {
         yield context.df.Task.all(provisioningTasks);
     }
 });
