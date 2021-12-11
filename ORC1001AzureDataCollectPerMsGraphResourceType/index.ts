@@ -13,26 +13,53 @@ import * as df from "durable-functions"
 let queryParameters: any;
 
 function handleGroupPolicyConfigurations(context, paramter) {
+    // if (!context.df.isReplaying) context.log(paramter)
+    // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
     const provisioningTasks = [];
-    // context.log("Instance ID:", context.df.instanceId)
-
+    
     for (let i = 0; i < paramter.graphValue.length; i++) {
+        // if (!context.df.isReplaying) context.log("create subtask for config" + paramter.graphValue[i].displayName)
         const child_id = context.df.instanceId + `:${i}`;
         let payload = { ...paramter }
         payload.graphValue = paramter.graphValue[i];
-        // context.log("ORC1001AzureDataCollectPerMsGraphResourceType",  "start group policy handler " + i + " for " + paramter.graphValue[i].displayName)
         provisioningTasks.push(context.df.callSubOrchestrator("ORC1002AzureDataCollectHandleGroupPolicy", payload, child_id));
     }
-    context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "started " + provisioningTasks.length + " tasks")
+    return provisioningTasks;
+}
+
+function handleConfigurations(context, paramter) {
+    // if (!context.df.isReplaying) context.log(paramter)
+    // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
+    const provisioningTasks = [];
+
+    for (let i = 0; i < paramter.graphValue.length; i++) {
+        let payload = { ...paramter }
+        payload.graphValue = paramter.graphValue[i];
+        provisioningTasks.push(context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", payload));
+    }
+    if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "started " + provisioningTasks.length + " tasks")
+    return provisioningTasks;
+}
+
+function createSubORCTasksForEachGraphValue(context, paramter, subOrchestrator, idOffset) {
+    const provisioningTasks = [];
+    // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
+
+    for (let i = 0; i < paramter.graphValue.length; i++) {
+        const child_id = context.df.instanceId + idOffset + `:${i}`;
+        let payload = { ...paramter }
+        payload.graphValue = paramter.graphValue[i];
+        provisioningTasks.push(context.df.callSubOrchestrator(subOrchestrator, payload, child_id));
+    }
     return provisioningTasks;
 }
 
 const orchestrator = df.orchestrator(function* (context) {
-    context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "start");
+    if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "start");
 
     let response = null;
     queryParameters = context.df.getInput();
-    context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "url: " + queryParameters.graphResourceUrl);
+    if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "url: " + queryParameters.graphResourceUrl);
 
     // Create Job
     let jobData = {
@@ -41,66 +68,78 @@ const orchestrator = df.orchestrator(function* (context) {
         tenant: queryParameters.tenant._id
     };
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
-    // console.log("new job", job);
+    // context.log("ORC1001AzureDataCollectPerMsGraphResourceType", job);
 
-    // Update Job
-    let finishedJobState = {
-        _id: job._id,
-        state: "FINISHED",
-        message: ""
-    };
+    // Query MsGraph Resources in Tenant
+    let msGraphResource = yield context.df.callActivity("ACT2001MsGraphGet", queryParameters);
+    if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType: query ms Graph Resources");
+    // if (!context.df.isReplaying) context.log(msGraphResource);
 
-    // Query Resources
-    let msGraphResource = yield context.df.callActivity("ACT2000MsGraphQuery", queryParameters);
-    context.log("ORC1001AzureDataCollectPerMsGraphResourceType: query ms Graph Resources");
+    if (msGraphResource && msGraphResource.data && msGraphResource.data.value) {
+        let msGraphResponseValue = msGraphResource.data.value
+        //context.log(msGraphResponseValue);
 
-    if (msGraphResource && msGraphResource.result && msGraphResource.result.value) {
-        let msGraphResponseValue = msGraphResource.result.value
-        // console.log(msGraphResponseValue);
-        // console.log("value ok")
-
+        // build parameter for activities or orchestrator calls
         let parameter = {
-            graphValue: msGraphResponseValue,
             graphResourceUrl: queryParameters.graphResourceUrl,
             tenant: queryParameters.tenant,
-            accessToken: queryParameters.accessToken
+            accessToken: queryParameters.accessToken,
+            graphValue: msGraphResponseValue
+        }
+
+        // check if ms graph resource needs further data resolved by id
+        // some data returned contains empty fields (for example deviceManagementScript -> scriptContent)
+        // some fields can't be queried by $expand
+        // solution: take each item and query it directly again -> $resource/$itemId
+        // with the response we replace the existing but incomplete value from the previous query
+        if (queryParameters.objectDeepResolve) {
+            let tasks = createSubORCTasksForEachGraphValue(context, parameter, "ORC1200MsGraphQueryResolveById", "1");
+            parameter.graphValue = yield context.df.Task.all(tasks);
         }
 
         switch (queryParameters.graphResourceUrl) {
             case '/deviceManagement/managedDevices':
-                response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", parameter);
-                break;
+                response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", parameter)
+                break
             case '/deviceManagement/groupPolicyConfigurations':
                 // call gpo handler
-                let tasks = handleGroupPolicyConfigurations(context, parameter);
-                let groupPolicyConfiguration = yield context.df.Task.all(tasks);
-                context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "query group policy configurations completed");
-                console.log(groupPolicyConfiguration);
-                parameter.graphValue = groupPolicyConfiguration;
-                response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
-                break;
+                // only return objects which need updating/creating in db
+                let tasks = handleGroupPolicyConfigurations(context, parameter)
+                let groupPolicyConfiguration = yield context.df.Task.all(tasks)
+                // filter empty objects
+                groupPolicyConfiguration = groupPolicyConfiguration.filter(n => n);
+
+                // handle the gpo objects as normal configurations from this point on
+                if (groupPolicyConfiguration.length > 0) {
+                    parameter.graphValue = groupPolicyConfiguration
+                    let gpoTasks = handleConfigurations(context, parameter)
+                    response = yield context.df.Task.all(gpoTasks)
+                }
+                break
             default:
-                response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
+                let tasksConfigurations = handleConfigurations(context, parameter)
+                response = yield context.df.Task.all(tasksConfigurations)
+                //response = yield context.df.callActivity("ACT3001AzureDataCollectHandleConfiguration", parameter);
                 break
         }
-
-        // analyze response, set job state accordingly
-        if (response) {
-            if (response.configurationTypeNotDefined && response.configurationTypeNotDefined.length > 0) {
-                finishedJobState.state = 'WARNING';
-                finishedJobState.message = 'ConfigurationType not yet implemented: ' + JSON.stringify(response.configurationTypeNotDefined);
+        // analyze response, add to job log
+        if (response && response.length > 0) {
+            // add response to job log
+            for (let m = 0; m < response.length; m++) {
+                job.log.push({ message: response[m].message, state: response[m].state})
+                // context.log(job);
             }
-        }
+        } 
+        job.state = 'FINISHED'  
     } else {
-        finishedJobState.state = 'ERROR';
-        finishedJobState.message = 'Unable to query MS Graph API';
+        job.log.push({ message: 'Unable to query MS Graph API', state: 'ERROR'})
+        job.state = 'ERROR'
     }
-
-    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", finishedJobState);
+    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", job);
     // console.log("finished job data", finishedJobData);
     // console.log("updated job", updatedJobResponse);
 
-    return msGraphResource;
+    return job;
 });
 
 export default orchestrator;

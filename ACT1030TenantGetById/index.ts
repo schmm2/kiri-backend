@@ -11,10 +11,8 @@
 
 import { AzureFunction, Context } from "@azure/functions"
 import { Tenant } from "../models/tenant";
-const createMongooseClient = require('../shared/mongodb');
 
 const activityFunction: AzureFunction = async function (context: Context, tenantId): Promise<string> {
-    await createMongooseClient();
     return Tenant.findById(tenantId);
 };
 

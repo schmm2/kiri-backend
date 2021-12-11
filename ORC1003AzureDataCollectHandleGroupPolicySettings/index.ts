@@ -26,24 +26,24 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // get all presentationValues of the specific definitionValue
     let presentationValuesGraphApiUrl = graphResourceUrl + "/" + graphItemId + "/definitionValues/" + definitionValue.id + "/presentationValues?$expand=presentation";
-    //context.log(presentationValuesGraphApiUrl);
+    // if (!context.df.isReplaying) context.log(presentationValuesGraphApiUrl);
 
     let graphQueryPresentationValues = {
         graphResourceUrl: presentationValuesGraphApiUrl,
         accessToken: queryParameters.accessToken
     }
 
-    let gpoPresentationValuesResponse = yield context.df.callActivity("ACT2000MsGraphQuery", graphQueryPresentationValues);
+    let gpoPresentationValuesResponse = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryPresentationValues);
 
-    if (gpoPresentationValuesResponse && gpoPresentationValuesResponse.result && gpoPresentationValuesResponse.result.value) {
-        let gpoPresentationValues = gpoPresentationValuesResponse.result.value;
+    if (gpoPresentationValuesResponse && gpoPresentationValuesResponse.data && gpoPresentationValuesResponse.data.value) {
+        let gpoPresentationValues = gpoPresentationValuesResponse.data.value;
 
         if (gpoPresentationValues.length > 0) {
             settingsObj["presentationValues"] = []
 
             for (let p = 0; p < gpoPresentationValues.length; p++) {
                 let presentationValue = gpoPresentationValues[p];
-                // context.log(presentationValue);
+                // if (!context.df.isReplaying) context.log(presentationValue);
 
                 // Add presentation@odata.bind property that links the value to the presentation object
                 presentationValue["presentation@odata.bind"] = "https://graph.microsoft.com/beta/deviceManagement/groupPolicyDefinitions('" + definitionValue.definition.id + "')/presentations('" + presentationValue.presentation.id + "')";

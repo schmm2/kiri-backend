@@ -16,6 +16,11 @@ const msgraphresourceSchema = new Schema({
     version: {
         type: String,
         required: true
+    },
+    objectDeepResolve: {
+        type: Boolean,
+        require: true,
+        default: false
     }
 }, {
     timestamps: true
@@ -29,7 +34,7 @@ export const MsGraphResourceTC = createObjectTC({ model: MsGraphResource, custom
 MsGraphResourceTC.addRelation(
     'configurationTypes',
     {
-        resolver: () => ConfigurationTypeTC.getResolver('findMany'),
+        resolver: () => ConfigurationTypeTC.mongooseResolvers.findMany(),
         prepareArgs: {
             filter: source => ({
                 msGraphResource: source._id
@@ -39,7 +44,7 @@ MsGraphResourceTC.addRelation(
     }
 );
 
-MsGraphResourceTC.wrapResolverResolve('removeById', next => async rp => {
+MsGraphResourceTC.mongooseResolvers.removeById().wrapResolve((next) => async rp => {
     // extend resolve params with hook
     rp.beforeRecordMutate = async (doc, resolveParams) => {
         console.log("MsGraphResourceTC: check if doc can be delete safely");

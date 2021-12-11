@@ -1,11 +1,11 @@
 const { DeviceTC } = require("../../models/Device");
 
 export const deviceQuery = {
-    deviceById: DeviceTC.getResolver("findById"),
-    deviceMany: DeviceTC.getResolver('findMany'),
+    deviceById: DeviceTC.mongooseResolvers.findById(),
+    deviceMany: DeviceTC.mongooseResolvers.findMany(),
 }
 
 export const deviceMutation = {
-    deviceCreateOne: DeviceTC.getResolver("createOne"),
-    deviceRemoveMany: DeviceTC.getResolver("removeMany")
+    deviceCreateOne: DeviceTC.mongooseResolvers.createOne(),
+    deviceRemoveMany: DeviceTC.mongooseResolvers.removeMany()
 }

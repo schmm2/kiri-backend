@@ -1,13 +1,14 @@
 import { ConfigurationTC } from "../../models/Configuration";
 
 export const configurationQuery = {
-    configurationByIds: ConfigurationTC.getResolver("findByIds"),
-    configurationById: ConfigurationTC.getResolver("findById"),
-    configurationMany: ConfigurationTC.getResolver('findMany'),
+    configurationByIds: ConfigurationTC.mongooseResolvers.findByIds(),
+    configurationById: ConfigurationTC.mongooseResolvers.findById(),
+    configurationMany: ConfigurationTC.mongooseResolvers.findMany(),
+    configurationManyLean: ConfigurationTC.mongooseResolvers.findMany({ lean: true })
 }
 
 export const configurationMutation = {
-    configurationCreateOne: ConfigurationTC.getResolver("createOne"),
-    configurationRemoveById: ConfigurationTC.getResolver("removeById"),
-    configurationRemoveMany: ConfigurationTC.getResolver("removeMany")
+    configurationCreateOne: ConfigurationTC.mongooseResolvers.createOne(),
+    configurationRemoveById: ConfigurationTC.mongooseResolvers.removeById(),
+    configurationRemoveMany: ConfigurationTC.mongooseResolvers.removeMany()
 }

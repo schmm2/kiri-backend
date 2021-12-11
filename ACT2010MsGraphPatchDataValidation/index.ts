@@ -25,6 +25,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     delete dataObject.createdDateTime
     delete dataObject.supportsScopeTags
     delete dataObject.roleScopeTagIds
+    delete dataObject.id
 
     switch (msGraphResourceUrl) {
         case '/deviceManagement/deviceEnrollmentConfigurations':

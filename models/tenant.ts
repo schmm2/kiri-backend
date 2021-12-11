@@ -32,7 +32,7 @@ export const TenantTC = createObjectTC({ model: Tenant, customizationOptions: {}
 TenantTC.addRelation(
    'configurations',
    {
-      resolver: () => ConfigurationTC.getResolver("findMany"),
+      resolver: () => ConfigurationTC.mongooseResolvers.findMany(),
       prepareArgs: {
          filter: source => ({
             tenant: source._id
@@ -45,7 +45,7 @@ TenantTC.addRelation(
 TenantTC.addRelation(
    'jobs',
    {
-      resolver: () => JobTC.getResolver("findMany"),
+      resolver: () => JobTC.mongooseResolvers.findMany(),
       prepareArgs: {
          filter: source => ({
             tenant: source._id
@@ -55,7 +55,7 @@ TenantTC.addRelation(
    }
 );
 
-TenantTC.wrapResolverResolve('removeById', next => async rp => {
+TenantTC.mongooseResolvers.removeById().wrapResolve(next => async rp => {
    // extend resolve params with hook
    rp.beforeRecordMutate = async (doc, resolveParams) => {
       console.log("TenantTC: remove related data");

@@ -1,46 +1,38 @@
-[
-    {
+[{
         "name": "androidManagedAppProtections",
         "resource": "/deviceAppManagement/androidManagedAppProtections",
         "version": "beta",
-        "configurationTypes": [
-            {
-                "name": "androidManagedAppProtection",
-                "category": "appprotection",
-                "platform": "android"
-            }
-        ]
+        "configurationTypes": [{
+            "name": "androidManagedAppProtection",
+            "category": "appprotection",
+            "platform": "android"
+        }]
     },
     {
         "name": "iosManagedAppProtections",
         "resource": "/deviceAppManagement/iosManagedAppProtections",
         "version": "beta",
-        "configurationTypes": [
-            {
-                "name": "iosManagedAppProtection",
-                "category": "appprotection",
-                "platform": "iosipados"
-            }
-        ]
+        "configurationTypes": [{
+            "name": "iosManagedAppProtection",
+            "category": "appprotection",
+            "platform": "iosipados"
+        }]
     },
     {
         "name": "targetedManagedAppConfigurations",
         "resource": "/deviceAppManagement/targetedManagedAppConfigurations",
         "version": "beta",
-        "configurationTypes": [
-            {
-                "name": "targetedManagedAppConfiguration",
-                "category": "appconfiguration",
-                "platform": "general"
-            }
-        ]
+        "configurationTypes": [{
+            "name": "targetedManagedAppConfiguration",
+            "category": "appconfiguration",
+            "platform": "general"
+        }]
     },
     {
         "name": "devicecompliancepolicies",
         "resource": "/deviceManagement/deviceCompliancePolicies",
         "version": "beta",
-        "configurationTypes": [
-            {
+        "configurationTypes": [{
                 "name": "androidCompliancePolicy",
                 "category": "compliance",
                 "platform": "android"
@@ -71,8 +63,7 @@
         "name": "deviceConfigurations",
         "resource": "/deviceManagement/deviceConfigurations",
         "version": "beta",
-        "configurationTypes": [
-            {
+        "configurationTypes": [{
                 "name": "windowsUpdateForBusinessConfiguration",
                 "category": "update",
                 "platform": "windows"
@@ -115,11 +106,32 @@
         ]
     },
     {
+        "name": "deviceManagementScripts",
+        "objectDeepResolve": true,
+        "resource": "/deviceManagement/deviceManagementScripts",
+        "version": "beta",
+        "configurationTypes": [{
+            "name": "deviceManagementScript",
+            "category": "deviceManagementScript",
+            "platform": "windows"
+        }]
+    },
+    {
+        "name": "deviceHealthScripts",
+        "objectDeepResolve": true,
+        "resource": "/deviceManagement/deviceHealthScripts",
+        "version": "beta",
+        "configurationTypes": [{
+            "name": "deviceHealthScript",
+            "category": "deviceHealthScript",
+            "platform": "windows"
+        }]
+    },
+    {
         "name": "deviceenrollmentconfigurations",
         "resource": "/deviceManagement/deviceEnrollmentConfigurations",
         "version": "beta",
-        "configurationTypes": [
-            {
+        "configurationTypes": [{
                 "name": "deviceEnrollmentLimitConfiguration",
                 "category": "enrollment",
                 "platform": "general"
@@ -138,20 +150,18 @@
                 "name": "windows10EnrollmentCompletionPageConfiguration",
                 "category": "enrollment",
                 "platform": "windows"
-            }    
+            }
         ]
     },
     {
         "name": "groupPolicyConfigurations",
         "resource": "/deviceManagement/groupPolicyConfigurations",
         "version": "beta",
-        "configurationTypes": [
-            {
-                "name": "groupPolicyConfiguration",
-                "category": "configurationprofile",
-                "platform": "windows"
-            }
-        ]
+        "configurationTypes": [{
+            "name": "groupPolicyConfiguration",
+            "category": "configurationprofile",
+            "platform": "windows"
+        }]
     },
     {
         "name": "managedDevices",
@@ -162,12 +172,10 @@
         "name": "windowsAutopilotDeploymentProfiles",
         "resource": "/deviceManagement/windowsAutopilotDeploymentProfiles",
         "version": "beta",
-        "configurationTypes": [
-            {
-                "name": "azureADWindowsAutopilotDeploymentProfile",
-                "category": "autopilot",
-                "platform": "windows"
-            }
-        ]
+        "configurationTypes": [{
+            "name": "azureADWindowsAutopilotDeploymentProfile",
+            "category": "autopilot",
+            "platform": "windows"
+        }]
     }
 ]

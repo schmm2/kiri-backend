@@ -10,26 +10,10 @@
  */
 
 import { AzureFunction, Context } from "@azure/functions"
-var mongoose = require('mongoose');
-const createMongooseClient = require('../shared/mongodb');
+import { Job } from '../models/job'
 
 const activityFunction: AzureFunction = async function (context: Context, jobParameters): Promise<string> {
-    //console.log(jobParameters);
-
-    const db = await createMongooseClient()
-    let Job = mongoose.model('Job');
-    let Tenant = mongoose.model('Tenant');
-
-    const newJob = await Job.create(jobParameters);
-    //console.log("created job", newJob._id);
-
-    // establish relationship, update tenant
-    Tenant.update(
-        { _id: jobParameters.tenant },
-        { $push: { jobs: newJob._id } },
-        (err, doc) => { if (err) { console.log("mongoose: error updating tenant") } }
-    )
-    return newJob;
+    return await Job.create(jobParameters);
 };
 
 export default activityFunction;

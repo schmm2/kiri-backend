@@ -1,4 +1,4 @@
-const { SchemaComposer } = require('graphql-compose');
+import { SchemaComposer } from 'graphql-compose';
 const schemaComposer = new SchemaComposer();
 
 const { tenantQuery, tenantMutation } = require('./tenant');
@@ -8,6 +8,9 @@ const { deviceQuery, deviceMutation } = require('./device');
 const { configurationQuery, configurationMutation } = require ('./configuration');
 const { configurationVersionQuery, configurationVersionMutation } = require('./configurationversion');
 const { jobQuery, jobMutation } = require('./job');
+const { deploymentQuery, deploymentMutation } = require('./deployment');
+const { deploymentReferenceQuery, deploymentReferenceMutation } = require('./deploymentreference');
+const { deviceVersionQuery, deviceVersionMutation } = require('./deviceversion')
 
 schemaComposer.Query.addFields({
     ...tenantQuery,
@@ -16,7 +19,10 @@ schemaComposer.Query.addFields({
     ...deviceQuery,
     ...configurationVersionQuery,
     ...configurationQuery,
-    ...jobQuery
+    ...jobQuery,
+    ...deploymentQuery,
+    ...deviceVersionQuery,
+    ...deploymentReferenceQuery
 })
 
 schemaComposer.Mutation.addFields({
@@ -26,7 +32,10 @@ schemaComposer.Mutation.addFields({
     ...deviceMutation,
     ...configurationVersionMutation,
     ...configurationMutation,
-    ...jobMutation
+    ...jobMutation,
+    ...deploymentMutation,
+    ...deviceVersionMutation,
+    ...deploymentReferenceMutation
 })
 
 module.exports = schemaComposer.buildSchema(); 

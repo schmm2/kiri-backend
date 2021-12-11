@@ -1,21 +1,20 @@
 {
-  "disabled": false,
-  "bindings": [
-    {
-      "authLevel": "function",
-      "type": "httpTrigger",
-      "direction": "in",
-      "name": "req",
-      "methods": [
-        "get",
-        "post"
-      ]
-    },
-    {
-      "type": "http",
-      "direction": "out",
-      "name": "$return"
-    }
-  ],
-  "scriptFile": "../dist/graphql/index.js"
+    "disabled": false,
+    "bindings": [{
+            "authLevel": "anonymous",
+            "type": "httpTrigger",
+            "direction": "in",
+            "name": "req",
+            "methods": [
+                "get",
+                "post"
+            ]
+        },
+        {
+            "type": "http",
+            "direction": "out",
+            "name": "$return"
+        }
+    ],
+    "scriptFile": "../dist/graphql/index.js"
 }
