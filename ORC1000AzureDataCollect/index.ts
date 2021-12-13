@@ -77,7 +77,7 @@ const orchestrator = df.orchestrator(function* (context) {
         }
     } else {
         job.state = 'ERROR';
-        job.log.push({ message: "internal error", state: "ERROR" });
+        job.log.push({ message: "internal error, unable to create accessToken", state: "ERROR" });
     }
 
     yield context.df.callActivity("ACT1021JobUpdate", job);

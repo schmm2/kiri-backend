@@ -21,7 +21,13 @@ const msgraphresourceSchema = new Schema({
         type: Boolean,
         require: true,
         default: false
-    }
+    },
+    changeTracking: {
+        type: String,
+        enum: ['HASH'],
+        default: 'HASH',
+        required: true
+    },
 }, {
     timestamps: true
 });
