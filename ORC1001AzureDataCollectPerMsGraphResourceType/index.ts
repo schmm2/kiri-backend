@@ -106,7 +106,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 }
 
                 // newer version found, go done the rabbit hole
-                if (!context.df.isReplaying) context.log(gpoGraphItem)
+                // if (!context.df.isReplaying) context.log(gpoGraphItem)
 
                 const child_id = context.df.instanceId + `:${i}`;
                 let parameter = {
