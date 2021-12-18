@@ -47,8 +47,6 @@ const orchestrator = df.orchestrator(function* (context) {
     let response = null;
 
     if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "start");
-
-
     if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "url: " + queryParameters.graphResourceUrl);
 
     // Create Job
@@ -124,7 +122,10 @@ const orchestrator = df.orchestrator(function* (context) {
                 let parameter = { ...defaultParameter }
                 parameter.graphValue = groupPolicyConfigurations;
                 let gpoTasks = handleConfigurations(context, parameter)
-                response = yield context.df.Task.all(gpoTasks)
+
+                if (gpoTasks.length >= 1) {
+                    response = yield context.df.Task.all(gpoTasks)
+                }
             }
         }
         //*******************************
@@ -139,15 +140,22 @@ const orchestrator = df.orchestrator(function* (context) {
         else {
             let parameter = { ...defaultParameter };
 
-            // resolve all graph Items by id
-            if (MsGraphResource.objectDeepResolve) {
+            // check if ms graph resource needs further data resolved by id
+            // some data returned contains empty fields (for example deviceManagementScript -> scriptContent)
+            // some fields can't be queried by $expand
+            // solution: take each item and query it directly again -> $resource/$itemId
+            // with the response we replace the existing but incomplete value from the previous query
+            if (queryParameters.objectDeepResolve) {
                 let tasks = createSubORCTasksForEachGraphValue(context, defaultParameter, "ORC1200MsGraphQueryResolveById", "2");
                 parameter.graphValue = yield context.df.Task.all(tasks);
             }
 
             // handle configs
             let tasksConfigurations = handleConfigurations(context, parameter)
-            response = yield context.df.Task.all(tasksConfigurations)
+
+            if (tasksConfigurations.length >= 1) {
+                response = yield context.df.Task.all(tasksConfigurations)
+            }
         }
 
         // analyze response, add to job log
