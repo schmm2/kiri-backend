@@ -119,9 +119,9 @@ const orchestrator = df.orchestrator(function* (context) {
                             // Compare Hash
                             if (configurationFromGraphSettingsHash === selectedConfigurationVersion.version) {
                                 // if (!context.df.isReplaying) context.log(functionName, "Tenant Config up to date");
-                                job.log.push({ message: selectedConfigurationVersion.displayName + ", config in tenant is up to date", state: "SUCCESS" });
+                                job.log.push({ message: 'config in tenant is up to date: ' + selectedConfigurationVersion.displayName, state: "DEFAULT" });
                             } else {
-                                job.log.push({ message: 'config needs to be updated', state: "DEFAULT" });
+                                job.log.push({ message: 'config needs to be updated: ' + destinationConfigurationFromGraphResponse.data.displayName, state: "DEFAULT" });
                                 let parameter = {
                                     accessToken: accessToken,
                                     dataObject: newConfigurationVersionValueValidated,

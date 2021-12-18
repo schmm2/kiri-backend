@@ -25,7 +25,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
     let response = {
         ok: true,
-        state: 'SUCCESS',
+        state: 'DEFAULT',
         message: "",
         createdConfigurationId: null,
         createdConfigurationVersionId: null
@@ -106,6 +106,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                         if (addConfigurationVersionResponse._id) {
                             response.createdConfigurationVersionId = addConfigurationVersionResponse._id;
                             response.message = configurationObjectFromGraph.displayName + ": saved, new configuration" 
+                            response.state = "SUCCESS"
                             return response; // all done
                         }
                         else {
@@ -170,6 +171,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 if (addConfigurationVersionResponse._id) {
                     response.createdConfigurationVersionId = addConfigurationVersionResponse._id
                     response.message = configurationObjectFromGraph.displayName + ": saved, new configuration version" 
+                    response.state = "SUCCESS"
                 }
                 else {
                     context.log.error(configurationObjectFromGraphJSON)
