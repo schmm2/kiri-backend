@@ -74,19 +74,17 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     const aesKeyString = key.toString('base64');
     const aesIVString = iv.toString('base64');
 
-    const keyPair = Buffer.from(getBytes(aesIVString + "," + aesKeyString)).toString('base64')
+    const keyPairBase64 = Buffer.from(getBytes(aesIVString + "," + aesKeyString)).toString('base64')
     //context.log(aesIVString)
     //context.log(aesKeyString)
-    context.log(keyPair)
+    //context.log(keyPairBase64)
 
     // value
-    const val = JSON.stringify(body);
-    context.log("BODYBYTES")
-    context.log(getBytes(body))
+   
+   
     // build cipher
     const cipher = cryptoModule.createCipheriv(encryptionType, Buffer.from(key), iv);
-
-    let encrypted = cipher.update(JSON.stringify(body));
+    let encrypted = cipher.update( Buffer.from(JSON.stringify(body), 'utf8'));
     encrypted = Buffer.concat([encrypted, cipher.final()]);
     let encryptedBase64 = encrypted.toString('base64')
     context.log(encrypted)
@@ -99,9 +97,10 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
     // encrypt Keys
     let publicKeyBytes = base64.base64ToBytes(publicKey)
-    let keyPairBytes = getBytes(keyPair);
+    let keyPairBytes = base64.base64ToBytes(keyPairBase64);
+    context.log(publicKeyBytes)
 
-    let test = toBuffer(base64Arraybuffer.decode(publicKey))
+    //let test = toBuffer(base64Arraybuffer.decode(publicKey))
     //context.log(test);
     //context.log(publicKeyBytes);
 
@@ -111,10 +110,16 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     //context.log(pemText)
     //context.log(publicKey)
 
-    const keyNew = new NodeRSA(publicKeyBytes, "pem");
+    //var public2="-----BEGIN PUBLIC KEY-----\n"+publicKey+"\n"+"-----END PUBLIC KEY-----";
+    const keyNew = new NodeRSA(publicKeyBytes, "pkcs8-public-pem");
     //context.log(keyNew);
 
+    context.log(getBytes("HELLO"))
+    
     const encryptedKey = keyNew.encrypt(keyPairBytes, 'base64');
+    context.log(encryptedKey)
+    
+    //return
     /*
     var utf8encoded = Buffer.from(publicKey, 'base64').toString('utf8');
         context.log(utf8encoded);
@@ -142,6 +147,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
         Key: encryptedKey
     }
 
+    context.log(fullBody)
     let warReq = await fetch("https://surfacewarrantyservice.azurewebsites.net/api/v2/warranty", {
         method: 'POST',
         body: JSON.stringify(fullBody),
@@ -149,8 +155,9 @@ const activityFunction: AzureFunction = async function (context: Context, parame
             'Content-Type': 'application/json'
         }
     })
+    context.log(warReq)
     //context.log(await warReq.text())
-    context.log(await warReq.json())
+    //context.log(await warReq.json())
 };
 
 export default activityFunction;

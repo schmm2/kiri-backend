@@ -62,7 +62,9 @@ const orchestrator = df.orchestrator(function* (context) {
             let storeWarrantyTasks = [];
             for (let w = 0; w < warrantyData.length; w++) {
                 const warrantyObject = warrantyData[w];
-                storeWarrantyTasks.push(context.df.callActivity("ACT1100DeviceWarrantyCreate", warrantyObject))
+                if (warrantyData.endDate) {
+                    storeWarrantyTasks.push(context.df.callActivity("ACT1100DeviceWarrantyCreate", warrantyObject))
+                }
             }
             if (storeWarrantyTasks.length > 0) {
                 yield context.df.Task.all(storeWarrantyTasks);
