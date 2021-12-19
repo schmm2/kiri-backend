@@ -51,7 +51,8 @@ const deviceversionSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'DeviceVersion',
         require: false,
-        default: null
+        default: null,
+        index: true
     }
 }, {
     timestamps: true

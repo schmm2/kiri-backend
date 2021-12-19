@@ -24,6 +24,7 @@
         "graphql-compose": "^9.0.4",
         "graphql-compose-mongoose": "^9.7.0",
         "isomorphic-fetch": "^3.0.0",
+        "moment": "^2.29.1",
         "mongoose": "^6.0.11",
         "typescript": "^4.4.4"
     },
