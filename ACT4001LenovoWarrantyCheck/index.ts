@@ -11,6 +11,8 @@
 
 import { AzureFunction, Context } from "@azure/functions"
 import * as moment from "moment"
+import { DeviceWarranty } from '../models/deviceWarranty'
+import { Device } from '../models/device'
 
 const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<string> {
     let warrentyObject = null
@@ -27,13 +29,14 @@ const activityFunction: AzureFunction = async function (context: Context, parame
         //let warlatest = responseJson.EndDate ForEach-Object { [datetime]$_ } | sort-object | select-object -last 1 
 
         warrentyObject = {
-            'Serial': responseJson.Serial,
-            'Warranty Product name': responseJson.WarProduct,
-            'StartDate': responseJson.StartDate,
-            'EndDate': responseJson.EndDate
+            'serialNumber': responseJson.Serial,
+            'productName': responseJson.WarProduct,
+            'startDate': responseJson.StartDate,
+            'endDate': responseJson.EndDate,
+            'device': parameter.deviceDbId
         }
     }
-    //context.log(warrentyObject)
+    context.log(warrentyObject)
     return warrentyObject
 };
 
