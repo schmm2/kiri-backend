@@ -25,15 +25,12 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
     if (responseJson.WarProduct) {
         //let warlatest = responseJson.EndDate ForEach-Object { [datetime]$_ } | sort-object | select-object -last 1 
-        let warrantyEndDate = moment(responseJson.EndDate)
-        let warrantyState = warrantyEndDate.isSameOrAfter(today) ? "OK" : "Expired"
 
         warrentyObject = {
             'Serial': responseJson.Serial,
             'Warranty Product name': responseJson.WarProduct,
             'StartDate': responseJson.StartDate,
-            'EndDate': responseJson.EndDate,
-            'Warranty Status': warrantyState
+            'EndDate': responseJson.EndDate
         }
     }
     //context.log(warrentyObject)
