@@ -21,6 +21,8 @@ const orchestrator = df.orchestrator(function* (context) {
     };
 
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
+    job.log.push({ message: "started job at " + (new Date(Date.now())).toISOString(), state: "DEFAULT" });
+
     //if (!context.df.isReplaying) context.log("new job", job);
 
     // precheck parameter
@@ -80,6 +82,7 @@ const orchestrator = df.orchestrator(function* (context) {
         job.log.push({ message: "internal error, unable to create accessToken", state: "ERROR" });
     }
 
+    job.log.push({ message: "job finished at " + (new Date(Date.now())).toISOString(), state: "DEFAULT" });
     yield context.df.callActivity("ACT1021JobUpdate", job);
 
     if (job.state == "ERROR") {

@@ -61,6 +61,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
     const KVUri = "https://" + keyVaultName + ".vault.azure.net";
     const credential = new DefaultAzureCredential();
     const client = new SecretClient(KVUri, credential);
+    
     context.log(functionName, "KeyVault " + KVUri);
 
     if (tenantObject.tenantId && tenantObject.appId) {
@@ -75,10 +76,13 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
         }
         catch (error) {
             context.log(functionName, "Error, unable to get Secret from KeyVault")
+            // Debug help, output JWT to see which user ha been used
+            //context.log("Token:", await credential.getToken("https://graph.microsoft.com/.default"));
+
             if (error.errorResponse && error.errorResponse.errorDescription) {
                 context.log(functionName, error.errorResponse.errorDescription)
             } else {
-                context.log(JSON.stringify(error));
+                context.log(functionName, error.code);
             }
             return createErrorResponse("unable to get Secret from KeyVault", context, functionName);
         }

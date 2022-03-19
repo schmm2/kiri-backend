@@ -11,7 +11,9 @@
 
 import * as df from "durable-functions"
 import { MsGraphResource } from "../models/msgraphresource";
+import { createSettingsHash } from '../utils/createSettingsHash';
 let queryParameters: any;
+const functionName = "ORC1001AzureDataCollectPerMsGraphResourceType"
 
 function handleConfigurations(context, paramter) {
     // if (!context.df.isReplaying) context.log(paramter)
@@ -27,15 +29,29 @@ function handleConfigurations(context, paramter) {
     return provisioningTasks;
 }
 
-function createSubORCTasksForEachGraphValue(context, paramter, subOrchestrator, idOffset) {
+function createSubTasksForEachItem(context, paramter, activity) {
+    const tasks = [];
+
+    for (let i = 0; i < paramter.payload.length; i++) {
+        let parameterPerItem = { ...paramter }
+        // replace payload with item specific payload
+        parameterPerItem.payload = paramter.payload[i];
+        tasks.push(context.df.callActivity(activity, parameterPerItem));
+    }
+    if (!context.df.isReplaying) context.log("ORC1001AzureDataCollectPerMsGraphResourceType", "started " + tasks.length + " tasks")
+    return tasks;
+}
+
+
+function createSubORCTasksForEachItem(context, paramter, subOrchestrator, idOffset) {
     const provisioningTasks = [];
     // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
 
-    for (let i = 0; i < paramter.graphValue.length; i++) {
+    for (let i = 0; i < paramter.payload.length; i++) {
         const child_id = context.df.instanceId + idOffset + `:${i}`;
-        let payload = { ...paramter }
-        payload.graphValue = paramter.graphValue[i];
-        provisioningTasks.push(context.df.callSubOrchestrator(subOrchestrator, payload, child_id));
+        let parameterPerItem = { ...paramter }
+        parameterPerItem.payload = paramter.payload[i];
+        provisioningTasks.push(context.df.callSubOrchestrator(subOrchestrator, parameterPerItem, child_id));
     }
     return provisioningTasks;
 }
@@ -72,45 +88,79 @@ const orchestrator = df.orchestrator(function* (context) {
             graphResourceUrl: queryParameters.graphResourceUrl,
             tenant: queryParameters.tenant,
             accessToken: queryParameters.accessToken,
-            graphValue: msGraphResponseValue
+            payload: msGraphResponseValue
         }
 
         //*******************************
-        // Handle Group Configurations
+        // Version Precheck
+        // Is the data already stored?
         //*******************************
+
+        const newConfigurationsFromGraph = []
+        const updatedConfigurationsFromGraph = []
+
+        for (let i = 0; i < msGraphResponseValue.length; i++) {
+            let newGraphDataItem = msGraphResponseValue[i];
+
+            // check DB to see if this object already exists
+            let newestConfigurationVersionInDB = yield context.df.callActivity("ACT1041ConfigurationVersionNewestByGraphId", newGraphDataItem.id);
+
+            if (newestConfigurationVersionInDB && newestConfigurationVersionInDB._id) {
+                // Graph Item Id does already exists in our DB, but its unclear if it is the newest version
+                // Check lastModifiedDate > version > versionHash
+                // context.log(newestConfigurationVersionInDB)
+
+                // compare config last modified date
+                if (newGraphDataItem.lastModifiedDateTime && (newestConfigurationVersionInDB.graphModifiedAt === newGraphDataItem.lastModifiedDateTime)) {
+                    continue;
+                }
+                else if (newGraphDataItem.version && (newestConfigurationVersionInDB.graphVersion === newGraphDataItem.version)) {
+                    continue;
+                }
+                else {
+                    // graph item does not have the attribut lastModifiedDateTime or version => Version check by hash
+                    let newGraphDataItemVersionHash = createSettingsHash(newGraphDataItem)
+                    if (newGraphDataItemVersionHash === newestConfigurationVersionInDB.version) {
+                        continue
+                    }
+                }
+                // new version of config found
+                updatedConfigurationsFromGraph.push({
+                    newestConfigurationVersionIdInDB: newestConfigurationVersionInDB._id,
+                    graphValue: newGraphDataItem
+                })
+            } else {
+                // we didnt store this config yet
+                newConfigurationsFromGraph.push(newGraphDataItem)
+            }
+        }
+
+        job.log.push({ message: 'Found ' + msGraphResponseValue.length + ' Configurations on Tenant to handle', state: 'DEFAULT' })
+        job.log.push({ message: 'Found ' + newConfigurationsFromGraph.length + ' new Configurations', state: 'DEFAULT' })
+        job.log.push({ message: 'Found ' + updatedConfigurationsFromGraph.length + ' Configurations to Update', state: 'DEFAULT' })
+        yield context.df.callActivity("ACT1021JobUpdate", job);
+
+        //*******************************
+        // Handle GroupPolicy Configurations
+        //*******************************
+
         if (queryParameters.graphResourceUrl === '/deviceManagement/groupPolicyConfigurations') {
             // if (!context.df.isReplaying) context.log(paramter)
             // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
+
+            /*
             const provisioningTasks = [];
             let groupPolicyConfigurations;
 
-            for (let i = 0; i < msGraphResponseValue.length; i++) {
-                // if (!context.df.isReplaying) context.log("create subtask for config" + paramter.graphValue[i].displayName)
-                let gpoGraphItem = msGraphResponseValue[i];
-
-                // Precheck
-                // to query administrative templates is alot of work for the system as there are many definitionValues & presentationvalues to query
-                // this pre-check should speed things up
-                // check DB to see if this object already exists, if modiefied dates are the same we skip this config
-                let newestConfigurationVersionInDB = yield context.df.callActivity("ACT1041ConfigurationVersionNewestByGraphId", gpoGraphItem.id);
-
-                if (newestConfigurationVersionInDB && newestConfigurationVersionInDB.graphModifiedAt) {
-                    // context.log(newestConfigurationVersionInDB)
-                    // compare config update date
-                    if (newestConfigurationVersionInDB.graphModifiedAt === gpoGraphItem.lastModifiedDateTime) {
-                        // seems to be the same config version, stop here
-                        continue;
-                    }
-                }
-
-                // newer version found, go done the rabbit hole
-                // if (!context.df.isReplaying) context.log(gpoGraphItem)
+            for (let i = 0; i < newConfigurationsFromGraph.length; i++) {
+                // if (!context.df.isReplaying) context.log(newConfigurationsFromGraph[i])
 
                 const child_id = context.df.instanceId + `:${i}`;
                 let parameter = {
                     accessToken: queryParameters.accessToken,
-                    graphId: gpoGraphItem.id
+                    graphId: newConfigurationsFromGraph[i].id
                 }
+                //go done the rabbit hole
                 provisioningTasks.push(context.df.callSubOrchestrator("ORC1002AzureDataCollectQueryGroupPolicy", parameter, child_id));
             }
 
@@ -120,41 +170,51 @@ const orchestrator = df.orchestrator(function* (context) {
 
                 // from here on we handle the gpo config as a normal config
                 let parameter = { ...defaultParameter }
-                parameter.graphValue = groupPolicyConfigurations;
+                parameter.payload = groupPolicyConfigurations;
                 let gpoTasks = handleConfigurations(context, parameter)
 
                 if (gpoTasks.length >= 1) {
                     response = yield context.df.Task.all(gpoTasks)
                 }
-            }
+            }*/
         }
         //*******************************
         // Handle Devices
         //*******************************
         else if (queryParameters.graphResourceUrl === '/deviceManagement/managedDevices') {
-            response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", defaultParameter)
+            //response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", defaultParameter)
         }
         //*******************************
         // Handle other Configurations
         //*******************************
         else {
-            let parameter = { ...defaultParameter };
-
             // check if ms graph resource needs further data resolved by id
             // some data returned contains empty fields (for example deviceManagementScript -> scriptContent)
             // some fields can't be queried by $expand
             // solution: take each item and query it directly again -> $resource/$itemId
             // with the response we replace the existing but incomplete value from the previous query
-            if (queryParameters.objectDeepResolve) {
-                let tasks = createSubORCTasksForEachGraphValue(context, defaultParameter, "ORC1200MsGraphQueryResolveById", "2");
-                parameter.graphValue = yield context.df.Task.all(tasks);
-            }
+            //if (queryParameters.objectDeepResolve) {
+            //    let tasks = createSubORCTasksForEachGraphValue(context, defaultParameter, "ORC1200MsGraphQueryResolveById", "2");
+            //    parameter.graphValue = yield context.df.Task.all(tasks);
+            //}
 
             // handle configs
-            let tasksConfigurations = handleConfigurations(context, parameter)
+            // new Config
+            let createConfigParameter = { ...defaultParameter }
+            createConfigParameter.payload = newConfigurationsFromGraph
+            let createConfigTasks = createSubTasksForEachItem(context, createConfigParameter, "ACT3010ConfigurationCreate")
 
-            if (tasksConfigurations.length >= 1) {
-                response = yield context.df.Task.all(tasksConfigurations)
+            // new Config Version
+            let createConfigVersionParameter = { ...defaultParameter }
+            createConfigVersionParameter.payload = updatedConfigurationsFromGraph
+
+            let createConfigVersionTasks = createSubTasksForEachItem(context, createConfigVersionParameter, "ACT3020ConfigurationVersionCreate")
+
+            // merge Tasks
+            let configTasks = createConfigTasks.concat(createConfigVersionTasks)
+
+            if (configTasks.length >= 1) {
+                response = yield context.df.Task.all(configTasks)
             }
         }
 
@@ -171,9 +231,9 @@ const orchestrator = df.orchestrator(function* (context) {
         job.log.push({ message: 'Unable to query MS Graph API', state: 'ERROR' })
         job.state = 'ERROR'
     }
-    let updatedJobResponse = yield context.df.callActivity("ACT1021JobUpdate", job);
-    // console.log("finished job data", finishedJobData);
-    // console.log("updated job", updatedJobResponse);
+
+    yield context.df.callActivity("ACT1021JobUpdate", job);
+    // if (!context.df.isReplaying) context.log(functionName, JSON.stringify(job));
 
     return job;
 });

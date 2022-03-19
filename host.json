@@ -10,9 +10,9 @@
         "fileLoggingMode": "always",
         "logLevel": {
             "default": "Warning",
-            "Host.Results": "Warning",
-            "Function": "Debug",
-            "Host.Aggregator": "Warning"
+            "Host.Results": "Error",
+            "Function": "Information",
+            "Host.Aggregator": "Trace"
         }
     },
     "extensionBundle": {

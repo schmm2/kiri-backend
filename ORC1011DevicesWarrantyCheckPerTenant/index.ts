@@ -45,7 +45,7 @@ const orchestrator = df.orchestrator(function* (context) {
                     queryWarrantyTasks.push(context.df.callActivity("ACT4001LenovoWarrantyCheck", { deviceDbId: device.device, serialNumber: device.serialNumber }))
                     break
                 case "Microsoft Corporation":
-                    queryWarrantyTasks.push(context.df.callActivity("ACT4002MicrosoftWarrantyCheck", { deviceDbId: device.device, serialNumber: device.serialNumber }))
+                    //queryWarrantyTasks.push(context.df.callActivity("ACT4002MicrosoftWarrantyCheck", { deviceDbId: device.device, serialNumber: device.serialNumber }))
                     break
                 default:
                     break
