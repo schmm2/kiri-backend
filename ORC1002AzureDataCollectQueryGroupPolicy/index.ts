@@ -24,7 +24,7 @@ const orchestrator = df.orchestrator(function* (context) {
     };
 
     let gpoGraphItemReponse = yield context.df.callActivity("ACT2001MsGraphGet", gpoQueryParameters);
-    if (!context.df.isReplaying) context.log(gpoGraphItemReponse)
+    //if (!context.df.isReplaying) context.log(gpoGraphItemReponse)
 
     if (gpoGraphItemReponse && gpoGraphItemReponse.data && gpoGraphItemReponse.data.id) {
         let gpoGraphItem = gpoGraphItemReponse.data;

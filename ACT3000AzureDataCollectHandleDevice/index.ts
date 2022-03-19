@@ -38,7 +38,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     let Device = mongoose.model('Device')
     let DeviceVersion = mongoose.model('DeviceVersion')
 
-    let deviceListGraph = parameter.graphValue
+    let deviceListGraph = parameter.payload
     let tenant = parameter.tenant
 
     let responses = [];

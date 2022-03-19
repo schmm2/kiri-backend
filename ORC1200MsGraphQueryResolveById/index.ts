@@ -11,18 +11,20 @@ const orchestrator = df.orchestrator(function* (context) {
     queryParameters = context.df.getInput();
 
     let graphResourceUrl = queryParameters.graphResourceUrl;
-    let graphValue = queryParameters.graphValue;
+    let graphValue = queryParameters.payload;
 
-    let graphQueryResource = {
-        graphResourceUrl: graphResourceUrl + "/" + graphValue.id,
-        accessToken: queryParameters.accessToken
-    }
+    if (graphValue && graphValue.id) {
+        let graphQueryResource = {
+            graphResourceUrl: graphResourceUrl + "/" + graphValue.id,
+            accessToken: queryParameters.accessToken
+        }
+        
+        let response = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryResource);
 
-    let response = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryResource);
-
-    if (response.ok && response.data) {
-        context.log("ORC1200MsGraphQueryResolveById", "found data for " + graphValue.id)
-        outputs = response.data
+        if (response.ok && response.data) {
+            context.log("ORC1200MsGraphQueryResolveById", "found data for " + graphValue.id)
+            outputs = response.data
+        }
     }
     return outputs;
 });

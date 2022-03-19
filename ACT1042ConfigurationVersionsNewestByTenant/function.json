@@ -1,0 +1,8 @@
+{
+    "bindings": [{
+        "name": "name",
+        "type": "activityTrigger",
+        "direction": "in"
+    }],
+    "scriptFile": "../dist/ACT1042ConfigurationVersionsNewestByTenant/index.js"
+}
