@@ -5,6 +5,8 @@
 
 import * as df from "durable-functions"
 let queryParameters: any;
+import { createErrorResponse } from "../utils/createErrorResponse"
+let functionName = "ORC1200MsGraphQueryResolveById"
 
 const orchestrator = df.orchestrator(function* (context) {
     let outputs: any = "";
@@ -24,6 +26,8 @@ const orchestrator = df.orchestrator(function* (context) {
         if (response.ok && response.data) {
             context.log("ORC1200MsGraphQueryResolveById", "found data for " + graphValue.id)
             outputs = response.data
+        }else{
+            return createErrorResponse("unable to query data " + graphQueryResource.graphResourceUrl, context, functionName)
         }
     }
     return outputs;

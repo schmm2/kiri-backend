@@ -54,7 +54,8 @@ const activityFunction: AzureFunction = async function (context: Context, msGrap
             // context.log(functionName, response);
 
             if (!response.ok) {
-                return createErrorResponse(response.message, context, functionName)
+                let message = "Url: " + url + ", message: "  + response.message
+                return createErrorResponse(message, context, functionName)
             }
         } else {
             return createErrorResponse("No API Url defined", context, functionName)

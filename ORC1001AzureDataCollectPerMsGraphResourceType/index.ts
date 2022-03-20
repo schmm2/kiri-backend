@@ -54,20 +54,6 @@ function createSubTasksForEachItem(context, parameter, activity) {
     return tasks;
 }
 
-
-function createSubORCTasksForEachItem(context, parameter, subOrchestrator, idOffset) {
-    const provisioningTasks = [];
-    // if (!context.df.isReplaying) context.log("Instance ID:", context.df.instanceId)
-
-    for (let i = 0; i < parameter.payload.length; i++) {
-        const child_id = context.df.instanceId + idOffset + `:${i}`;
-        let parameterPerItem = { ...parameter }
-        parameterPerItem.payload = parameter.payload[i];
-        provisioningTasks.push(context.df.callSubOrchestrator(subOrchestrator, parameterPerItem, child_id));
-    }
-    return provisioningTasks;
-}
-
 const orchestrator = df.orchestrator(function* (context) {
     queryParameters = context.df.getInput();
     let msGraphResourceName = queryParameters.msGraphResourceName
@@ -168,40 +154,49 @@ const orchestrator = df.orchestrator(function* (context) {
             // New Configs
             for (let a = 0; a < newConfigurationsFromGraph.length; a++) {
                 newConfigurationsFromGraph[a] = yield deepResolveGraphItem(context, defaultParameter, newConfigurationsFromGraph[a])
-                context.log(newConfigurationsFromGraph[a])
             }
+
             // Updated Configs
             for (let b = 0; b < updatedConfigurationsFromGraph.length; b++) {
                 updatedConfigurationsFromGraph[b].graphValue = yield deepResolveGraphItem(context, defaultParameter, updatedConfigurationsFromGraph[b].graphValue)
             }
+
+            // Filter objects out if there was an issue at the resolving
+            newConfigurationsFromGraph = newConfigurationsFromGraph.filter(elem => elem.id)
+            updatedConfigurationsFromGraph = updatedConfigurationsFromGraph.filter(elem => elem.id)
         }
 
         //*******************************
         // Deep Resolve - GroupPolicy Configurations
+        // Some Deep Resolve query might fail so we do no include it, try the next data collection run
         //*******************************
 
         if (queryParameters.graphResourceUrl === '/deviceManagement/groupPolicyConfigurations') {
             // New Configs
             for (let a = 0; a < newConfigurationsFromGraph.length; a++) {
-                newConfigurationsFromGraph[a] = yield deepResolveGroupPolicy(context, defaultParameter, newConfigurationsFromGraph[a])
-                context.log(newConfigurationsFromGraph[a])
+                let newConfigDeepResolved = yield deepResolveGroupPolicy(context, defaultParameter, newConfigurationsFromGraph[a]) 
             }
             // Updated Configs
             for (let b = 0; b < updatedConfigurationsFromGraph.length; b++) {
-                updatedConfigurationsFromGraph[b].graphValue = yield deepResolveGroupPolicy(context, defaultParameter, updatedConfigurationsFromGraph[b].graphValue)
+                let updatedConfigDeepResolved = yield deepResolveGroupPolicy(context, defaultParameter, updatedConfigurationsFromGraph[b].graphValue)
             }
+
+            // Filter objects out if there was an issue at the resolving
+            newConfigurationsFromGraph = newConfigurationsFromGraph.filter(elem => elem.id)
+            updatedConfigurationsFromGraph = updatedConfigurationsFromGraph.filter(elem => elem.id)
         }
 
         //*******************************
-        // Handle Devices
+        // Store Data
+        // Store new or changed Data in Database
         //*******************************
+
+        // Devices
         if (queryParameters.graphResourceUrl === '/deviceManagement/managedDevices') {
             response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", defaultParameter)
 
         }
-        //*******************************
-        // Handle Configurations
-        //*******************************
+        // all other Configurations
         else {
             // new Config
             let createConfigParameter = { ...defaultParameter }
