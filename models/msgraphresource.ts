@@ -22,6 +22,10 @@ const msgraphresourceSchema = new Schema({
         require: true,
         default: false
     },
+    deepResolveAttributes: {
+        type: [String],
+        require: false
+    },
     changeTracking: {
         type: String,
         enum: ['HASH'],

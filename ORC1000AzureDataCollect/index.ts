@@ -53,6 +53,7 @@ const orchestrator = df.orchestrator(function* (context) {
                     msGraphResourceName: msGraphResources[i].name,
                     objectDeepResolve: msGraphResources[i].objectDeepResolve,
                     apiVersion: msGraphResources[i].version,
+                    deepResolveAttributes: msGraphResources[i].deepResolveAttributes,
                     tenant: tenant,
                 }
                 provisioningTasks.push(context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id));

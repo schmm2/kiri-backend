@@ -60,6 +60,18 @@
         ]
     },
     {
+        "name": "configurationPolicies",
+        "objectDeepResolve": true,
+        "deepResolveAttributes": ["settings"],
+        "resource": "/deviceManagement/configurationPolicies",
+        "version": "beta",
+        "configurationTypes": [{
+            "name": "configurationPolicies",
+            "category": "configurationprofile",
+            "platform": "windows"
+        }]
+    },
+    {
         "name": "deviceConfigurations",
         "resource": "/deviceManagement/deviceConfigurations",
         "version": "beta",
@@ -152,16 +164,6 @@
                 "platform": "windows"
             }
         ]
-    },
-    {
-        "name": "groupPolicyConfigurations",
-        "resource": "/deviceManagement/groupPolicyConfigurations",
-        "version": "beta",
-        "configurationTypes": [{
-            "name": "groupPolicyConfiguration",
-            "category": "configurationprofile",
-            "platform": "windows"
-        }]
     },
     {
         "name": "managedDevices",

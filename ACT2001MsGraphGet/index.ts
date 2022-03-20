@@ -24,11 +24,19 @@ async function getGraphAPI(token, apiUrl): Promise<ActivityMessage> {
             method: 'GET',
             headers: headers
         })
-        if (response.status >= 400 && response.status < 600) {
+
+        // Handle Status
+        // OK
+        if (response.status >= 200 && response.status < 300) {
+            let data = await response.json();
+            return { ok: true, message: '', data: data }
+        }
+        // Bad Server Response
+        else if (response.status >= 400 && response.status < 600) {
             return { ok: false, message: "Bad response from server, statusText: " + response.statusText };
         };
-        let data = await response.json();
-        return { ok: true, message: '', data: data }
+        // all other stuff
+        return { ok: false, message: "htpp error: " + response.statusText }
     } catch (error) {
         return { ok: false, message: error }
     }
@@ -54,14 +62,19 @@ const activityFunction: AzureFunction = async function (context: Context, msGrap
             // context.log(functionName, response);
 
             if (!response.ok) {
-                let message = "Url: " + url + ", message: "  + response.message
-                return createErrorResponse(message, context, functionName)
+                let message = "Url: " + url + ", message: " + response.message
+                createErrorResponse(message, context, functionName)
+                throw new Error(message)
             }
         } else {
-            return createErrorResponse("No API Url defined", context, functionName)
+            let message = "No API Url defined"
+            createErrorResponse(message, context, functionName)
+            throw new Error(message)
         }
     } else {
-        return createErrorResponse("No AccessToken defined", context, functionName)
+        let message = "No AccessToken defined"
+        createErrorResponse(message, context, functionName)
+        throw new Error(message)
     }
     // return result
     // context.log(response);

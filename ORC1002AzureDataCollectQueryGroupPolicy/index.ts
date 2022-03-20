@@ -16,6 +16,7 @@ const orchestrator = df.orchestrator(function* (context) {
     let queryParameters: any = context.df.getInput();
     let accessToken = queryParameters.accessToken;
     let graphId = queryParameters.graphId;
+    let gpoGraphItemReponse = null
 
     // Query full GPO Graph Item
     let gpoQueryParameters = {
@@ -23,11 +24,16 @@ const orchestrator = df.orchestrator(function* (context) {
         graphResourceUrl: graphResourceUrl + "/" + graphId
     };
 
-    let gpoGraphItemReponse = yield context.df.callActivity("ACT2001MsGraphGet", gpoQueryParameters);
-    //if (!context.df.isReplaying) context.log(gpoGraphItemReponse)
+    try {
+        gpoGraphItemReponse = yield context.df.callActivity("ACT2001MsGraphGet", gpoQueryParameters);
+    } catch (err) {
+        throw new Error(err)
+    }
 
     if (gpoGraphItemReponse && gpoGraphItemReponse.data && gpoGraphItemReponse.data.id) {
         let gpoGraphItem = gpoGraphItemReponse.data;
+        let gpoDefinitionValuesResponse = null;
+
         if (!context.df.isReplaying) context.log(functionName, "Gpo Name: " + gpoGraphItem.displayName)
 
         // build definitionValues URL of the specific gpo object
@@ -39,24 +45,33 @@ const orchestrator = df.orchestrator(function* (context) {
             accessToken: accessToken
         }
 
-        let gpoDefinitionValuesResponse = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryDefinitionValues);
+        try {
+            gpoDefinitionValuesResponse = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryDefinitionValues);
+        } catch (err) {
+            throw new Error(err)
+        }
 
         if (gpoDefinitionValuesResponse && gpoDefinitionValuesResponse.data && gpoDefinitionValuesResponse.data.value) {
             let gpoDefinitionValues = gpoDefinitionValuesResponse.data.value
-
             let tasks = []
-            for (let d = 0; d < gpoDefinitionValues.length; d++) {
-                const child_id = context.df.instanceId + `:${d}`;
-                let payload = {
-                    definitionValue: gpoDefinitionValues[d],
-                    graphResourceUrl: graphResourceUrl,
-                    graphItemId: gpoGraphItem.id,
-                    accessToken: queryParameters.accessToken
+
+            try {
+                for (let d = 0; d < gpoDefinitionValues.length; d++) {
+                    const child_id = context.df.instanceId + `:${d}`;
+                    let payload = {
+                        definitionValue: gpoDefinitionValues[d],
+                        graphResourceUrl: graphResourceUrl,
+                        graphItemId: gpoGraphItem.id,
+                        accessToken: queryParameters.accessToken
+                    }
+                    tasks.push(context.df.callSubOrchestrator("ORC1003AzureDataCollectQueryGroupPolicySettings", payload, child_id));
                 }
-                tasks.push(context.df.callSubOrchestrator("ORC1003AzureDataCollectQueryGroupPolicySettings", payload, child_id));
+                if (tasks.length > 0) {
+                    gpoSettings = yield context.df.Task.all(tasks);
+                }
             }
-            if (tasks.length > 0) {
-                gpoSettings = yield context.df.Task.all(tasks);
+            catch (err) {
+                throw new Error(err)
             }
 
             // sort gpo settings by definition@odata.bind to get the same result after every data check
@@ -74,7 +89,7 @@ const orchestrator = df.orchestrator(function* (context) {
         gpoGraphItem["gpoSettings"] = gpoSettings;
         return gpoGraphItem;
     } else {
-        return null
+        throw new Error("unable to query data " + gpoQueryParameters.graphResourceUrl)
     }
 });
 

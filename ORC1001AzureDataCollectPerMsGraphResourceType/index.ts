@@ -32,11 +32,12 @@ function deepResolveGroupPolicy(context, parameter, graphItem) {
 // Deep Resolve
 //*******************************
 
-function deepResolveGraphItem(context, parameter, graphItem) {
+function deepResolveGraphItem(context, parameter, graphItem, attributes) {
     const child_id = context.df.instanceId + '1000' + `:${graphItem.id}`;
 
     let graphItemParameter = { ...parameter }
     graphItemParameter.payload = graphItem
+    graphItemParameter["attributes"] = attributes
 
     return context.df.callSubOrchestrator("ORC1200MsGraphQueryResolveById", graphItemParameter, child_id);
 }
@@ -143,28 +144,35 @@ const orchestrator = df.orchestrator(function* (context) {
 
         //*******************************
         // Deep Resolve 
-        // check if ms graph resource needs further data resolved by id
         // some data returned contains empty fields (for example deviceManagementScript -> scriptContent)
         // some fields can't be queried by $expand
         // solution: take each item and query it directly again -> $resource/$itemId
         // with the response we can replace the existing but incomplete value from the previous query
         //*******************************
 
-        if (queryParameters.objectDeepResolve) {
-            // New Configs
-            for (let a = 0; a < newConfigurationsFromGraph.length; a++) {
-                newConfigurationsFromGraph[a] = yield deepResolveGraphItem(context, defaultParameter, newConfigurationsFromGraph[a])
+        // New Configs
+        for (let a = 0; a < newConfigurationsFromGraph.length; a++) {
+            try {
+                newConfigurationsFromGraph[a] = yield deepResolveGraphItem(context, defaultParameter, newConfigurationsFromGraph[a], msGraphResource.deepResolveAttributes)
             }
-
-            // Updated Configs
-            for (let b = 0; b < updatedConfigurationsFromGraph.length; b++) {
-                updatedConfigurationsFromGraph[b].graphValue = yield deepResolveGraphItem(context, defaultParameter, updatedConfigurationsFromGraph[b].graphValue)
+            catch (err) {
+                job.log.push({ message: "unable to resolve config " + newConfigurationsFromGraph[a].displayName, state: 'ERROR' })
+                newConfigurationsFromGraph[a] = null
             }
-
-            // Filter objects out if there was an issue at the resolving
-            newConfigurationsFromGraph = newConfigurationsFromGraph.filter(elem => elem.id)
-            updatedConfigurationsFromGraph = updatedConfigurationsFromGraph.filter(elem => elem.id)
         }
+        // Updated Configs
+        for (let b = 0; b < updatedConfigurationsFromGraph.length; b++) {
+            try {
+                updatedConfigurationsFromGraph[b].graphValue = yield deepResolveGraphItem(context, defaultParameter, updatedConfigurationsFromGraph[b].graphValue, msGraphResource.deepResolveAttributes)
+            }
+            catch (err) {
+                job.log.push({ message: "unable to resolve config " + updatedConfigurationsFromGraph[b].graphValue.displayName, state: 'ERROR' })
+                updatedConfigurationsFromGraph[b] = null
+            }
+        }
+        // Filter objects out if there was an issue at the resolving
+        newConfigurationsFromGraph = newConfigurationsFromGraph.filter(elem => elem && elem.id)
+        updatedConfigurationsFromGraph = updatedConfigurationsFromGraph.filter(elem => elem && elem.graphValue && elem.graphValue.id)
 
         //*******************************
         // Deep Resolve - GroupPolicy Configurations
@@ -174,16 +182,28 @@ const orchestrator = df.orchestrator(function* (context) {
         if (queryParameters.graphResourceUrl === '/deviceManagement/groupPolicyConfigurations') {
             // New Configs
             for (let a = 0; a < newConfigurationsFromGraph.length; a++) {
-                let newConfigDeepResolved = yield deepResolveGroupPolicy(context, defaultParameter, newConfigurationsFromGraph[a]) 
+                try {
+                    newConfigurationsFromGraph[a] = yield deepResolveGroupPolicy(context, defaultParameter, newConfigurationsFromGraph[a])
+                }
+                catch (err) {
+                    job.log.push({ message: "unable to deep resolve new config " + newConfigurationsFromGraph[a].displayName, state: 'ERROR' })
+                    newConfigurationsFromGraph[a] = null
+                }
             }
             // Updated Configs
             for (let b = 0; b < updatedConfigurationsFromGraph.length; b++) {
-                let updatedConfigDeepResolved = yield deepResolveGroupPolicy(context, defaultParameter, updatedConfigurationsFromGraph[b].graphValue)
+                try {
+                    updatedConfigurationsFromGraph[b].graphValue = yield deepResolveGroupPolicy(context, defaultParameter, updatedConfigurationsFromGraph[b].graphValue)
+                }
+                catch (err) {
+                    job.log.push({ message: "unable to deep resolve updated config " + updatedConfigurationsFromGraph[b].graphValue.displayName + ", try rerun", state: 'ERROR' })
+                    updatedConfigurationsFromGraph[b] = null
+                }
             }
 
             // Filter objects out if there was an issue at the resolving
-            newConfigurationsFromGraph = newConfigurationsFromGraph.filter(elem => elem.id)
-            updatedConfigurationsFromGraph = updatedConfigurationsFromGraph.filter(elem => elem.id)
+            newConfigurationsFromGraph = newConfigurationsFromGraph.filter(elem => elem && elem.id)
+            updatedConfigurationsFromGraph = updatedConfigurationsFromGraph.filter(elem => elem && elem.graphValue && elem.graphValue.id)
         }
 
         //*******************************
@@ -194,7 +214,6 @@ const orchestrator = df.orchestrator(function* (context) {
         // Devices
         if (queryParameters.graphResourceUrl === '/deviceManagement/managedDevices') {
             response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", defaultParameter)
-
         }
         // all other Configurations
         else {
@@ -228,6 +247,7 @@ const orchestrator = df.orchestrator(function* (context) {
         job.state = 'FINISHED'
     } else {
         job.log.push({ message: 'Unable to query MS Graph API', state: 'ERROR' })
+        job.log.push({ message: JSON.stringify(msGraphResource), state: 'ERROR' })
         job.state = 'ERROR'
     }
 

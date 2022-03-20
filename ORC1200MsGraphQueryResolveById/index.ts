@@ -27,7 +27,8 @@ const orchestrator = df.orchestrator(function* (context) {
             context.log("ORC1200MsGraphQueryResolveById", "found data for " + graphValue.id)
             outputs = response.data
         }else{
-            return createErrorResponse("unable to query data " + graphQueryResource.graphResourceUrl, context, functionName)
+            createErrorResponse("unable to query data " + graphQueryResource.graphResourceUrl, context, functionName)
+            throw new Error("unable to query data " + graphQueryResource.graphResourceUrl)
         }
     }
     return outputs;

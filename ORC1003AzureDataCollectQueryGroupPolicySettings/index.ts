@@ -11,12 +11,15 @@
 
 import * as df from "durable-functions"
 let queryParameters: any;
+import { createErrorResponse } from "../utils/createErrorResponse"
+let functionName = "ORC1003AzureDataCollectQueryGroupPolicySettings"
 
 const orchestrator = df.orchestrator(function* (context) {
     queryParameters = context.df.getInput();
     let definitionValue = queryParameters.definitionValue;
     let graphResourceUrl = queryParameters.graphResourceUrl;
     let graphItemId = queryParameters.graphItemId;
+    let gpoPresentationValuesResponse = null;
 
     // prepare settings object
     let settingsObj = {
@@ -33,8 +36,18 @@ const orchestrator = df.orchestrator(function* (context) {
         accessToken: queryParameters.accessToken
     }
 
-    let gpoPresentationValuesResponse = yield context.df.callActivity("ACT2001MsGraphGet", graphQueryPresentationValues);
+    // retry options
+    const firstRetryIntervalInMilliseconds = 5000;
+    const maxNumberOfAttempts = 3;
+    const retryOptions = new df.RetryOptions(firstRetryIntervalInMilliseconds, maxNumberOfAttempts);
 
+    try {
+        gpoPresentationValuesResponse = yield context.df.callActivityWithRetry("ACT2001MsGraphGet", retryOptions, graphQueryPresentationValues);
+    } catch (err) {
+        throw new Error(err)
+    }
+
+    // double check if data has been recieved correctly
     if (gpoPresentationValuesResponse && gpoPresentationValuesResponse.data && gpoPresentationValuesResponse.data.value) {
         let gpoPresentationValues = gpoPresentationValuesResponse.data.value;
 
@@ -59,6 +72,10 @@ const orchestrator = df.orchestrator(function* (context) {
             }
         }
     }
+    else {
+        throw new Error("unable to query gpoPresentationValues " + graphQueryPresentationValues.graphResourceUrl)
+    }
+
     return settingsObj;
 });
 
