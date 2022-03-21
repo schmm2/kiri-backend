@@ -32,12 +32,12 @@ function deepResolveGroupPolicy(context, parameter, graphItem) {
 // Deep Resolve
 //*******************************
 
-function deepResolveGraphItem(context, parameter, graphItem, attributes) {
+function deepResolveGraphItem(context, parameter, graphItem, msGraphResource) {
     const child_id = context.df.instanceId + '1000' + `:${graphItem.id}`;
 
     let graphItemParameter = { ...parameter }
     graphItemParameter.payload = graphItem
-    graphItemParameter["attributes"] = attributes
+    graphItemParameter["msGraphResource"] = msGraphResource
 
     return context.df.callSubOrchestrator("ORC1200MsGraphQueryResolveById", graphItemParameter, child_id);
 }
@@ -57,12 +57,20 @@ function createSubTasksForEachItem(context, parameter, activity) {
 
 const orchestrator = df.orchestrator(function* (context) {
     queryParameters = context.df.getInput();
-    let msGraphResourceName = queryParameters.msGraphResourceName
+    
+    // msGraphResource
+    let msGraphResource = queryParameters.msGraphResource;
+    let graphResourceUrl = msGraphResource.resource;
+    let msGraphResourceName = msGraphResource.name;
+    let accessToken = queryParameters.accessToken;
+   
+    // tenant
     let tenant = queryParameters.tenant;
+
     let response = null;
 
     if (!context.df.isReplaying) context.log(functionName, "start");
-    if (!context.df.isReplaying) context.log(functionName, "url: " + queryParameters.graphResourceUrl);
+    if (!context.df.isReplaying) context.log(functionName, "url: " + graphResourceUrl);
 
     // Create Job
     let jobData = {
@@ -74,19 +82,24 @@ const orchestrator = df.orchestrator(function* (context) {
     // context.log(functionName, job);
 
     // Query MsGraph Resources in Tenant
-    let msGraphResource = yield context.df.callActivity("ACT2001MsGraphGet", queryParameters);
-    if (!context.df.isReplaying) context.log(functionName, "query ms Graph Resources");
+    let msGraphQueryParameters = {
+        accessToken: accessToken,
+        graphResourceUrl: graphResourceUrl
+    }
+    let msGraphItems = yield context.df.callActivity("ACT2001MsGraphGet", msGraphQueryParameters);
+    
+    // if (!context.df.isReplaying) context.log(functionName, "query ms Graph Resources");
     // if (!context.df.isReplaying) context.log(msGraphResource);
 
-    if (msGraphResource && msGraphResource.data && msGraphResource.data.value) {
-        let msGraphResponseValue = msGraphResource.data.value
+    if (msGraphItems && msGraphItems.data && msGraphItems.data.value) {
+        let msGraphResponseValue = msGraphItems.data.value
         //context.log(msGraphResponseValue);
 
         // build parameter for activities or orchestrator calls
         let defaultParameter = {
-            graphResourceUrl: queryParameters.graphResourceUrl,
-            tenant: queryParameters.tenant,
-            accessToken: queryParameters.accessToken,
+            graphResourceUrl: graphResourceUrl,
+            tenant: tenant,
+            accessToken: accessToken,
             payload: msGraphResponseValue
         }
 
@@ -153,7 +166,7 @@ const orchestrator = df.orchestrator(function* (context) {
         // New Configs
         for (let a = 0; a < newConfigurationsFromGraph.length; a++) {
             try {
-                newConfigurationsFromGraph[a] = yield deepResolveGraphItem(context, defaultParameter, newConfigurationsFromGraph[a], msGraphResource.deepResolveAttributes)
+                newConfigurationsFromGraph[a] = yield deepResolveGraphItem(context, defaultParameter, newConfigurationsFromGraph[a], msGraphResource)
             }
             catch (err) {
                 job.log.push({ message: "unable to resolve config " + newConfigurationsFromGraph[a].displayName, state: 'ERROR' })
@@ -163,7 +176,7 @@ const orchestrator = df.orchestrator(function* (context) {
         // Updated Configs
         for (let b = 0; b < updatedConfigurationsFromGraph.length; b++) {
             try {
-                updatedConfigurationsFromGraph[b].graphValue = yield deepResolveGraphItem(context, defaultParameter, updatedConfigurationsFromGraph[b].graphValue, msGraphResource.deepResolveAttributes)
+                updatedConfigurationsFromGraph[b].graphValue = yield deepResolveGraphItem(context, defaultParameter, updatedConfigurationsFromGraph[b].graphValue, msGraphResource)
             }
             catch (err) {
                 job.log.push({ message: "unable to resolve config " + updatedConfigurationsFromGraph[b].graphValue.displayName, state: 'ERROR' })
@@ -220,11 +233,14 @@ const orchestrator = df.orchestrator(function* (context) {
             // new Config
             let createConfigParameter = { ...defaultParameter }
             createConfigParameter.payload = newConfigurationsFromGraph
+            createConfigParameter["msGraphResource"] = msGraphResource;
+            
             let createConfigTasks = createSubTasksForEachItem(context, createConfigParameter, "ACT3010ConfigurationCreate")
 
             // new Config Version
             let createConfigVersionParameter = { ...defaultParameter }
-            createConfigVersionParameter.payload = updatedConfigurationsFromGraph
+            createConfigVersionParameter.payload = updatedConfigurationsFromGraph,
+            createConfigVersionParameter["msGraphResource"] = msGraphResource;
 
             let createConfigVersionTasks = createSubTasksForEachItem(context, createConfigVersionParameter, "ACT3020ConfigurationVersionCreate")
 

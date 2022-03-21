@@ -22,9 +22,15 @@ const msgraphresourceSchema = new Schema({
         require: true,
         default: false
     },
-    deepResolveAttributes: {
+    nameAttribute: {
+        type: String,
+        require: true,
+        default: "displayName"
+    },
+    expandAttributes: {
         type: [String],
-        require: false
+        require: false,
+        default: null
     },
     changeTracking: {
         type: String,

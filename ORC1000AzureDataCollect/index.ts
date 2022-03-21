@@ -12,6 +12,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
     const queryParameters: any = context.df.getInput();
     let tenantDbId = queryParameters.tenantDbId;
+    let msGraphResourceDbIdFilter = queryParameters.msGraphResourceDbIdFilter;
 
     // Create Job
     let jobData = {
@@ -43,17 +44,18 @@ const orchestrator = df.orchestrator(function* (context) {
             let msGraphResources = yield context.df.callActivity("ACT1000MsGraphResourceGetAll");
             // if (!context.df.isReplaying) context.log(msGraphResources);
 
+            // filter if provided
+            if(msGraphResourceDbIdFilter){
+                msGraphResources = msGraphResources.filter(msGraphResource => msGraphResource._id == msGraphResourceDbIdFilter)
+            }
+
             const provisioningTasks = [];
 
             for (let i = 0; i < msGraphResources.length; i++) {
                 const child_id = context.df.instanceId + `:${i}`;
                 let payload = {
                     accessToken: accessTokenResponse.accessToken,
-                    graphResourceUrl: msGraphResources[i].resource,
-                    msGraphResourceName: msGraphResources[i].name,
-                    objectDeepResolve: msGraphResources[i].objectDeepResolve,
-                    apiVersion: msGraphResources[i].version,
-                    deepResolveAttributes: msGraphResources[i].deepResolveAttributes,
+                    msGraphResource: msGraphResources[i],
                     tenant: tenant,
                 }
                 provisioningTasks.push(context.df.callSubOrchestrator("ORC1001AzureDataCollectPerMsGraphResourceType", payload, child_id));

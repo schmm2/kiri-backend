@@ -60,13 +60,27 @@
         ]
     },
     {
+        "name": "intents",
+        "objectDeepResolve": true,
+        "expandAttributes": ["settings,assignments"],
+        "resource": "/deviceManagement/intents",
+        "version": "beta",
+        "nameAttribute": "displayName",
+        "configurationTypes": [{
+            "name": "intent",
+            "category": "endpointSecurity",
+            "platform": "windows"
+        }]
+    },
+    {
         "name": "configurationPolicies",
         "objectDeepResolve": true,
-        "deepResolveAttributes": ["settings"],
+        "expandAttributes": ["settings,assignments"],
         "resource": "/deviceManagement/configurationPolicies",
         "version": "beta",
+        "nameAttribute": "name",
         "configurationTypes": [{
-            "name": "configurationPolicies",
+            "name": "configurationPolicy",
             "category": "configurationprofile",
             "platform": "windows"
         }]

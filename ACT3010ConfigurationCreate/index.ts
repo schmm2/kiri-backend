@@ -16,6 +16,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
     context.log(functionName, "Start Configuration Handeling");
 
     let configurationGraphValue = parameter.payload;
+    let msGraphResource = parameter.msGraphResource;
     let graphResourceUrl = parameter.graphResourceUrl;
     let tenant = parameter.tenant;
 
@@ -46,11 +47,19 @@ const activityFunction: AzureFunction = async function (context: Context, parame
         } else {
             // Graph Exceptions
             // Exception: Some resource do not contain a odata property (example: App Protection Policy)
-            // we take the url, use the last part => resource identifier and remove the plural 's' if it exists
+
             let graphResourceUrlArray = graphResourceUrl.split('/');
             configurationTypeName = graphResourceUrlArray[graphResourceUrlArray.length - 1];
-            // get last char
-            if (configurationTypeName.slice(-1) == "s") {
+
+            // Astetic changes to the DataType
+            // we wish to store the type but only the signular form of the word
+            // handle word ending with "Policies"
+            if (configurationTypeName.slice(-8) == "Policies") {
+                configurationTypeName = configurationTypeName.slice(0, -8);
+                configurationTypeName = configurationTypeName + "Policy"
+            }
+            // we take the url, use the last part => resource identifier and remove the plural 's' if it exists
+            else if (configurationTypeName.slice(-1) == "s") {
                 // remove plurar s
                 configurationTypeName = configurationTypeName.slice(0, -1);
             }
@@ -69,7 +78,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 let addConfigurationResponse = await Configuration.create({
                     graphIsDeleted: false,
                     graphId: configurationObjectFromGraph.id,
-                    graphCreatedAt: configurationObjectFromGraph.createdDateTime,
+                    graphCreatedAt: configurationObjectFromGraph.createdDateTime ? configurationObjectFromGraph.createdDateTime: 'undefined',
                     configurationType: configurationTypes[0].id,
                     tenant: tenant
                 });
@@ -85,8 +94,17 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 if (addConfigurationResponse && addConfigurationResponse._id) {
                     response.createdConfigurationId = addConfigurationResponse._id;
 
+                    // find displayName
+                    let displayName = null;
+                    if(msGraphResource.nameAttribute){
+                        context.log(functionName, "use different Name Attribut: " + msGraphResource.nameAttribute)
+                        displayName = configurationObjectFromGraph[msGraphResource.nameAttribute]
+                    }else{
+                        displayName = configurationObjectFromGraph.displayName
+                    }
+
                     let addConfigurationVersionResponse = await ConfigurationVersion.create({
-                        displayName: configurationObjectFromGraph.displayName,
+                        displayName: displayName,
                         graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime,
                         value: configurationObjectFromGraphJSON,
                         version: configurationObjectFromGraphVersion,

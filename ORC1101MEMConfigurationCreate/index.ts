@@ -144,7 +144,7 @@ const orchestrator = df.orchestrator(function* (context) {
     }
 
     // return newly created config
-    context.log(newConfiguration)
+    if (!context.df.isReplaying) context.log(newConfiguration)
     return newConfiguration;
 });
 

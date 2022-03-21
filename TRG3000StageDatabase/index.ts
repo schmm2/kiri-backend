@@ -25,7 +25,8 @@ async function stageDatabase(context) {
                         resource: msgraphResourceTemplate.resource,
                         version: msgraphResourceTemplate.version,
                         objectDeepResolve: msgraphResourceTemplate.objectDeepResolve ? true: false,
-                        deepResolveAttributes: msgraphResourceTemplate.deepResolveAttributes ? msgraphResourceTemplate.deepResolveAttributes: null
+                        expandAttributes: msgraphResourceTemplate.expandAttributes ? msgraphResourceTemplate.expandAttributes: null,
+                        nameAttribute: msgraphResourceTemplate.nameAttribute ? msgraphResourceTemplate.nameAttribute : "displayName" 
                     });
                     context.log("mongoose, created msgraphresource document: " + msGraphResourceCreated.name);
                     msGraphResourceObjectCount++;
