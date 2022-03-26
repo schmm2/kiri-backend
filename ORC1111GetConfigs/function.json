@@ -6,5 +6,5 @@
       "direction": "in"
     }
   ],
-  "scriptFile": "../dist/ORC1200MsGraphQueryResolveById/index.js"
+  "scriptFile": "../dist/ORC1111GetConfigs/index.js"
 }

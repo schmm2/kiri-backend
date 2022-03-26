@@ -11,20 +11,20 @@
         "azurite": "azurite --location c:\\azurite --debug c:\\azurite\\debug.log"
     },
     "dependencies": {
-        "@azure/identity": "^1.5.2",
+        "@azure/identity": "^2.0.4",
         "@azure/keyvault-secrets": "^4.3.0",
         "@microsoft/microsoft-graph-client": "^3.0.0",
         "adal-node": "^0.2.3",
         "adm-zip": "^0.5.9",
-        "apollo-server-azure-functions": "^3.4.0",
+        "apollo-server-azure-functions": "^3.6.6",
         "base64-arraybuffer": "^1.0.1",
         "byte-base64": "^1.1.0",
         "crypto": "^1.0.1",
-        "dotenv": "^10.0.0",
+        "dotenv": "^16.0.0",
         "durable-functions": "^1.5.2",
-        "graphql": "^15.6.1",
-        "graphql-compose": "^9.0.4",
-        "graphql-compose-mongoose": "^9.7.0",
+        "graphql": "^16.3.0",
+        "graphql-compose": "^9.0.7",
+        "graphql-compose-mongoose": "^9.7.1",
         "isomorphic-fetch": "^3.0.0",
         "moment": "^2.29.1",
         "mongoose": "^6.0.11",
@@ -32,9 +32,9 @@
         "typescript": "^4.4.4"
     },
     "devDependencies": {
-        "@azure/functions": "^1.2.3",
+        "@azure/functions": "^3.0.0",
         "@azure/identity-vscode": "^1.0.0",
         "npm-build-zip": "^1.0.3",
-        "yarn-upgrade-all": "^0.5.4"
+        "yarn-upgrade-all": "^0.6.1"
     }
 }

@@ -1,4 +1,5 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
+const { Deployment } = require("../models/deployment");
 const { ConfigurationType } = require('../models/configurationtype');
 const { MsGraphResource } = require('../models/msgraphresource');
 const { Configuration } = require('../models/configuration');
@@ -14,6 +15,7 @@ async function clearDatabase(context) {
     let configurationVersion = await ConfigurationVersion.deleteMany({});
     let devices = await Device.deleteMany({})
     let jobs = await Job.deleteMany({})
+    let deployments = await Deployment.deleteMany({})
 
     return {
         msGraphResources,
@@ -21,7 +23,8 @@ async function clearDatabase(context) {
         configuration,
         configurationVersion,
         devices,
-        jobs
+        jobs,
+        deployments
     };
 }
 

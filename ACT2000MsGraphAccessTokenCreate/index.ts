@@ -61,18 +61,18 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
     const KVUri = "https://" + keyVaultName + ".vault.azure.net";
     const credential = new DefaultAzureCredential();
     const client = new SecretClient(KVUri, credential);
-    
+
     context.log(functionName, "KeyVault " + KVUri);
 
     if (tenantObject.tenantId && tenantObject.appId) {
         context.log(functionName, "all parameters ok");
         context.log(functionName, "appId: " + tenantObject.appId);
 
-        // Get Secret from KeyVault
-        let retrievedSecret = null;
+        // Get App Secret from KeyVault
+        let retrievedAppSecret = null;
         try {
             context.log(functionName, "get secret");
-            retrievedSecret = await client.getSecret(tenantObject.appId);
+            retrievedAppSecret = await client.getSecret(tenantObject.appId);
         }
         catch (error) {
             context.log(functionName, "Error, unable to get Secret from KeyVault")
@@ -82,36 +82,70 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
             if (error.errorResponse && error.errorResponse.errorDescription) {
                 context.log(functionName, error.errorResponse.errorDescription)
             } else {
-                context.log(functionName, error.code);
+                context.log(functionName, error);
             }
             return createErrorResponse("unable to get Secret from KeyVault", context, functionName);
         }
 
-        if (retrievedSecret && retrievedSecret.value) {
+        if (retrievedAppSecret && retrievedAppSecret.value) {
             context.log(functionName, "Secret retrieved");
+            let tokenResponse = null
+            let storeNewToken = true
 
-            let tokenResponse = await getAccessToken(
-                AUTHORITYHOSTURL,
-                RESOURCEURL,
-                tenantObject.tenantId,
-                tenantObject.appId,
-                retrievedSecret.value,
-                context
-            );
+            // lookup if we already stored an accessToken
+            try {
+                let existingSecret = await client.getSecret("graph-" + tenantObject.tenantId);
+                existingSecret = JSON.parse(existingSecret.value)
+
+                const tokenExpiresOn = Date.parse(existingSecret.result.expiresOn);
+                const dateNow = Date.now();
+
+                //context.log(tokenExpiresOn)
+                //context.log(dateNow)
+
+                if (dateNow < tokenExpiresOn) {
+                    // valid Token found
+                    context.log(functionName, "stored Token still valid")
+                    tokenResponse = existingSecret
+                    storeNewToken = false
+                } else {
+                    context.log(functionName, "stored Token has expired")
+                }
+            }
+            catch {
+                context.log(functionName, "error retrieving stored secrets")
+            }
+
+            // no existing token, request a new one
+            if (!tokenResponse) {
+                tokenResponse = await getAccessToken(
+                    AUTHORITYHOSTURL,
+                    RESOURCEURL,
+                    tenantObject.tenantId,
+                    tenantObject.appId,
+                    retrievedAppSecret.value,
+                    context
+                );
+            }
 
             // build response object
             if (tokenResponse.ok) {
                 context.log(functionName, "requested access token successfully");
-                // console.log(tokenResponse);
 
                 if (tokenResponse.result) {
+
+                    if (storeNewToken) {
+                        // store secret for later use
+                        await client.setSecret("graph-" + tenantObject.tenantId, JSON.stringify(tokenResponse));
+                    }
+                    
                     return {
                         "ok": true,
-                        "accessToken" : tokenResponse.result.accessToken
+                        "accessToken": tokenResponse.result.accessToken
                     }
                 }
-            } else {
-                context.log(tokenResponse);
+            }
+            else {
                 let message = "unable to request access token"
 
                 if (tokenResponse.message) {

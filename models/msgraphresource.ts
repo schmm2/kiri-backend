@@ -17,11 +17,6 @@ const msgraphresourceSchema = new Schema({
         type: String,
         required: true
     },
-    objectDeepResolve: {
-        type: Boolean,
-        require: true,
-        default: false
-    },
     nameAttribute: {
         type: String,
         require: true,
@@ -31,13 +26,7 @@ const msgraphresourceSchema = new Schema({
         type: [String],
         require: false,
         default: null
-    },
-    changeTracking: {
-        type: String,
-        enum: ['HASH'],
-        default: 'HASH',
-        required: true
-    },
+    }
 }, {
     timestamps: true
 });

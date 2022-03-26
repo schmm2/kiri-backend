@@ -10,9 +10,9 @@
  */
 
 import { AzureFunction, Context } from "@azure/functions"
-import { createErrorResponse } from "../utils/createErrorResponse"
+import isValidHttpUrl from "../utils/isValidHttpUrl"
 const functionName = "ACT2001MsGraphGet"
-const graphBaseUrl = "https://graph.microsoft.com/beta"
+const graphBaseUrl = "https://graph.microsoft.com"
 
 async function getGraphAPI(token, apiUrl): Promise<ActivityMessage> {
     const headers = new Headers()
@@ -33,48 +33,60 @@ async function getGraphAPI(token, apiUrl): Promise<ActivityMessage> {
         }
         // Bad Server Response
         else if (response.status >= 400 && response.status < 600) {
-            return { ok: false, message: "Bad response from server, statusText: " + response.statusText };
+            return { ok: false, message: "Bad response from server, code: " + response.status + ", statusText: " + response.statusText };
         };
-        // all other stuff
-        return { ok: false, message: "htpp error: " + response.statusText }
-    } catch (error) {
-        return { ok: false, message: error }
     }
+    catch (err) {
+        // http error
+        return { ok: false, message: err }
+    }
+
+    // all other stuff
+    return { ok: false, message: "udnefined error" }
 }
 
-const activityFunction: AzureFunction = async function (context: Context, msGraphResource): Promise<ActivityMessage> {
+const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<ActivityMessage> {
     let response = null
+    let apiVersion = parameter.apiVersion ? parameter.apiVersion : "beta";
 
-    if (msGraphResource.accessToken) {
-        let accessToken = msGraphResource.accessToken;
+    if (parameter.accessToken) {
+        let accessToken = parameter.accessToken;
 
-        if (msGraphResource.graphResourceUrl) {
+        if (parameter.graphResourceUrl) {
             // build url
-            let url = graphBaseUrl + msGraphResource.graphResourceUrl
+            // graphResourceUrl start with a / so no need to add one
+            let url = graphBaseUrl + "/" + apiVersion + parameter.graphResourceUrl
 
-            // build filter
-            if (msGraphResource.filter) {
-                url = url + "/" + msGraphResource.filter;
+            // add filter
+            // Untested
+            /*if (parameter.filter) {
+                url = url + "/" + parameter.filter;
+            }*/
+
+            // add expand 
+            if (parameter.expandAttributes) {
+                let expandString = "?$expand=" + parameter.expandAttributes.join()
+                url = url + expandString
             }
 
-            //console.log("query resources " + msGraphResource.graphResourceUrl )
-            response = await getGraphAPI(accessToken, url);
-            // context.log(functionName, response);
+            if (isValidHttpUrl(url)) {
+                response = await getGraphAPI(accessToken, url);
+                // context.log("query resources " + url )
+                // context.log(functionName, response);
+            } else {
+                throw new Error("invalid url: " + url)
+            }
 
             if (!response.ok) {
                 let message = "Url: " + url + ", message: " + response.message
-                createErrorResponse(message, context, functionName)
+                //createErrorResponse(message, context, functionName)
                 throw new Error(message)
             }
         } else {
-            let message = "No API Url defined"
-            createErrorResponse(message, context, functionName)
-            throw new Error(message)
+            throw new Error("No API Url defined")
         }
     } else {
-        let message = "No AccessToken defined"
-        createErrorResponse(message, context, functionName)
-        throw new Error(message)
+        throw new Error("No AccessToken defined")
     }
     // return result
     // context.log(response);
