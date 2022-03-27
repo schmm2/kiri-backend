@@ -13,6 +13,7 @@
     "dependencies": {
         "@azure/identity": "^2.0.4",
         "@azure/keyvault-secrets": "^4.3.0",
+        "@azure/functions": "^3.0.0",
         "@microsoft/microsoft-graph-client": "^3.0.0",
         "adal-node": "^0.2.3",
         "adm-zip": "^0.5.9",
