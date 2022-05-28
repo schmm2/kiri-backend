@@ -8,6 +8,7 @@
 import { AzureFunction, Context } from "@azure/functions"
 import { createSettingsHash } from '../utils/createSettingsHash';
 import { createErrorResponse } from '../utils/createErrorResponse';
+import { findGraphDataTypeName } from "../utils/findGraphDataTypeName";
 
 var mongoose = require('mongoose');
 
@@ -40,30 +41,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
         // define configurationType from configuration we received via graph
         // this information is important to link the configuration to a configurationType
-        let configurationTypeName = null
-
-        if (configurationObjectFromGraph["@odata.type"]) {
-            configurationTypeName = configurationObjectFromGraph["@odata.type"].replace("#microsoft.graph.", "");
-        } else {
-            // Graph Exceptions
-            // Exception: Some resource do not contain a odata property (example: App Protection Policy)
-
-            let graphResourceUrlArray = graphResourceUrl.split('/');
-            configurationTypeName = graphResourceUrlArray[graphResourceUrlArray.length - 1];
-
-            // Astetic changes to the DataType
-            // we wish to store the type but only the signular form of the word
-            // handle word ending with "Policies"
-            if (configurationTypeName.slice(-8) == "Policies") {
-                configurationTypeName = configurationTypeName.slice(0, -8);
-                configurationTypeName = configurationTypeName + "Policy"
-            }
-            // we take the url, use the last part => resource identifier and remove the plural 's' if it exists
-            else if (configurationTypeName.slice(-1) == "s") {
-                // remove plurar s
-                configurationTypeName = configurationTypeName.slice(0, -1);
-            }
-        }
+        let configurationTypeName = findGraphDataTypeName(configurationObjectFromGraph, graphResourceUrl);
 
         // check data Type
         if (configurationTypeName) {

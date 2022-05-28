@@ -59,7 +59,11 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
     }
 
     const KVUri = "https://" + keyVaultName + ".vault.azure.net";
+
     const credential = new DefaultAzureCredential();
+    // Debug help, output JWT to see which user ha been used
+    //context.log("Token:", await credential.getToken("https://graph.microsoft.com/.default"));
+
     const client = new SecretClient(KVUri, credential);
 
     context.log(functionName, "KeyVault " + KVUri);
@@ -68,6 +72,7 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
         context.log(functionName, "all parameters ok");
         context.log(functionName, "appId: " + tenantObject.appId);
 
+        // ****** App Secret *****
         // Get App Secret from KeyVault
         let retrievedAppSecret = null;
         try {
@@ -76,8 +81,6 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
         }
         catch (error) {
             context.log(functionName, "Error, unable to get Secret from KeyVault")
-            // Debug help, output JWT to see which user ha been used
-            //context.log("Token:", await credential.getToken("https://graph.microsoft.com/.default"));
 
             if (error.errorResponse && error.errorResponse.errorDescription) {
                 context.log(functionName, error.errorResponse.errorDescription)
@@ -87,6 +90,9 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
             return createErrorResponse("unable to get Secret from KeyVault", context, functionName);
         }
 
+        // ************
+
+        // ****** Access Token *****
         if (retrievedAppSecret && retrievedAppSecret.value) {
             context.log(functionName, "Secret retrieved");
             let tokenResponse = null
@@ -133,12 +139,10 @@ const ACT2001MsGraphAccessTokenCreate: AzureFunction = async function (context: 
                 context.log(functionName, "requested access token successfully");
 
                 if (tokenResponse.result) {
-
                     if (storeNewToken) {
                         // store secret for later use
                         await client.setSecret("graph-" + tenantObject.tenantId, JSON.stringify(tokenResponse));
                     }
-                    
                     return {
                         "ok": true,
                         "accessToken": tokenResponse.result.accessToken

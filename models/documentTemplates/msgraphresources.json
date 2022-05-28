@@ -61,7 +61,6 @@
     },
     {
         "name": "intents",
-        "objectDeepResolve": true,
         "expandAttributes": ["settings,assignments"],
         "resource": "/deviceManagement/intents",
         "version": "beta",
@@ -74,7 +73,6 @@
     },
     {
         "name": "configurationPolicies",
-        "objectDeepResolve": true,
         "expandAttributes": ["settings,assignments"],
         "resource": "/deviceManagement/configurationPolicies",
         "version": "beta",
@@ -133,7 +131,6 @@
     },
     {
         "name": "deviceManagementScripts",
-        "objectDeepResolve": true,
         "resource": "/deviceManagement/deviceManagementScripts",
         "version": "beta",
         "configurationTypes": [{
@@ -144,7 +141,6 @@
     },
     {
         "name": "deviceHealthScripts",
-        "objectDeepResolve": true,
         "resource": "/deviceManagement/deviceHealthScripts",
         "version": "beta",
         "configurationTypes": [{
@@ -192,7 +188,8 @@
     {
         "name": "managedDevices",
         "resource": "/deviceManagement/managedDevices",
-        "version": "beta"
+        "version": "beta",
+        "category": "device"
     },
     {
         "name": "windowsAutopilotDeploymentProfiles",

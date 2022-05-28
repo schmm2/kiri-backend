@@ -11,6 +11,7 @@
 
 import * as df from "durable-functions"
 import { createSettingsHash } from '../utils/createSettingsHash';
+import { findGraphDataTypeName } from "../utils/findGraphDataTypeName";
 let queryParameters: any;
 const functionName = "ORC1001AzureDataCollectPerMsGraphResourceType"
 
@@ -57,6 +58,7 @@ const orchestrator = df.orchestrator(function* (context) {
     queryParameters = context.df.getInput();
 
     // ***** Variables *****
+    // *********************
 
     // msGraphResource
     let msGraphResource = queryParameters.msGraphResource;
@@ -78,6 +80,7 @@ const orchestrator = df.orchestrator(function* (context) {
     const retryOptions = new df.RetryOptions(firstRetryIntervalInMilliseconds, maxNumberOfAttempts);
 
     // ***** Flow *****
+    // ****************
 
     // Create Job
     let jobData = {
@@ -88,18 +91,21 @@ const orchestrator = df.orchestrator(function* (context) {
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
     // context.log(functionName, job);
 
-    // Query MsGraph Resources in Tenant
-    let msGraphQueryParameters = {
+    // Get Datatypes for this MsGraph Resource
+    let configurationDataTypes = yield context.df.callActivity("ACT1011ConfigurationTypeByMsGraphResource", msGraphResource._id);
+
+    // Query all MsGraph Resources Items in Tenant
+    let msGraphQueryAllItemsParameter = {
         accessToken: accessToken,
         graphResourceUrl: graphResourceUrl
     }
-    let msGraphItems = yield context.df.callActivity("ACT2001MsGraphGet", msGraphQueryParameters);
+    let msGraphResponse = yield context.df.callActivity("ACT2001MsGraphGet", msGraphQueryAllItemsParameter);
 
     // if (!context.df.isReplaying) context.log(functionName, "query ms Graph Resources");
     // if (!context.df.isReplaying) context.log(msGraphResource);
 
-    if (msGraphItems && msGraphItems.data && msGraphItems.data.value) {
-        let msGraphResponseValue = msGraphItems.data.value
+    if (msGraphResponse && msGraphResponse.data && msGraphResponse.data.value) {
+        let msGraphResponseValue = msGraphResponse.data.value
         //context.log(msGraphResponseValue);
 
         // build parameter for activities or orchestrator calls
@@ -111,144 +117,148 @@ const orchestrator = df.orchestrator(function* (context) {
         }
 
         //*******************************
-        // Version Precheck
+        // Resolve Graph Items
         // 
-        // Check if the data is already stored
-        //*******************************
-
-        let newConfigurationsFromGraph = []
-        let updatedConfigurationsFromGraph = []
-
-        // Get all newestConfigVersion from DB, query all at once => speed improv.
-        let newestConfigurationVersionsInDB = yield context.df.callActivity("ACT1042ConfigurationVersionsNewestByTenant", queryParameters.tenant);
-
-        for (let i = 0; i < msGraphResponseValue.length; i++) {
-            let newGraphDataItem = msGraphResponseValue[i];
-
-            let newestConfigurationVersionInDB = newestConfigurationVersionsInDB.find(configVersion => configVersion.graphId === newGraphDataItem.id)
-
-            if (newestConfigurationVersionInDB && newestConfigurationVersionInDB._id) {
-                // Graph Item Id does already exists in our DB, but its unclear if it is the newest version
-                // Check lastModifiedDate > version > versionHash
-                // context.log(newestConfigurationVersionInDB)
-
-                // compare config last modified date
-                if (newGraphDataItem.lastModifiedDateTime && (newestConfigurationVersionInDB.graphModifiedAt === newGraphDataItem.lastModifiedDateTime)) {
-                    continue;
-                }
-                else if (newGraphDataItem.version && (newestConfigurationVersionInDB.graphVersion === newGraphDataItem.version)) {
-                    continue;
-                }
-                else {
-                    // graph item does not have the attribut lastModifiedDateTime or version => Version check by hash
-                    let newGraphDataItemVersionHash = createSettingsHash(newGraphDataItem)
-                    if (newGraphDataItemVersionHash === newestConfigurationVersionInDB.version) {
-                        continue
-                    }
-                }
-                // New version of config found
-                updatedConfigurationsFromGraph.push({
-                    newestConfigurationVersionIdInDB: newestConfigurationVersionInDB._id,
-                    graphValue: newGraphDataItem
-                })
-            } else {
-                // New config found, we didnt store this config yet
-                newConfigurationsFromGraph.push(newGraphDataItem)
-            }
-        }
-
-        job.log.push({ message: 'Found ' + msGraphResponseValue.length + ' Configurations on Tenant to handle', state: 'DEFAULT' })
-        job.log.push({ message: 'Found ' + newConfigurationsFromGraph.length + ' new Configurations', state: 'DEFAULT' })
-        job.log.push({ message: 'Found ' + updatedConfigurationsFromGraph.length + ' Configurations to Update', state: 'DEFAULT' })
-        yield context.df.callActivity("ACT1021JobUpdate", job);
-
-        //*******************************
-        // Deep Resolve 
+        // Deep Resolve:
         // some data returned contains empty fields (for example deviceManagementScript -> scriptContent)
         // some fields can't be queried by $expand
         // solution: take each item and query it directly again -> $resource/$itemId
         // with the response we can replace the existing but incomplete value from the previous query
+        // 
+        // Expand: 
+        // In this process expand fields are added to the query
         //*******************************
 
-        // New Configs
-        for (let a = 0; a < newConfigurationsFromGraph.length; a++) {
+        for (let i = 0; i < msGraphResponseValue.length; i++) {
             try {
-                newConfigurationsFromGraph[a] = yield resolveGraphItem(context, defaultParameter, newConfigurationsFromGraph[a], msGraphResource, retryOptions)
-                newConfigurationsFromGraph[a] = newConfigurationsFromGraph[a].data
+                msGraphResponseValue[i] = yield resolveGraphItem(context, defaultParameter, msGraphResponseValue[i], msGraphResource, retryOptions)
+                msGraphResponseValue[i] = msGraphResponseValue[i].data
             }
             catch (err) {
-                job.log.push({ message: "unable to resolve config " + newConfigurationsFromGraph[a].displayName, state: 'ERROR' })
-                newConfigurationsFromGraph[a] = null
+                job.log.push({ message: "unable to resolve config " + msGraphResponseValue[i].displayName, state: 'ERROR' })
+                msGraphResponseValue[i] = null
             }
         }
-
-        // Updated Configs
-        for (let b = 0; b < updatedConfigurationsFromGraph.length; b++) {
-            try {
-                updatedConfigurationsFromGraph[b].graphValue = yield resolveGraphItem(context, defaultParameter, updatedConfigurationsFromGraph[b].graphValue, msGraphResource, retryOptions)
-                updatedConfigurationsFromGraph[b].graphValue = updatedConfigurationsFromGraph[b].graphValue.data
-            }
-            catch (err) {
-                job.log.push({ message: "unable to resolve config " + updatedConfigurationsFromGraph[b].graphValue.displayName, state: 'ERROR' })
-                updatedConfigurationsFromGraph[b] = null
-            }
-        }
-        
         // Filter objects out if there was an issue at the resolving
-        newConfigurationsFromGraph = newConfigurationsFromGraph.filter(elem => elem && elem.id)
-        updatedConfigurationsFromGraph = updatedConfigurationsFromGraph.filter(elem => elem && elem.graphValue && elem.graphValue.id)
+        msGraphResponseValue = msGraphResponseValue.filter(elem => elem && elem.id)
+
 
         //*******************************
-        // Deep Resolve - GroupPolicy Configurations
-        // Some Deep Resolve query might fail so we do no include it, try the next data collection run
+        // Send Data to Log Analytics
+        // 
+        // Temporary Storage 
+        // Intend: Main UI Data
         //*******************************
 
-        if (graphResourceUrl === '/deviceManagement/groupPolicyConfigurations') {
-            // New Configs
-            for (let a = 0; a < newConfigurationsFromGraph.length; a++) {
-                try {
-                    newConfigurationsFromGraph[a] = yield deepResolveGroupPolicy(context, defaultParameter, newConfigurationsFromGraph[a])
-                }
-                catch (err) {
-                    job.log.push({ message: "unable to deep resolve new config " + newConfigurationsFromGraph[a].displayName, state: 'ERROR' })
-                    newConfigurationsFromGraph[a] = null
-                }
-            }
-            // Updated Configs
-            for (let b = 0; b < updatedConfigurationsFromGraph.length; b++) {
-                try {
-                    updatedConfigurationsFromGraph[b].graphValue = yield deepResolveGroupPolicy(context, defaultParameter, updatedConfigurationsFromGraph[b].graphValue)
-                }
-                catch (err) {
-                    job.log.push({ message: "unable to deep resolve updated config " + updatedConfigurationsFromGraph[b].graphValue.displayName + ", try rerun", state: 'ERROR' })
-                    updatedConfigurationsFromGraph[b] = null
-                }
+        let logAnalyticsTasks = []
+
+
+        for (let i = 0; i < msGraphResponseValue.length; i++) {
+            let msGraphItem = msGraphResponseValue[i]
+
+            // create copy so we can add some settings
+            msGraphItem = JSON.parse(JSON.stringify(msGraphItem))
+
+            // find configurationType => custom log type
+            let configurationTypeName = findGraphDataTypeName(msGraphItem, graphResourceUrl)
+
+            // find category of data
+            let configurationType = configurationDataTypes.find(type => type.name == configurationTypeName)
+            if (configurationType && configurationType.category) {
+                msGraphItem["category"] = configurationType.category
             }
 
-            // Filter objects out if there was an issue at the resolving
-            newConfigurationsFromGraph = newConfigurationsFromGraph.filter(elem => elem && elem.id)
-            updatedConfigurationsFromGraph = updatedConfigurationsFromGraph.filter(elem => elem && elem.graphValue && elem.graphValue.id)
+            // need to add more attributes so we can query more easily
+            msGraphItem["tenantId"] = tenant.tenantId
+
+            let logAnalyticsDataAddParameter = {
+                "logType": configurationTypeName,
+                "data": msGraphItem,
+            }
+            context.log("sssss")
+            context.log(msGraphItem)
+
+            logAnalyticsTasks.push(context.df.callActivity("ACT1200LogAnalyticsDataAdd", logAnalyticsDataAddParameter))
+        }
+        if (logAnalyticsTasks.length >= 1) {
+            let logAnaylticsDataAddResponse = yield context.df.Task.all(logAnalyticsTasks)
+            context.log(functionName, "uploaded " + logAnalyticsTasks.length + " items to Log Analytics")
         }
 
         //*******************************
-        // Store Data
-        // Store new or changed Data in Database
+        // Store Data in Database
+        //
+        // Detect which Data needs to be stored in DB
         //*******************************
 
-        
+        // ***** Configurations *****
+        if (msGraphResource.category == "configuration") {
+            // **** Version Precheck ****
+            // Check if the data is already stored in Database
 
-        // Devices
-        if (graphResourceUrl === '/deviceManagement/managedDevices') {
-            response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", defaultParameter)
-        }
-        // all other Configurations
-        else {
+            let newConfigurationsFromGraph = []
+            let updatedConfigurationsFromGraph = []
+
+            // Get all newestConfigVersion from DB, query all at once => speed improv.
+            let newestConfigurationVersionsInDB = yield context.df.callActivity("ACT1042ConfigurationVersionsNewestByTenant", queryParameters.tenant);
+
+            for (let i = 0; i < msGraphResponseValue.length; i++) {
+                let newGraphDataItem = msGraphResponseValue[i];
+
+                let newestConfigurationVersionInDB = newestConfigurationVersionsInDB.find(configVersion => configVersion.graphId === newGraphDataItem.id)
+
+                if (newestConfigurationVersionInDB && newestConfigurationVersionInDB._id) {
+                    // Graph Item Id does already exists in our DB, but its unclear if it is the newest version
+                    // Check lastModifiedDate > version > versionHash
+                    // context.log(newestConfigurationVersionInDB)
+
+                    // compare config last modified date
+                    if (newGraphDataItem.lastModifiedDateTime && (newestConfigurationVersionInDB.graphModifiedAt === newGraphDataItem.lastModifiedDateTime)) {
+                        continue;
+                    } // compare version value
+                    else if (newGraphDataItem.version && (newestConfigurationVersionInDB.graphVersion === newGraphDataItem.version)) {
+                        continue;
+                    }
+                    else {
+                        // graph item does not have the attribut lastModifiedDateTime or version => Version check by hash
+                        let newGraphDataItemVersionHash = createSettingsHash(newGraphDataItem)
+                        if (newGraphDataItemVersionHash === newestConfigurationVersionInDB.version) {
+                            continue
+                        }
+                    }
+
+                    // handle Administrative Templates, deep resolve data
+                    if (graphResourceUrl === '/deviceManagement/groupPolicyConfigurations') {
+                        newGraphDataItem = yield deepResolveGroupPolicy(context, defaultParameter, newGraphDataItem)
+                    }
+
+                    // New version of config found
+                    updatedConfigurationsFromGraph.push({
+                        newestConfigurationVersionIdInDB: newestConfigurationVersionInDB._id,
+                        graphValue: newGraphDataItem
+                    })
+                } else {
+                    // handle Administrative Templates, deep resolve data
+                    if (graphResourceUrl === '/deviceManagement/groupPolicyConfigurations') {
+                        newGraphDataItem = yield deepResolveGroupPolicy(context, defaultParameter, newGraphDataItem)
+                    }
+
+                    // New config found, we didnt store this config yet
+                    newConfigurationsFromGraph.push(newGraphDataItem)
+                }
+            }
+
+            job.log.push({ message: 'Found ' + msGraphResponseValue.length + ' Configurations on Tenant to handle', state: 'DEFAULT' })
+            job.log.push({ message: 'Found ' + newConfigurationsFromGraph.length + ' new Configurations', state: 'DEFAULT' })
+            job.log.push({ message: 'Found ' + updatedConfigurationsFromGraph.length + ' Configurations to Update', state: 'DEFAULT' })
+            yield context.df.callActivity("ACT1021JobUpdate", job);
+
             // new Config
             let createConfigParameter = { ...defaultParameter }
             createConfigParameter.payload = newConfigurationsFromGraph
             createConfigParameter["msGraphResource"] = msGraphResource
             let createConfigTasks = createSubTasksForEachItem(context, createConfigParameter, "ACT3010ConfigurationCreate")
-            
+
             // new Config Version
             let createConfigVersionParameter = { ...defaultParameter }
             createConfigVersionParameter.payload = updatedConfigurationsFromGraph
@@ -257,11 +267,17 @@ const orchestrator = df.orchestrator(function* (context) {
 
             // merge Tasks
             let configTasks = createConfigTasks.concat(createConfigVersionTasks)
-           
+
             if (configTasks.length >= 1) {
                 response = yield context.df.Task.all(configTasks)
             }
         }
+
+        // ***** Devices *****
+        if (msGraphResource.category == "device") {
+            response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", defaultParameter)
+        }
+
 
         // analyze response, add to job log
         if (response && response.length > 0) {

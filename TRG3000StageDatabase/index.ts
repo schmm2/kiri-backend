@@ -24,7 +24,7 @@ async function stageDatabase(context) {
                         name: msgraphResourceTemplate.name,
                         resource: msgraphResourceTemplate.resource,
                         version: msgraphResourceTemplate.version,
-                        objectDeepResolve: msgraphResourceTemplate.objectDeepResolve ? true: false,
+                        category: msgraphResourceTemplate.category ? msgraphResourceTemplate.category: "configuration",
                         expandAttributes: msgraphResourceTemplate.expandAttributes ? msgraphResourceTemplate.expandAttributes: null,
                         nameAttribute: msgraphResourceTemplate.nameAttribute ? msgraphResourceTemplate.nameAttribute : "displayName" 
                     });

@@ -26,7 +26,12 @@ const msgraphresourceSchema = new Schema({
         type: [String],
         require: false,
         default: null
-    }
+    },
+    category: {
+        type: String,
+        require: true,
+        default: "configuration"
+    },
 }, {
     timestamps: true
 });
