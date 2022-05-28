@@ -7,6 +7,7 @@
 
 import * as df from "durable-functions"
 import { createErrorResponse } from "../utils/createErrorResponse"
+import logJobError from "../utils/logJobError"
 
 const functionName = "ORC1101MsGraphConfigurationCreate"
 
@@ -16,10 +17,11 @@ const orchestrator = df.orchestrator(function* (context) {
     const queryParameters: any = context.df.getInput();
     // if (!context.df.isReplaying) context.log(queryParameters);
 
-    let tenantDbId = queryParameters.tenantDbId;
-    let configurationVersionDbId = queryParameters.configurationVersionDbId;
+    let tenantDbId = queryParameters.tenantDbId
+    let configurationVersionDbId = queryParameters.configurationVersionDbId
     let configurationDisplayName = queryParameters.configurationName
-    let accessToken = queryParameters.accessToken ? queryParameters.accessToken : null;
+    let whatif = queryParameters.whatif
+    let accessToken = queryParameters.accessToken ? queryParameters.accessToken : null
 
     let newConfiguration;
 
@@ -33,7 +35,7 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // check parameters
     if (!configurationVersionDbId || !configurationDisplayName || !tenantDbId) {
-        job.log.push({ message: "invalid parameters", state: "Error" });
+        job.log.push({ message: "invalid parameters", state: "ERROR" });
         job.state = 'ERROR'
     }
     else { // all parameters ok
@@ -70,7 +72,7 @@ const orchestrator = df.orchestrator(function* (context) {
                 if (configurationDisplayName) {
                     newConfigurationVersionValue.displayName = configurationDisplayName;
                 }
-                
+
                 let dataValidationParameter = {
                     msGraphResourceUrl: msGraphResourceUrl,
                     dataObject: newConfigurationVersionValue
@@ -78,23 +80,29 @@ const orchestrator = df.orchestrator(function* (context) {
 
                 let newConfigurationValidated = yield context.df.callActivity("ACT2011MsGraphCreateDataValidation", dataValidationParameter);
                 // if (!context.df.isReplaying) context.log(functionName + ", data validation parameter", dataValidationParameter);
-                
+
                 let createParameter = {
                     accessToken: accessToken,
                     dataObject: newConfigurationValidated,
-                    msGraphApiUrl: msGraphResourceUrl
+                    msGraphApiUrl: msGraphResourceUrl,
+                    whatif: whatif
                 }
                 job.log.push({ message: 'trying to create config ' + newConfigurationVersionValue.displayName, state: "DEFAULT" });
-                
-                // if (!context.df.isReplaying) context.log(functionName + ", patch parameter", createParameter);
-                let msGraphResponse = yield context.df.callActivity("ACT2003MsGraphPost", createParameter);
-                // if (!context.df.isReplaying) context.log(functionName, msGraphResponse)
 
-                if (!msGraphResponse.ok) {
-                    job.log.push({ message: 'error msGraph Post', state: "ERROR" });
-                    job.log.push({ message: msGraphResponse.message, state: "ERROR" });
-                    job.state = 'ERROR'
-                } else {
+                // if (!context.df.isReplaying) context.log(functionName + ", patch parameter", createParameter);
+                let msGraphResponse = null;
+
+                try {
+                    msGraphResponse = yield context.df.callActivity("ACT2003MsGraphPost", createParameter);
+                    // if (!context.df.isReplaying) context.log(functionName, msGraphResponse)
+                }
+                catch (error) {
+                    logJobError(job, "error msGraph Post")
+                    if (error) { logJobError(job, JSON.stringify(error)) }
+                    msGraphResponse = { ok: false }
+                }
+
+                if (msGraphResponse && msGraphResponse.ok) {
                     // get full object & id of just created new config
                     newConfiguration = msGraphResponse.data;
                     let newConfigurationId = msGraphResponse.data.id;

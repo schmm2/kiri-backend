@@ -42,7 +42,7 @@ async function getGraphAPI(token, apiUrl): Promise<ActivityMessage> {
     }
 
     // all other stuff
-    return { ok: false, message: "udnefined error" }
+    return { ok: false, message: "undefined error" }
 }
 
 const activityFunction: AzureFunction = async function (context: Context, parameter): Promise<ActivityMessage> {

@@ -37,8 +37,8 @@ const orchestrator = df.orchestrator(function* (context) {
     }
 
     // retry options
-    const firstRetryIntervalInMilliseconds = 5000;
-    const maxNumberOfAttempts = 3;
+    const firstRetryIntervalInMilliseconds = 1000;
+    const maxNumberOfAttempts = 2
     const retryOptions = new df.RetryOptions(firstRetryIntervalInMilliseconds, maxNumberOfAttempts);
 
     try {

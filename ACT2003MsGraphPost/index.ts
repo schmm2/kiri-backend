@@ -10,7 +10,6 @@
  */
 
 import { AzureFunction, Context } from "@azure/functions"
-import { createErrorResponse } from "../utils/createErrorResponse"
 
 const functionName = "ACT2003MsGraphPost"
 const graphBaseUrl = "https://graph.microsoft.com/beta"
@@ -26,14 +25,22 @@ async function postGraphAPI(token, apiUrl, body): Promise<ActivityMessage> {
             headers: headers,
             body: JSON.stringify(body)
         })
-        if (response.status >= 400 && response.status < 600) {
-            return { ok: false, message: "Bad response from server, statusText: " + response.statusText };
+        // OK
+        if (response.status >= 200 && response.status < 300) {
+            let data = await response.json();
+            return { ok: true, message: response.statusText, data: data }
+        } // Error
+        else if (response.status >= 400 && response.status < 600) {
+            return { ok: false, message: "Bad response from server, code: " + response.status + ", statusText: " + response.statusText };
         };
-        let data = await response.json();
-        return { ok: true, message: response.statusText, data: data }
     } catch (error) {
-        return { ok: false, message: error }
+        // rethrow error
+        let message = "Url: " + apiUrl + ", message: " + error
+        throw new  Error(message)
     }
+
+    // all other stuff
+    return { ok: false, message: "undefined error" }
 }
 
 
@@ -43,14 +50,13 @@ const activityFunction: AzureFunction = async function (context: Context, queryP
     let dataObject = queryParameters.dataObject
     let url = graphBaseUrl + msGraphApiUrl
 
+    // add whatif 
+    if (queryParameters.whatif) {
+        url = url + "?whatif"
+    }
+
     // post resource via graph api
     let response: ActivityMessage = await postGraphAPI(accessToken, url, dataObject);
-    //context.log(url);
-    //context.log(dataObject);
-
-    if (!response.ok) {
-        return createErrorResponse(response.message, context, functionName);
-    }
     return response;
 };
 
