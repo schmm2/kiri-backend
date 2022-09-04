@@ -153,13 +153,18 @@
         "name": "deviceenrollmentconfigurations",
         "resource": "/deviceManagement/deviceEnrollmentConfigurations",
         "version": "beta",
+        "transformRulesCreate": [{
+            "action": "DELETE",
+            "property": "priority"
+        }],
+        "transformRulesPatch": [],
         "configurationTypes": [{
                 "name": "deviceEnrollmentLimitConfiguration",
                 "category": "enrollment",
                 "platform": "general"
             },
             {
-                "name": "deviceEnrollmentPlatformRestrictionsConfiguration",
+                "name": "deviceEnrollmentPlatformRestrictionConfiguration",
                 "category": "enrollment",
                 "platform": "general"
             },

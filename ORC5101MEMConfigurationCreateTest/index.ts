@@ -44,19 +44,23 @@ const orchestrator = df.orchestrator(function* (context) {
         }
     }
 
-    let configurationsPerType = []
+    let allreadyTestedConfigurationTypes = []
+
     // AccessToken available
     if (accessToken) {
-        // get from each msGraphResource one config
+        // get all configs of tenant
         let configurations = yield context.df.callActivity("ACT1064ConfigurationGetByTenant", tenantDbId);
-        context.log(configurations.length)
 
         for (let index = 0; index < configurations.length; index++) {
             const configuration = configurations[index]
 
-            const found = configurationsPerType.some(el => el.configurationType === configuration.configurationType);
-            if (!found) {
-                configurationsPerType.push(configuration);
+            // lookup list if we tested this type already
+            const alreadyTestedConfigurationType = allreadyTestedConfigurationTypes.some(el => el === configuration.configurationType);
+
+            if (!alreadyTestedConfigurationType) {
+                allreadyTestedConfigurationTypes.push(configuration.configurationType);
+                job.log.push({ message: 'start test configTypeId: ' + configuration.configurationType, state: 'DEFAULT' })
+
                 let configurationVersion = yield context.df.callActivity("ACT1062ConfigurationGetNewestConfigurationVersion", configuration._id);
                 let child_id = configurationVersion._id
 

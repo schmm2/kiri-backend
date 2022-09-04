@@ -35,7 +35,8 @@ const orchestrator = df.orchestrator(function* (context) {
 
     // check parameters
     if (!configurationVersionDbId || !configurationDisplayName || !tenantDbId) {
-        job.log.push({ message: "invalid parameters", state: "ERROR" });
+        let parameters = { configurationVersionDbId, configurationDisplayName, tenantDbId }
+        job.log.push({ message: "invalid parameters" + JSON.stringify(parameters), state: "ERROR" });
         job.state = 'ERROR'
     }
     else { // all parameters ok
@@ -152,7 +153,7 @@ const orchestrator = df.orchestrator(function* (context) {
     }
 
     // return newly created config
-    if (!context.df.isReplaying) context.log(newConfiguration)
+    // if (!context.df.isReplaying) context.log(newConfiguration)
     return newConfiguration;
 });
 

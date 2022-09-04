@@ -31,6 +31,13 @@ function deepResolveGroupPolicy(context, parameter, graphItem) {
 
 //*******************************
 // Resolve Graph Item
+// some data returned contains empty fields (for example deviceManagementScript -> scriptContent)
+// some fields can't be queried by $expand
+// solution: take each item and query it directly again -> $resource/$itemId
+// with the response we can replace the existing but incomplete value from the previous query
+// 
+// Expand: 
+// In this process expand fields are added to the query
 //*******************************
 
 function resolveGraphItem(context, parameter, graphItem, msGraphResource, retryOptions) {
@@ -89,7 +96,6 @@ const orchestrator = df.orchestrator(function* (context) {
         tenant: tenant._id
     };
     let job = yield context.df.callActivity("ACT1020JobCreate", jobData);
-    // context.log(functionName, job);
 
     // Get Datatypes for this MsGraph Resource
     let configurationDataTypes = yield context.df.callActivity("ACT1011ConfigurationTypeByMsGraphResource", msGraphResource._id);
@@ -117,75 +123,6 @@ const orchestrator = df.orchestrator(function* (context) {
         }
 
         //*******************************
-        // Resolve Graph Items
-        // 
-        // Deep Resolve:
-        // some data returned contains empty fields (for example deviceManagementScript -> scriptContent)
-        // some fields can't be queried by $expand
-        // solution: take each item and query it directly again -> $resource/$itemId
-        // with the response we can replace the existing but incomplete value from the previous query
-        // 
-        // Expand: 
-        // In this process expand fields are added to the query
-        //*******************************
-
-        for (let i = 0; i < msGraphResponseValue.length; i++) {
-            try {
-                msGraphResponseValue[i] = yield resolveGraphItem(context, defaultParameter, msGraphResponseValue[i], msGraphResource, retryOptions)
-                msGraphResponseValue[i] = msGraphResponseValue[i].data
-            }
-            catch (err) {
-                job.log.push({ message: "unable to resolve config " + msGraphResponseValue[i].displayName, state: 'ERROR' })
-                msGraphResponseValue[i] = null
-            }
-        }
-        // Filter objects out if there was an issue at the resolving
-        msGraphResponseValue = msGraphResponseValue.filter(elem => elem && elem.id)
-
-
-        //*******************************
-        // Send Data to Log Analytics
-        // 
-        // Temporary Storage 
-        // Intend: Main UI Data
-        //*******************************
-
-        let logAnalyticsTasks = []
-
-
-        for (let i = 0; i < msGraphResponseValue.length; i++) {
-            let msGraphItem = msGraphResponseValue[i]
-
-            // create copy so we can add some settings
-            msGraphItem = JSON.parse(JSON.stringify(msGraphItem))
-
-            // find configurationType => custom log type
-            let configurationTypeName = findGraphDataTypeName(msGraphItem, graphResourceUrl)
-
-            // find category of data
-            let configurationType = configurationDataTypes.find(type => type.name == configurationTypeName)
-            if (configurationType && configurationType.category) {
-                msGraphItem["category"] = configurationType.category
-            }
-
-            // need to add more attributes so we can query more easily
-            msGraphItem["tenantId"] = tenant.tenantId
-
-            let logAnalyticsDataAddParameter = {
-                "logType": configurationTypeName,
-                "data": msGraphItem,
-            }
-            context.log("sssss")
-            context.log(msGraphItem)
-
-            logAnalyticsTasks.push(context.df.callActivity("ACT1200LogAnalyticsDataAdd", logAnalyticsDataAddParameter))
-        }
-        if (logAnalyticsTasks.length >= 1) {
-            let logAnaylticsDataAddResponse = yield context.df.Task.all(logAnalyticsTasks)
-            context.log(functionName, "uploaded " + logAnalyticsTasks.length + " items to Log Analytics")
-        }
-
-        //*******************************
         // Store Data in Database
         //
         // Detect which Data needs to be stored in DB
@@ -204,13 +141,15 @@ const orchestrator = df.orchestrator(function* (context) {
 
             for (let i = 0; i < msGraphResponseValue.length; i++) {
                 let newGraphDataItem = msGraphResponseValue[i];
+                let existingConfig = false;
 
+                // ***** check if config is already in DB
                 let newestConfigurationVersionInDB = newestConfigurationVersionsInDB.find(configVersion => configVersion.graphId === newGraphDataItem.id)
 
+                // handle existing configs
                 if (newestConfigurationVersionInDB && newestConfigurationVersionInDB._id) {
                     // Graph Item Id does already exists in our DB, but its unclear if it is the newest version
                     // Check lastModifiedDate > version > versionHash
-                    // context.log(newestConfigurationVersionInDB)
 
                     // compare config last modified date
                     if (newGraphDataItem.lastModifiedDateTime && (newestConfigurationVersionInDB.graphModifiedAt === newGraphDataItem.lastModifiedDateTime)) {
@@ -227,22 +166,34 @@ const orchestrator = df.orchestrator(function* (context) {
                         }
                     }
 
+                    // set newConfig to false
+                    existingConfig = true
+                }
+
+                // ***** Deep Resolve Configuration
+                try {
+                    // resolve Graph Item
+                    let newGraphDataItemData = yield resolveGraphItem(context, defaultParameter, newGraphDataItem, msGraphResource, retryOptions)
+                    newGraphDataItem = newGraphDataItemData.data
+
                     // handle Administrative Templates, deep resolve data
                     if (graphResourceUrl === '/deviceManagement/groupPolicyConfigurations') {
                         newGraphDataItem = yield deepResolveGroupPolicy(context, defaultParameter, newGraphDataItem)
                     }
+                }
+                catch (err) {
+                    job.log.push({ message: "unable to resolve config " + newGraphDataItem.displayName, state: 'ERROR' })
+                    continue
+                }
 
+                // ***** Prepare Data Structure
+                if (existingConfig) {
                     // New version of config found
                     updatedConfigurationsFromGraph.push({
-                        newestConfigurationVersionIdInDB: newestConfigurationVersionInDB._id,
+                        configurationIdInDB: newestConfigurationVersionInDB.configuration,
                         graphValue: newGraphDataItem
                     })
                 } else {
-                    // handle Administrative Templates, deep resolve data
-                    if (graphResourceUrl === '/deviceManagement/groupPolicyConfigurations') {
-                        newGraphDataItem = yield deepResolveGroupPolicy(context, defaultParameter, newGraphDataItem)
-                    }
-
                     // New config found, we didnt store this config yet
                     newConfigurationsFromGraph.push(newGraphDataItem)
                 }
@@ -275,9 +226,9 @@ const orchestrator = df.orchestrator(function* (context) {
 
         // ***** Devices *****
         if (msGraphResource.category == "device") {
+            // no need for a deep resolve here
             response = yield context.df.callActivity("ACT3000AzureDataCollectHandleDevice", defaultParameter)
         }
-
 
         // analyze response, add to job log
         if (response && response.length > 0) {
@@ -287,6 +238,58 @@ const orchestrator = df.orchestrator(function* (context) {
                 // context.log(job);
             }
         }
+
+        //*******************************
+        // Send Data to Log Analytics
+        // 
+        // Temporary Storage 
+        //*******************************
+
+        let logAnalyticsTasks = []
+
+        if (msGraphResource.category == "device") {
+
+            for (let i = 0; i < msGraphResponseValue.length; i++) {
+                let msGraphItem = msGraphResponseValue[i]
+
+                // resolve Graph Item
+                try {
+                    let newGraphDataItemData = yield resolveGraphItem(context, defaultParameter, msGraphItem, msGraphResource, retryOptions)
+                    msGraphItem = newGraphDataItemData.data
+                }
+                catch (err) {
+                    job.log.push({ message: "unable to resolve config " + msGraphItem.displayName, state: 'ERROR' })
+                    continue
+                }
+
+                // create copy so we can add some settings
+                msGraphItem = JSON.parse(JSON.stringify(msGraphItem))
+
+                // find configurationType => custom log type
+                let configurationTypeName = findGraphDataTypeName(msGraphItem, graphResourceUrl)
+
+                // find category of data
+                let configurationType = configurationDataTypes.find(type => type.name == configurationTypeName)
+                if (configurationType && configurationType.category) {
+                    msGraphItem["category"] = configurationType.category
+                }
+
+                // need to add more attributes so we can query more easily
+                msGraphItem["tenantId"] = tenant.tenantId
+
+                let logAnalyticsDataAddParameter = {
+                    "logType": configurationTypeName,
+                    "data": msGraphItem,
+                }
+                logAnalyticsTasks.push(context.df.callActivity("ACT1200LogAnalyticsDataAdd", logAnalyticsDataAddParameter))
+            }
+            if (logAnalyticsTasks.length >= 1) {
+                let logAnaylticsDataAddResponse = yield context.df.Task.all(logAnalyticsTasks)
+                context.log(functionName, "uploaded " + logAnalyticsTasks.length + " items to Log Analytics")
+            }
+        }
+
+        // finished job
         job.state = 'FINISHED'
     } else {
         job.log.push({ message: 'Unable to query MS Graph API', state: 'ERROR' })
@@ -294,8 +297,8 @@ const orchestrator = df.orchestrator(function* (context) {
         job.state = 'ERROR'
     }
 
+    // Send data to log Analytics
     yield context.df.callActivity("ACT1021JobUpdate", job);
-    // if (!context.df.isReplaying) context.log(functionName, JSON.stringify(job));
 
     return job;
 });

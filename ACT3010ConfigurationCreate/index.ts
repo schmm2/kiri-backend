@@ -56,7 +56,7 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                 let addConfigurationResponse = await Configuration.create({
                     graphIsDeleted: false,
                     graphId: configurationObjectFromGraph.id,
-                    graphCreatedAt: configurationObjectFromGraph.createdDateTime ? configurationObjectFromGraph.createdDateTime: 'undefined',
+                    graphCreatedAt: configurationObjectFromGraph.createdDateTime ? configurationObjectFromGraph.createdDateTime : 'undefined',
                     configurationType: configurationTypes[0].id,
                     tenant: tenant
                 });
@@ -74,10 +74,10 @@ const activityFunction: AzureFunction = async function (context: Context, parame
 
                     // find displayName
                     let displayName = null;
-                    if(msGraphResource.nameAttribute){
+                    if (msGraphResource.nameAttribute) {
                         context.log(functionName, "use different Name Attribut: " + msGraphResource.nameAttribute)
                         displayName = configurationObjectFromGraph[msGraphResource.nameAttribute]
-                    }else{
+                    } else {
                         displayName = configurationObjectFromGraph.displayName
                     }
 
@@ -86,11 +86,16 @@ const activityFunction: AzureFunction = async function (context: Context, parame
                         graphModifiedAt: configurationObjectFromGraph.lastModifiedDateTime,
                         value: configurationObjectFromGraphJSON,
                         version: configurationObjectFromGraphVersion,
-                        isNewest: true,
                         configuration: addConfigurationResponse._id
                     });
 
                     if (addConfigurationVersionResponse._id) {
+
+                        // set active configVersion on the configuration
+                        addConfigurationResponse.newestConfigurationVersion = addConfigurationVersionResponse._id
+                        addConfigurationResponse.save()
+
+                        // build response message
                         response.createdConfigurationVersionId = addConfigurationVersionResponse._id;
                         response.message = configurationObjectFromGraph.displayName + ": saved, new configuration"
                         response.state = "SUCCESS"

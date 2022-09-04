@@ -4,6 +4,19 @@ import { createObjectTC } from '../graphql/createObjectTC';
 import { ConfigurationTypeTC } from '../models/configurationtype';
 import { ConfigurationType } from '../models/configurationtype';
 
+const transformRuleSchema = new Schema({
+    action: {
+        type: String,
+        enum: ['DELETE'],
+        default: 'DELETE',
+        require: true
+    },
+    property: {
+        type: String,
+        require: true
+    }
+})
+
 const msgraphresourceSchema = new Schema({
     name: {
         type: String,
@@ -32,6 +45,16 @@ const msgraphresourceSchema = new Schema({
         require: true,
         default: "configuration"
     },
+    transformRulesPatch: {
+        type: [transformRuleSchema],
+        require: true,
+        default: []
+    },
+    transformRulesCreate: {
+        type: [transformRuleSchema],
+        require: true,
+        default: []
+    }
 }, {
     timestamps: true
 });

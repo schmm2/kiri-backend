@@ -18,7 +18,9 @@ async function stageDatabase(context) {
         await MsGraphResource.find({ name: msgraphResourceTemplate.name }).
             then(async msGraphResources => {
                 let msGraphResourceCreated = null;
+
                 if (msGraphResources.length == 0) {
+
                     // entry not found so we need to add the element
                     msGraphResourceCreated = await MsGraphResource.create({
                         name: msgraphResourceTemplate.name,
@@ -26,9 +28,12 @@ async function stageDatabase(context) {
                         version: msgraphResourceTemplate.version,
                         category: msgraphResourceTemplate.category ? msgraphResourceTemplate.category: "configuration",
                         expandAttributes: msgraphResourceTemplate.expandAttributes ? msgraphResourceTemplate.expandAttributes: null,
+                        transformRulesCreate: msgraphResourceTemplate.transformRulesCreate ? msgraphResourceTemplate.transformRulesCreate: [],
+                        transformRulesPatch: msgraphResourceTemplate.transformRulesPatch ? msgraphResourceTemplate.transformRulesPatch : [],
                         nameAttribute: msgraphResourceTemplate.nameAttribute ? msgraphResourceTemplate.nameAttribute : "displayName" 
                     });
                     context.log("mongoose, created msgraphresource document: " + msGraphResourceCreated.name);
+                    //context.log(msGraphResourceCreated)
                     msGraphResourceObjectCount++;
                 }
                 else {

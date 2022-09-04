@@ -32,10 +32,6 @@ const configurationversionSchema = new Schema({
         type: String,
         required: true
     },
-    isNewest: {
-        type: Boolean,
-        required: true
-    },
     configuration: {
         type: Schema.Types.ObjectId,
         ref: 'Configuration',
