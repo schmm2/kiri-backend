@@ -23,6 +23,12 @@ const configurationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ConfigurationType',
         required: true
+    },
+    newestConfigurationVersion: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ConfigurationVersion',
+        required: false,
+        default: null
     }
 }, {
     timestamps: true
@@ -34,11 +40,22 @@ export const ConfigurationTC = createObjectTC({ model: Configuration, customizat
 ConfigurationTC.addRelation(
     'tenant',
     {
-        resolver: () => TenantTC.mongooseResolvers.findById({lean: true}),
+        resolver: () => TenantTC.mongooseResolvers.findById({ lean: true }),
         prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
             _id: (source) => source.tenant,
         },
         projection: { tenant: true }, // point fields in source object, which should be fetched from DB
+    }
+);
+
+ConfigurationTC.addRelation(
+    'configurationType',
+    {
+        resolver: () => ConfigurationTypeTC.mongooseResolvers.findById({ lean: true }),
+        prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
+            _id: (source) => source.configurationType,
+        },
+        projection: { configurationType: true }, // point fields in source object, which should be fetched from DB
     }
 );
 
@@ -98,13 +115,10 @@ ConfigurationTC.addRelation(
 ConfigurationTC.addRelation(
     'newestConfigurationVersion',
     {
-        resolver: () => ConfigurationVersionTC.mongooseResolvers.findOne({ lean: true }),
-        prepareArgs: { // resolver `findMany` has `filter` arg, we may provide mongoose query to it
-            filter: (source) => ({
-                configuration: source.id,
-                isNewest: true
-            }),
+        resolver: () => ConfigurationVersionTC.mongooseResolvers.findById({ lean: true }),
+        prepareArgs: { // resolver `findByIds` has `_ids` arg, let provide value to it
+            _id: (source) => source.newestConfigurationVersion,
         },
-        projection: { configuration: true, isNewest: true }, // point fields in source object, which should be fetched from DB
+        projection: { newestConfigurationVersion: true }, // point fields in source object, which should be fetched from DB
     }
 );
